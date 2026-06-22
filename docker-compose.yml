@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cedae_inovacao_app
+    restart: unless-stopped
+    ports:
+      - "8095:8095"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - ORACLE_HOST=${ORACLE_HOST}
+      - ORACLE_PORT=${ORACLE_PORT:-1521}
+      - ORACLE_SERVICE=${ORACLE_SERVICE}
+      - ORACLE_USER=${ORACLE_USER}
+      - ORACLE_PASSWORD=${ORACLE_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-60m}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-gsalviete}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-senha123}
+    volumes:
+      - ./backend/.env:/app/.env
+      - ./frontend:/frontend
+    networks:
+      - cedae_net
+
+networks:
+  cedae_net:
+    driver: bridge

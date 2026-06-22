@@ -1,0 +1,664 @@
+/* ══════════════════════════════════════════════════════
+   CEDAE Inovação — Stylesheet Principal
+   Tema: Água / Saneamento / Azul institucional
+   ══════════════════════════════════════════════════════ */
+
+:root {
+  --blue-900: #042b52;
+  --blue-800: #0B4F8A;
+  --blue-600: #1570b8;
+  --blue-400: #4fa3d8;
+  --blue-100: #ddeef8;
+  --blue-50:  #f0f7fd;
+
+  --gray-900: #111827;
+  --gray-700: #374151;
+  --gray-500: #6b7280;
+  --gray-300: #d1d5db;
+  --gray-100: #f3f4f6;
+  --gray-50:  #f9fafb;
+
+  --white:    #ffffff;
+  --error:    #b91c1c;
+  --success:  #065f46;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  color: var(--gray-900);
+  background: var(--gray-50);
+  min-height: 100vh;
+}
+
+/* ── Utilities ─────────────────────────────────────── */
+.hidden { display: none !important; }
+.required { color: var(--blue-600); }
+
+/* ── Header ────────────────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;          /* permite truncar se necessário */
+  flex-shrink: 1;
+}
+
+.brand-logo {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--blue-800);
+  letter-spacing: .04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--gray-500);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-admin {
+  background: var(--blue-800);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s;
+  white-space: nowrap;
+}
+.btn-admin:hover { background: var(--blue-900); }
+
+.btn-login {
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+  white-space: nowrap;
+}
+.btn-login:hover { border-color: var(--blue-600); color: var(--blue-600); }
+
+.btn-logout {
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--gray-500);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-logout:hover { color: var(--error); border-color: var(--error); }
+
+/* ── Hero ──────────────────────────────────────────── */
+.hero {
+  position: relative;
+  background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 60%, var(--blue-600) 100%);
+  overflow: hidden;
+  padding: 64px 20px 60px;
+}
+
+.hero-water {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 110% 110%, rgba(79,163,216,.25) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at -10% 80%, rgba(255,255,255,.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero-label {
+  display: inline-block;
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.85);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.hero-title {
+  font-family: var(--font-serif);
+  /* clamp garante leitura em telas de 320px até desktop */
+  font-size: clamp(22px, 6vw, 44px);
+  color: var(--white);
+  line-height: 1.2;
+  margin-bottom: 20px;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.hero-desc {
+  font-size: clamp(13px, 3.5vw, 15px);
+  line-height: 1.7;
+  color: rgba(255,255,255,.78);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── Form Wrapper ──────────────────────────────────── */
+.form-wrapper {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 16px 72px;
+}
+
+/* ── Form Block ────────────────────────────────────── */
+.form-block {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.block-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.block-tag {
+  display: inline-block;
+  background: var(--blue-100);
+  color: var(--blue-800);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+
+.block-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+/* ── Field Group ───────────────────────────────────── */
+.field-group { margin-bottom: 24px; }
+.field-group:last-child { margin-bottom: 0; }
+
+.field-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-900);
+  /* FIX 1: margem mínima de 12px antes dos cards de opção */
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.field-hint {
+  font-size: 12.5px;
+  color: var(--gray-500);
+  /* Quando há hint, ele fica entre o label e as opções,
+     o gap total (label 12px + hint 8px abaixo) fica adequado */
+  margin-top: -6px;      /* compensa o margin-bottom do label */
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.field-input,
+.field-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: var(--font-sans);
+  color: var(--gray-900);
+  background: var(--white);
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+}
+
+.field-input::placeholder,
+.field-textarea::placeholder { color: var(--gray-300); }
+
+.field-input:focus,
+.field-textarea:focus {
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(21,112,184,.12);
+}
+
+.field-textarea { resize: vertical; min-height: 100px; }
+
+.field-error {
+  display: block;
+  font-size: 12px;
+  color: var(--error);
+  margin-top: 4px;
+  min-height: 16px;
+}
+
+/* ── Radio / Checkbox Groups ───────────────────────── */
+.radio-group,
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;            /* FIX 2: garante largura total */
+}
+
+/* FIX 3: grupo horizontal — cada card cresce igualmente */
+.radio-group--horizontal {
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* FIX 2: cards sempre em 100% da largura do container,
+          sem max-width que os limite */
+.radio-option,
+.checkbox-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+  width: 100%;            /* FIX 2: largura total */
+  box-sizing: border-box;
+}
+
+/* FIX 3: dentro do grupo horizontal cada card é flex: 1 */
+.radio-group--horizontal .radio-option {
+  flex: 1 1 0;
+  min-width: 140px;       /* evita cards muito estreitos */
+}
+
+.radio-option:hover,
+.checkbox-option:hover {
+  border-color: var(--blue-400);
+  background: var(--blue-50);
+}
+
+.radio-option input[type="radio"],
+.checkbox-option input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radio-box,
+.checkbox-box {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: 2px solid var(--gray-300);
+  border-radius: 50%;
+  margin-top: 2px;
+  transition: border-color .2s, background .2s;
+  position: relative;
+}
+
+.checkbox-box { border-radius: 4px; }
+
+.radio-option input:checked ~ .radio-box,
+.checkbox-option input:checked ~ .checkbox-box {
+  border-color: var(--blue-600);
+  background: var(--blue-600);
+}
+
+.radio-option input:checked ~ .radio-box::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: var(--white);
+  border-radius: 50%;
+}
+
+.checkbox-option input:checked ~ .checkbox-box::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 1px;
+  width: 6px; height: 10px;
+  border: 2px solid var(--white);
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+.radio-option input:checked ~ div strong,
+.checkbox-option input:checked ~ div strong {
+  color: var(--blue-800);
+}
+
+.radio-option div strong,
+.checkbox-option div strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--gray-900);
+  margin-bottom: 2px;
+}
+
+.radio-option div p,
+.checkbox-option div p {
+  font-size: 12.5px;
+  color: var(--gray-500);
+  line-height: 1.45;
+}
+
+/* ── Form Footer ───────────────────────────────────── */
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.form-footer-note { font-size: 12.5px; color: var(--gray-500); }
+
+.btn-primary {
+  background: var(--blue-800);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+}
+.btn-primary:hover { background: var(--blue-900); }
+.btn-primary:active { transform: scale(.98); }
+
+.btn-submit { min-width: 200px; }
+
+/* ── Success Card ──────────────────────────────────── */
+.success-card {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 48px 24px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.success-icon { margin-bottom: 20px; }
+.success-card h2 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+.success-card p { color: var(--gray-500); margin-bottom: 28px; font-size: 14px; }
+
+/* ── Modal ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 201;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  width: min(400px, 90vw);
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--gray-500);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.modal-body { padding: 24px; }
+
+/* ── Footer ────────────────────────────────────────── */
+.site-footer {
+  background: var(--blue-900);
+  color: rgba(255,255,255,.55);
+  text-align: center;
+  padding: 28px 24px;
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE — Mobile-First
+   Breakpoints: 320px · 375px · 414px · 768px · 1024px+
+   ══════════════════════════════════════════════════════ */
+
+/* ── 320 – 374px (telefones muito pequenos) ────────── */
+@media (max-width: 374px) {
+  /* Header: logo menor, texto pode ser ocultado */
+  .brand-logo { height: 28px; }
+  .brand-name { font-size: 12px; }
+  .brand-sub  { display: none; }
+
+  .btn-admin,
+  .btn-login,
+  .btn-logout { padding: 6px 10px; font-size: 12px; }
+
+  /* Hero: padding reduzido, título menor */
+  .hero { padding: 40px 16px 40px; }
+  .hero-title { font-size: clamp(20px, 7vw, 26px); }
+  .hero-desc  { font-size: 13px; }
+
+  /* Blocos do formulário: padding menor */
+  .form-block { padding: 20px 14px; border-radius: var(--radius-md); }
+  .form-wrapper { padding: 24px 12px 56px; }
+
+  /* Radio/checkbox: empilhados, sem corte de texto */
+  .radio-group--horizontal {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .radio-group--horizontal .radio-option {
+    flex: 1 1 100%;
+    min-width: unset;
+  }
+
+  /* Botão submit: largura total */
+  .form-footer { flex-direction: column; align-items: stretch; gap: 12px; }
+  .btn-submit  { width: 100%; text-align: center; min-width: unset; }
+
+  /* Field label sem margem excessiva em telas estreitas */
+  .field-label { font-size: 13px; }
+  .field-hint  { font-size: 12px; }
+}
+
+/* ── 375 – 413px (iPhone padrão e similares) ───────── */
+@media (min-width: 375px) and (max-width: 413px) {
+  .brand-logo { height: 32px; }
+
+  .hero { padding: 48px 18px 44px; }
+  .hero-title { font-size: clamp(22px, 6.5vw, 30px); }
+
+  .form-block   { padding: 22px 16px; }
+  .form-wrapper { padding: 28px 14px 60px; }
+
+  .radio-group--horizontal {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .radio-group--horizontal .radio-option {
+    flex: 1 1 100%;
+    min-width: unset;
+  }
+
+  .form-footer { flex-direction: column; align-items: stretch; }
+  .btn-submit  { width: 100%; text-align: center; min-width: unset; }
+}
+
+/* ── 414px – 767px (largura média mobile) ──────────── */
+@media (min-width: 414px) and (max-width: 767px) {
+  .hero { padding: 52px 20px 48px; }
+
+  .form-block   { padding: 24px 18px; }
+  .form-wrapper { padding: 32px 16px 64px; }
+
+  /* Grupos horizontais: empilhar em mobile */
+  .radio-group--horizontal {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .radio-group--horizontal .radio-option {
+    flex: 1 1 100%;
+    min-width: unset;
+  }
+
+  .form-footer { flex-direction: column; align-items: stretch; }
+  .btn-submit  { width: 100%; text-align: center; min-width: unset; }
+}
+
+/* ── Atalho: todo mobile (≤ 767px) ────────────────── */
+/* Cobre os três ranges acima com regras compartilhadas */
+@media (max-width: 767px) {
+  /* Header: nunca sobrepõe */
+  .header-inner { padding: 10px 14px; gap: 10px; }
+  .header-actions { gap: 6px; }
+
+  /* Cards de opção: sempre 100%, texto nunca cortado */
+  .radio-option,
+  .checkbox-option {
+    width: 100%;
+    word-break: break-word;
+  }
+
+  /* Blocos: raio menor para ganhar espaço visual */
+  .form-block { border-radius: var(--radius-md); }
+
+  /* Success card menos padding vertical */
+  .success-card { padding: 36px 20px; }
+}
+
+/* ── 768px (tablet) ────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .form-wrapper { padding: 40px 24px 72px; }
+  .form-block   { padding: 28px 24px; }
+
+  /* Grupos horizontais: volta ao modo linha */
+  .radio-group--horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .radio-group--horizontal .radio-option {
+    flex: 1 1 calc(50% - 6px); /* 2 colunas no tablet */
+    min-width: 160px;
+  }
+}
+
+/* ── 1024px+ (desktop) ─────────────────────────────── */
+@media (min-width: 1024px) {
+  .header-inner { padding: 14px 24px; }
+  .brand-logo   { height: 40px; }
+  .brand-name   { font-size: 15px; }
+
+  .hero { padding: 80px 24px 72px; }
+
+  .form-wrapper { padding: 48px 24px 80px; }
+  .form-block   { padding: 32px; }
+
+  /* Grupos horizontais: cada card cresce igualmente */
+  .radio-group--horizontal {
+    flex-direction: row;
+    flex-wrap: nowrap;
+  }
+  .radio-group--horizontal .radio-option {
+    flex: 1;
+    min-width: 0;
+  }
+}

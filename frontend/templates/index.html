@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Esteira de Inovação — CEDAE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <img id="logo-setor" src="/static/img/logo-placeholder.png" alt="Logo CEDAE" class="brand-logo" />
+        <div class="brand-text">
+          <span class="brand-name">Assessoria de Inovação</span>
+          <!--  <span class="brand-sub">Assessoria de Inovação</span> -->
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-admin" class="btn-admin hidden" onclick="window.location.href='/admin-panel'">
+          Painel Admin
+        </button>
+        <button id="btn-login" class="btn-login" onclick="toggleLoginModal(true)">Entrar</button>
+        <button id="btn-logout" class="btn-logout hidden" onclick="logout()">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-water"></div>
+    <div class="hero-content">
+      <p class="hero-label">Formulário Via 2</p>
+      <h1 class="hero-title">Esteira de Captação<br>Ativa de Inovação</h1>
+      <p class="hero-desc">
+        Prezado(a) colaborador(a), este é o canal direto da Assessoria de Inovação para Planejamento.
+        Se você implementou, está testando ou idealizou uma melhoria, nova metodologia, processo ou tecnologia
+        na sua área, registre-a abaixo.
+      </p>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <main class="form-wrapper">
+    <div id="form-success" class="success-card hidden">
+      <div class="success-icon">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="24" fill="#0B4F8A" opacity=".12" />
+          <path d="M14 24l7 7 13-14" stroke="#0B4F8A" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </div>
+      <h2>Iniciativa registrada com sucesso.</h2>
+      <p>A Assessoria de Inovação entrará em contato em breve. Obrigado pela contribuição.</p>
+      <button onclick="resetForm()" class="btn-primary">Registrar outra iniciativa</button>
+    </div>
+
+
+
+    <form id="inovacao-form" novalidate>
+
+      <!-- BLOCO 0 -->
+      <div class="form-block">
+        <div class="block-header">
+          <span class="block-tag">Bloco 0</span>
+          <h2 class="block-title">Identificação do Proponente</h2>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="nome_colaborador">
+            Nome Completo do Colaborador <span class="required">*</span>
+          </label>
+          <p class="field-hint">Digite seu nome completo para fins de contato e registro de autoria da iniciativa.</p>
+          <input type="text" id="nome_colaborador" name="nome_colaborador" class="field-input" required
+            placeholder="Ex.: João da Silva" />
+          <span class="field-error" id="err-nome"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="canal_contato">
+            Canal de Contato Direto <span class="required">*</span>
+          </label>
+          <p class="field-hint">Insira seu ramal, telefone celular ou e-mail institucional.</p>
+          <input type="text" id="canal_contato" name="canal_contato" class="field-input" required
+            placeholder="Ex.: (21) 99999-0000 / joao.silva@cedae.com.br" />
+          <span class="field-error" id="err-contato"></span>
+        </div>
+      </div>
+
+      <!-- BLOCO I -->
+      <div class="form-block">
+        <div class="block-header">
+          <span class="block-tag">Bloco I</span>
+          <h2 class="block-title">Dados Complementares da Iniciativa</h2>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="titulo_iniciativa">
+            Título / Nome da Iniciativa <span class="required">*</span>
+          </label>
+          <p class="field-hint">Dê um nome simples e direto para o seu projeto, ação ou ideia.</p>
+          <input type="text" id="titulo_iniciativa" name="titulo_iniciativa" class="field-input" required
+            placeholder="Ex.: Automação de alertas da ETA Guandu" />
+          <span class="field-error" id="err-titulo"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="area_proponente">
+            Área Proponente / Lotação <span class="required">*</span>
+          </label>
+          <p class="field-hint">Indique o departamento, gerência ou diretoria onde a iniciativa está baseada.</p>
+          <input type="text" id="area_proponente" name="area_proponente" class="field-input" required
+            placeholder="Ex.: GETI, DIPLA, Superintendência de Operações" />
+          <span class="field-error" id="err-area"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="local_aplicacao">
+            Local de Aplicação Física / Operacional <span class="required">*</span>
+          </label>
+          <p class="field-hint">Indique a unidade operacional ou área administrativa específica.</p>
+          <input type="text" id="local_aplicacao" name="local_aplicacao" class="field-input" required
+            placeholder="Ex.: ETA Guandu, Sede Administrativa" />
+          <span class="field-error" id="err-local"></span>
+        </div>
+      </div>
+
+      <!-- BLOCO II -->
+      <div class="form-block">
+        <div class="block-header">
+          <span class="block-tag">Bloco II</span>
+          <h2 class="block-title">Engenharia do Escopo Prático</h2>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="problema_pratico">
+            Qual é o problema prático ou gargalo enfrentado? <span class="required">*</span>
+          </label>
+          <p class="field-hint">Descreva a "dor", o atraso, o desperdício ou a dificuldade que motivou a criação dessa
+            ideia.</p>
+          <textarea id="problema_pratico" name="problema_pratico" class="field-textarea" required rows="4"
+            placeholder="Descreva o problema..."></textarea>
+          <span class="field-error" id="err-problema"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="solucao_proposta">
+            Como funciona ou funcionará a sua solução proposta? <span class="required">*</span>
+          </label>
+          <p class="field-hint">Explique como a proposta resolve ou atenua o problema citado.</p>
+          <textarea id="solucao_proposta" name="solucao_proposta" class="field-textarea" required rows="4"
+            placeholder="Descreva a solução..."></textarea>
+          <span class="field-error" id="err-solucao"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="risco_mitigado">Qual o risco que esta solução ajuda a mitigar?</label>
+          <p class="field-hint">Descreva o risco corporativo, regulatório (AGENERSA), estratégico ou operacional.</p>
+          <textarea id="risco_mitigado" name="risco_mitigado" class="field-textarea" rows="3"
+            placeholder="Opcional — descreva o risco mitigado..."></textarea>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Em qual estágio atual de desenvolvimento esta iniciativa se encontra?</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="estagio_desenvolvimento" value="ideacao" />
+              <span class="radio-box"></span>
+              <div>
+                <strong>Ideação</strong>
+                <p>Tenho a ideia estruturada, mas ainda não foi testada na prática.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="estagio_desenvolvimento" value="piloto" />
+              <span class="radio-box"></span>
+              <div>
+                <strong>Teste / Piloto (MVP)</strong>
+                <p>A solução está em fase de teste inicial ou protótipo em ambiente restrito.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="estagio_desenvolvimento" value="escala" />
+              <span class="radio-box"></span>
+              <div>
+                <strong>Escala / Operação Ativa</strong>
+                <p>A melhoria já está implementada e rodando ativamente na rotina da área.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO III -->
+      <div class="form-block">
+        <div class="block-header">
+          <span class="block-tag">Bloco III</span>
+          <h2 class="block-title">Metadados Conceituais &amp; Orçamento</h2>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Em qual macrodimensão a sua iniciativa melhor se enquadra?</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="macrodimensao" value="tecnologica" />
+              <span class="radio-box"></span>
+              <div><strong>Inovação Tecnológica</strong>
+                <p>Software, IA, sensores digitais, IoT ou automação de equipamentos.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="macrodimensao" value="operacional" />
+              <span class="radio-box"></span>
+              <div><strong>Inovação Operacional</strong>
+                <p>Melhoria física nos sistemas de distribuição, tratamento de água ou eficiência energética.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="macrodimensao" value="gerencial" />
+              <span class="radio-box"></span>
+              <div><strong>Inovação Gerencial / Administrativa</strong>
+                <p>Desburocratização de fluxos, digitalização de arquivos ou novos modelos de compras.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="macrodimensao" value="social_ambiental" />
+              <span class="radio-box"></span>
+              <div><strong>Inovação Social e Ambiental</strong>
+                <p>Saneamento verde, preservação de mananciais ou ações para comunidades vulneráveis.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="macrodimensao" value="outros" />
+              <span class="radio-box"></span>
+              <div><strong>Outros / Multidimensionais</strong>
+                <p>Iniciativas híbridas ou não classificadas nas opções acima.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Qual é o perfil de impacto gerado pela solução?</label>
+          <div class="radio-group radio-group--horizontal">
+            <label class="radio-option">
+              <input type="radio" name="perfil_impacto" value="incremental" />
+              <span class="radio-box"></span>
+              <div><strong>Incremental</strong>
+                <p>Ajuste ou otimização de um processo existente.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="perfil_impacto" value="radical" />
+              <span class="radio-box"></span>
+              <div><strong>Radical / Disruptivo</strong>
+                <p>Método ou tecnologia completamente inédita na companhia.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Existe previsão de aporte financeiro necessário?</label>
+          <div class="radio-group radio-group--horizontal">
+            <label class="radio-option">
+              <input type="radio" name="aporte_financeiro" value="sim" onchange="toggleAporte(true)" />
+              <span class="radio-box"></span>
+              <div><strong>Sim</strong>
+                <p>Requer investimento orçamentário.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="aporte_financeiro" value="nao" onchange="toggleAporte(false)" />
+              <span class="radio-box"></span>
+              <div><strong>Não</strong>
+                <p>Será implementada com recursos já existentes.</p>
+              </div>
+            </label>
+          </div>
+          <div id="valor-aporte-wrapper" class="hidden" style="margin-top:12px;">
+            <input type="text" id="valor_aporte" name="valor_aporte" class="field-input" inputmode="numeric"
+              autocomplete="off" data-currency placeholder="R$ 0,00" />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="retorno_economico">
+            Estimativa de Retorno Econômico / Economia Gerada (R$/ano)
+          </label>
+          <p class="field-hint">Se aplicável, estime o impacto financeiro positivo anualizado após implementação
+            completa.</p>
+          <input type="text" id="retorno_economico" name="retorno_economico" class="field-input" inputmode="numeric"
+            autocomplete="off" placeholder="Ex.: R$ 120.000,00" />
+        </div>
+      </div>
+
+      <!-- BLOCO IV -->
+      <div class="form-block">
+        <div class="block-header">
+          <span class="block-tag">Bloco IV</span>
+          <h2 class="block-title">Suporte e Considerações do Proponente</h2>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">
+            Qual tipo de suporte da Assessoria você considera mais crítico para destravar o projeto?
+            <span class="required">*</span>
+          </label>
+          <div class="checkbox-group" id="suporte-checkboxes">
+            <label class="checkbox-option">
+              <input type="checkbox" name="suporte" value="instrumentos_juridicos" />
+              <span class="checkbox-box"></span>
+              <div><strong>Modelagem de Instrumentos Técnicos e Jurídicos</strong>
+                <p>Estruturar TR ou Acordo de Cooperação Técnica (ACT).</p>
+              </div>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="suporte" value="academia" />
+              <span class="checkbox-box"></span>
+              <div><strong>Conexão com a Academia / Universidades</strong>
+                <p>Buscar laboratórios, patentes ou pesquisadores.</p>
+              </div>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="suporte" value="mercado_startups" />
+              <span class="checkbox-box"></span>
+              <div><strong>Conexão com o Mercado / Startups</strong>
+                <p>Pontes com fornecedores tecnológicos ou soluções comerciais.</p>
+              </div>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="suporte" value="sinergia_interna" />
+              <span class="checkbox-box"></span>
+              <div><strong>Sinergia Interna / Conexão Interdepartamental</strong>
+                <p>Localizar outras gerências que enfrentem essa mesma dor ou que possam cocriar a solução.</p>
+              </div>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="suporte" value="monitoramento" />
+              <span class="checkbox-box"></span>
+              <div><strong>Apenas Monitoramento Corporativo</strong>
+                <p>Minha área possui autonomia; desejo apenas dar visibilidade institucional aos resultados.</p>
+              </div>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="suporte" value="diagnostico" />
+              <span class="checkbox-box"></span>
+              <div><strong>Apoio Diagnóstico</strong>
+                <p>Sei qual é o problema, mas preciso de orientação para definir o melhor caminho técnico.</p>
+              </div>
+            </label>
+          </div>
+          <span class="field-error" id="err-suporte"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="comentarios_adicionais">Insights, Comentários ou Informações
+            Adicionais</label>
+          <p class="field-hint">Registre quaisquer notas, links de referência ou histórico da iniciativa relevantes para
+            a análise.</p>
+          <textarea id="comentarios_adicionais" name="comentarios_adicionais" class="field-textarea" rows="4"
+            placeholder="Opcional — observações livres..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <p class="form-footer-note">Campos marcados com <span class="required">*</span> são obrigatórios.</p>
+        <button type="submit" class="btn-primary btn-submit" id="btn-submit">
+          <span id="btn-submit-text">Registrar Iniciativa</span>
+          <span id="btn-submit-loader" class="hidden">Enviando...</span>
+        </button>
+      </div>
+
+    </form>
+  </main>
+
+  <!-- LOGIN MODAL -->
+  <div id="login-overlay" class="modal-overlay hidden" onclick="toggleLoginModal(false)"></div>
+  <div id="login-modal" class="modal hidden">
+    <div class="modal-header">
+      <h3>Acesso Restrito</h3>
+      <button class="modal-close" onclick="toggleLoginModal(false)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label class="field-label" for="login-user">Usuário</label>
+        <input type="text" id="login-user" class="field-input" placeholder="Usuário" autocomplete="username" />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="login-pass">Senha</label>
+        <input type="password" id="login-pass" class="field-input" placeholder="Senha"
+          autocomplete="current-password" />
+      </div>
+
+  <!-- ERROR MODAL -->
+  <div id="error-overlay" class="modal-overlay hidden" onclick="toggleErrorModal(false)"></div>
+  <div id="error-modal" class="modal hidden" style="border-top: 4px solid #E53E3E;">
+    <div class="modal-header">
+      <h3 style="color: #E53E3E;">Aviso</h3>
+      <button class="modal-close" onclick="toggleErrorModal(false)">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="error-modal-msg" style="margin-bottom: 24px; color: #4A5568; line-height: 1.5;">Não foi possível completar a operação neste momento. Verifique os dados e tente novamente mais tarde.</p>
+      <button class="btn-primary" style="width:100%; background-color: #E53E3E; border-color: #C53030;" onclick="toggleErrorModal(false)">Entendi</button>
+    </div>
+  </div>
+      <span id="login-error" class="field-error hidden">Credenciais inválidas.</span>
+      <button class="btn-primary" style="width:100%;margin-top:8px;" onclick="doLogin()">Entrar</button>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro</p>
+    <p>Assessoria de Inovação para Planejamento</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>

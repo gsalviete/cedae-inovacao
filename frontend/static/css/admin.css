@@ -1,0 +1,216 @@
+/* ══════════════════════════════════════════════════════
+   CEDAE Inovação — Admin Panel Styles
+   ══════════════════════════════════════════════════════ */
+
+.admin-body { background: var(--gray-100); }
+
+.admin-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 16px 80px;
+}
+
+.guard-screen {
+  text-align: center;
+  padding: 80px;
+  color: var(--gray-500);
+}
+
+/* ── Section ───────────────────────────────────────── */
+.admin-section {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+/* ── KPI Grid ──────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.kpi-card {
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  text-align: center;
+}
+
+.kpi-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--blue-800);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  display: block;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--blue-900);
+  font-family: var(--font-serif);
+}
+
+/* ── Bar Chart ─────────────────────────────────────── */
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.bar-label {
+  width: 220px;
+  min-width: 220px;
+  color: var(--gray-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  flex: 1;
+  height: 12px;
+  background: var(--gray-100);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-600), var(--blue-400));
+  border-radius: 20px;
+  transition: width .6s ease;
+}
+
+.bar-count {
+  width: 32px;
+  text-align: right;
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
+/* ── Tables ────────────────────────────────────────── */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* scroll suave em iOS */
+  /* força barra de scroll visível em telas pequenas */
+  scrollbar-width: thin;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--gray-50);
+  color: var(--gray-500);
+  font-weight: 500;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--gray-300);
+}
+
+.admin-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-700);
+  vertical-align: top;
+}
+
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table tr:hover td { background: var(--blue-50); }
+
+.table-loading {
+  text-align: center;
+  color: var(--gray-500);
+  padding: 32px !important;
+}
+
+/* badge estágio */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge-ideacao   { background: #fef9c3; color: #854d0e; }
+.badge-piloto    { background: #dbeafe; color: #1e40af; }
+.badge-escala    { background: #dcfce7; color: #166534; }
+.badge-default   { background: var(--gray-100); color: var(--gray-500); }
+
+/* ══════════════════════════════════════════════════════
+   ADMIN RESPONSIVE — Mobile-First
+   ══════════════════════════════════════════════════════ */
+
+/* ── ≤ 414px (mobile) ──────────────────────────────── */
+@media (max-width: 414px) {
+  .admin-wrapper { padding: 20px 12px 56px; }
+  .admin-section { padding: 18px 14px; border-radius: var(--radius-md); }
+  .admin-section-title { font-size: 14px; margin-bottom: 14px; }
+
+  /* KPI: 2 colunas em mobile */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .kpi-card { padding: 14px 10px; }
+  .kpi-value { font-size: 28px; }
+
+  /* Barra: label menor para caber */
+  .bar-label { width: 90px; min-width: 90px; font-size: 11px; }
+  .bar-count { font-size: 11px; }
+
+  /* Guard screen menor */
+  .guard-screen { padding: 40px 16px; }
+}
+
+/* ── 415px – 767px (mobile médio) ──────────────────── */
+@media (min-width: 415px) and (max-width: 767px) {
+  .admin-wrapper { padding: 28px 16px 64px; }
+  .admin-section { padding: 20px 16px; }
+
+  /* KPI: 2 colunas */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .kpi-value { font-size: 32px; }
+
+  .bar-label { width: 110px; min-width: 110px; }
+}
+
+/* ── 768px (tablet) ────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .admin-wrapper { padding: 32px 20px 72px; }
+
+  /* KPI: auto-fit já cobre, mas garante no mínimo 2 colunas */
+  .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+  .bar-label { width: 160px; min-width: 160px; }
+}
+
+/* ── 1024px+ (desktop) ─────────────────────────────── */
+@media (min-width: 1024px) {
+  .admin-wrapper { padding: 40px 24px 80px; }
+  .bar-label { width: 220px; min-width: 220px; }
+}

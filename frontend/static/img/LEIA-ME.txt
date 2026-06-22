@@ -1,0 +1,8 @@
+Coloque aqui o arquivo de logo do setor com o nome: logo-placeholder.png
+
+Formatos aceitos: PNG, SVG
+Tamanho recomendado: altura máxima de 80px (será redimensionado automaticamente pelo CSS)
+
+Para alterar o caminho ou nome do arquivo, edite o atributo src da tag <img id="logo-setor"> nos templates:
+  - frontend/templates/index.html
+  - frontend/templates/admin.html
