@@ -10,12 +10,18 @@ import { AdminGuard } from './admin.guard';
   imports: [
     PassportModule,
     JwtModule.registerAsync({
-      useFactory: () => ({
-        secret: process.env.JWT_SECRET || 'insecure-default-change-me-32-chars',
-        signOptions: {
-          expiresIn: process.env.JWT_EXPIRES_IN || '60m',
-        },
-      }),
+      useFactory: () => {
+        const secret = process.env.JWT_SECRET;
+        if (!secret || secret.length < 32) {
+          throw new Error('JWT_SECRET não definido ou inválido — verifique as variáveis de ambiente');
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: process.env.JWT_EXPIRES_IN || '60m',
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -20,11 +21,9 @@ export class AdminGuard implements CanActivate {
       throw new UnauthorizedException('Token ausente');
     }
 
-    let payload: any;
+    let payload: JwtPayload;
     try {
-      payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET || 'insecure-default-change-me-32-chars',
-      });
+      payload = this.jwtService.verify<JwtPayload>(token);
     } catch {
       throw new UnauthorizedException('Token inválido ou expirado');
     }

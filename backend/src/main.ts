@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -6,6 +7,15 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 
 async function bootstrap() {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret || jwtSecret.length < 32) {
+    console.error(
+      'FATAL: JWT_SECRET não definido ou tem menos de 32 caracteres.\n' +
+        'Gere um valor com: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+    );
+    process.exit(1);
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Habilita CORS
