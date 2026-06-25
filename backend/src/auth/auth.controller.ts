@@ -6,7 +6,9 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UseGuards,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Request } from 'express';
@@ -17,11 +19,8 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   async login(@Body() body: LoginDto, @Req() req: Request) {
-    console.log('headers: ', req.headers);
-    console.log('raw body: ', req.body);
-    console.log('body: ', body);
-
     if (!this.authService.validateCredentials(body.username, body.password)) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
