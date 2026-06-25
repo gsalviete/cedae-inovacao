@@ -10,16 +10,6 @@ export class AuthService {
   ) {}
 
   validateCredentials(username: string, password: string): boolean {
-    console.log("recebido");
-    console.log("username", username);
-    console.log("password", password);
-
-    console.log("esperado");
-    console.log("adminUsername", process.env.ADMIN_USERNAME);
-    console.log("adminPassword", process.env.ADMIN_PASSWORD);
-    console.log("senha", password == process.env.ADMIN_PASSWORD);
-    console.log("usuario", username == process.env.ADMIN_USERNAME);
-
     const adminUsername = process.env.ADMIN_USERNAME;
     const adminPassword = process.env.ADMIN_PASSWORD;
     return username === adminUsername && password === adminPassword;
