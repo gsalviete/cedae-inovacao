@@ -96,7 +96,20 @@ export class IniciativasService {
   }
 
   async getById(id: number): Promise<object | null> {
-    const sql = 'SELECT * FROM INOVACAO_INICIATIVAS WHERE ID = :1';
+    const sql = `
+      SELECT ID, NOME_COLABORADOR, CANAL_CONTATO, EMAIL_PROPONENTE,
+             TITULO_INICIATIVA, AREA_PROPONENTE, LOCAL_APLICACAO,
+             DBMS_LOB.SUBSTR(PROBLEMA_PRATICO,       32767, 1) AS PROBLEMA_PRATICO,
+             DBMS_LOB.SUBSTR(SOLUCAO_PROPOSTA,       32767, 1) AS SOLUCAO_PROPOSTA,
+             DBMS_LOB.SUBSTR(RISCO_MITIGADO,         32767, 1) AS RISCO_MITIGADO,
+             ESTAGIO_DESENVOLVIMENTO, MACRODIMENSAO, PERFIL_IMPACTO,
+             APORTE_FINANCEIRO, VALOR_APORTE, RETORNO_ECONOMICO,
+             SUPORTE_NECESSARIO, DIAGNOSTICO_OBSERVACAO,
+             DBMS_LOB.SUBSTR(COMENTARIOS_ADICIONAIS, 32767, 1) AS COMENTARIOS_ADICIONAIS,
+             CRIADO_EM, NVL(STATUS, 'SUBMETIDA') AS STATUS, ATUALIZADO_EM
+      FROM INOVACAO_INICIATIVAS
+      WHERE ID = :1
+    `;
     const conn = await this.db.getConnection();
     try {
       const result = await conn.execute(sql, [id], { outFormat: oracledb.OUT_FORMAT_OBJECT });

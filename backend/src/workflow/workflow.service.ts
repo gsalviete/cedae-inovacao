@@ -107,7 +107,8 @@ export class WorkflowService {
   async getHistorico(iniciativaId: number): Promise<object[]> {
     const sql = `
       SELECT id, iniciativa_id, status_anterior, status_novo,
-             tipo_evento, usuario_login, data_hora, justificativa
+             tipo_evento, usuario_login, data_hora,
+             DBMS_LOB.SUBSTR(justificativa, 4000, 1) AS justificativa
       FROM HISTORICO_STATUS
       WHERE iniciativa_id = :1
       ORDER BY data_hora ASC

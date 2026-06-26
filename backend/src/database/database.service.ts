@@ -11,7 +11,6 @@ export class DatabaseService implements OnModuleInit {
     } catch {
       // thin mode — sem Oracle Client, ignorar
     }
-    oracledb.fetchAsString = [oracledb.CLOB];
   }
 
   /**
