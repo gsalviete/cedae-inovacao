@@ -1,4 +1,6 @@
 export interface JwtPayload {
-  sub: string;
+  sub: string | number;
+  login: string;
+  perfis: string[];
   is_admin: boolean;
 }

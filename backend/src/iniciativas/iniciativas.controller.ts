@@ -1,47 +1,75 @@
 import {
-  Controller,
-  Post,
-  Get,
   Body,
+  Controller,
+  Get,
   HttpException,
   HttpStatus,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
-import { IniciativasService } from './iniciativas.service';
-import { CreateIniciativaDto } from './dto/create-iniciativa.dto';
-import { AuthService } from '../auth/auth.service';
 import { Request } from 'express';
+import { AdminGuard } from '../auth/admin.guard';
+import { AuthService } from '../auth/auth.service';
+import { WorkflowService } from '../workflow/workflow.service';
+import { CreateIniciativaDto } from './dto/create-iniciativa.dto';
+import { PatchStatusDto } from './dto/patch-status.dto';
+import { IniciativasService } from './iniciativas.service';
 
 @Controller('api/iniciativas')
 export class IniciativasController {
   constructor(
     private readonly iniciativasService: IniciativasService,
     private readonly authService: AuthService,
+    private readonly workflowService: WorkflowService,
   ) {}
 
   @Post()
-  async submeter(@Body() dto: CreateIniciativaDto, @Req() req: Request) {
+  async submeter(@Body() dto: CreateIniciativaDto, @Req() req: Request): Promise<object> {
     try {
       const id = await this.iniciativasService.criar(dto);
-      // Registra log de submissão
-      const ip = req.ip || req.connection?.remoteAddress || 'unknown';
-      await this.authService
-        .registrarLog(
-          dto.nome_colaborador,
-          'submit_formulario',
-          `Iniciativa #${id} - ${dto.titulo_iniciativa}`,
-        )
-        .catch(() => {
-          // Log nunca deve quebrar a operação principal
-        });
+      this.authService
+        .registrarLog(dto.nome_colaborador, 'submit_formulario', `Iniciativa #${id} - ${dto.titulo_iniciativa}`)
+        .catch(() => {});
       return { message: 'Iniciativa registrada com sucesso.', id };
-    } catch (err) {
+    } catch (err: any) {
       throw new HttpException(err.message || 'Erro interno', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   @Get()
-  async listar() {
+  async listar(): Promise<object[]> {
     return this.iniciativasService.listar();
+  }
+
+  @Get(':id')
+  @UseGuards(AdminGuard)
+  async getById(@Param('id', ParseIntPipe) id: number): Promise<object> {
+    const ini = await this.iniciativasService.getById(id);
+    if (!ini) throw new NotFoundException(`Iniciativa #${id} não encontrada`);
+    return ini;
+  }
+
+  @Get(':id/historico')
+  @UseGuards(AdminGuard)
+  async getHistorico(@Param('id', ParseIntPipe) id: number): Promise<object[]> {
+    return this.workflowService.getHistorico(id);
+  }
+
+  @Patch(':id/status')
+  @UseGuards(AdminGuard)
+  async patchStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PatchStatusDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const payload = (req as any).user;
+    const perfis: string[] = payload?.perfis ?? (payload?.is_admin ? ['ADMINISTRADOR'] : []);
+    const usuario = { id: payload?.sub ?? payload?.login, login: payload?.login ?? '', perfis };
+    return this.workflowService.transicionar(id, dto.status, dto.justificativa, usuario);
   }
 }

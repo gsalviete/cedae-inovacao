@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { IniciativasModule } from './iniciativas/iniciativas.module';
 import { AdminModule } from './admin/admin.module';
+import { WorkflowModule } from './workflow/workflow.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AdminModule } from './admin/admin.module';
     }]),
     DatabaseModule,
     AuthModule,
+    WorkflowModule,
     IniciativasModule,
     AdminModule,
     ServeStaticModule.forRoot({

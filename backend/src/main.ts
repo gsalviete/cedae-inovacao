@@ -40,6 +40,10 @@ async function bootstrap() {
     res.sendFile(join(frontendPath, 'templates', 'admin.html'));
   });
 
+  app.getHttpAdapter().get('/admin-detalhe', (req: Request, res: Response) => {
+    res.sendFile(join(frontendPath, 'templates', 'admin-detalhe.html'));
+  });
+
   const port = process.env.PORT || 8095;
   await app.listen(port);
   console.log(`Aplicação rodando na porta ${port}`);

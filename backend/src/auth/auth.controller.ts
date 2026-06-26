@@ -21,24 +21,23 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   async login(@Body() body: LoginDto, @Req() req: Request) {
-    if (!this.authService.validateCredentials(body.username, body.password)) {
+    const user = await this.authService.validateCredentials(body.username, body.password);
+    if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const result = this.authService.generateToken(body.username);
+    const access_token = this.authService.generateToken(user);
+    const is_admin = user.perfis.includes('ADMINISTRADOR');
 
-    // Registra log de acesso sem bloquear a resposta
     const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-    this.authService
-      .registrarLog(body.username, 'login', `IP: ${ip}`)
-      .catch(() => {
-        // Log nunca deve quebrar o login
-      });
+    this.authService.registrarLog(body.username, 'login', `IP: ${ip}`).catch(() => {});
 
     return {
-      access_token: result.access_token,
+      access_token,
       token_type: 'bearer',
-      is_admin: result.is_admin,
+      is_admin,
+      login: user.login,
+      perfis: user.perfis,
     };
   }
 }
