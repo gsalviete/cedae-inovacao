@@ -1,0 +1,170 @@
+/* ══════════════════════════════════════════════════════
+   CEDAE Inovação — Detalhes de Iniciativa (detalhe.css)
+   ══════════════════════════════════════════════════════ */
+
+/* ── Cabeçalho ─────────────────────────────────────── */
+.detalhe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detalhe-titulo {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--gray-900);
+  margin: 0 0 4px;
+}
+
+.detalhe-id {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+/* ── Grid de campos ────────────────────────────────── */
+.detalhe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.detalhe-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detalhe-field-full {
+  margin-bottom: 16px;
+}
+
+.detalhe-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--gray-500);
+}
+
+.detalhe-value {
+  font-size: 14px;
+  color: var(--gray-900);
+}
+
+.detalhe-text {
+  font-size: 14px;
+  color: var(--gray-800);
+  line-height: 1.6;
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}
+
+/* ── Workflow buttons ──────────────────────────────── */
+.btn-workflow {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 10px;
+  margin-bottom: 8px;
+}
+
+.btn-workflow-info  { background: #dbeafe; color: #1e40af; }
+.btn-workflow-info:hover  { background: #bfdbfe; }
+.btn-workflow-ok    { background: #dcfce7; color: #166534; }
+.btn-workflow-ok:hover    { background: #bbf7d0; }
+.btn-workflow-err   { background: #fee2e2; color: #991b1b; }
+.btn-workflow-err:hover   { background: #fecaca; }
+
+/* ── Histórico timeline ────────────────────────────── */
+.historico-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  padding-left: 32px;
+}
+
+.historico-item {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.historico-item::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 20px;
+  bottom: 0;
+  width: 2px;
+  background: var(--gray-200);
+}
+
+.historico-item:last-child::before { display: none; }
+
+.historico-dot {
+  position: absolute;
+  left: -26px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--white);
+  background: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.historico-dot.badge-status-submetida  { background: #3b82f6; }
+.historico-dot.badge-status-em_analise { background: #f59e0b; }
+.historico-dot.badge-status-aprovada   { background: #22c55e; }
+.historico-dot.badge-status-reprovada  { background: #ef4444; }
+
+.historico-body { flex: 1; }
+
+.historico-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.historico-data {
+  font-size: 11px;
+  color: var(--gray-500);
+}
+
+.historico-desc {
+  font-size: 13px;
+  color: var(--gray-700);
+  margin-bottom: 4px;
+}
+
+.historico-seta {
+  font-weight: 500;
+  color: var(--gray-900);
+}
+
+.historico-just {
+  font-size: 13px;
+  color: var(--gray-600);
+  font-style: italic;
+  background: var(--gray-50);
+  border-left: 3px solid var(--gray-300);
+  padding: 6px 10px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-top: 6px;
+}
+
+@media (max-width: 600px) {
+  .detalhe-grid { grid-template-columns: 1fr; }
+  .detalhe-titulo { font-size: 18px; }
+  .historico-timeline { padding-left: 24px; }
+}

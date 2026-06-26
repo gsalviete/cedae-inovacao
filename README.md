@@ -50,12 +50,52 @@ docker compose up --build
 **Importante:** O arquivo `.env` contém segredos e nunca deve ser commitado.
 O `.gitignore` já bloqueia `.env` e `.env.*`.
 
+## Gestão do JWT_SECRET
+
+O `JWT_SECRET` assina e verifica todos os tokens de autenticação.
+A aplicação **recusa iniciar** se o valor estiver ausente ou tiver menos de 32 caracteres.
+
+### Gerar um novo JWT_SECRET
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Copie o resultado (64 caracteres hexadecimais) e coloque no `.env`:
+
+```
+JWT_SECRET=<resultado-do-comando-acima>
+```
+
+### Requisitos mínimos
+
+- Mínimo 32 caracteres
+- Gerado aleatoriamente (`crypto.randomBytes` ou equivalente)
+- Não deve conter palavras como "troque", "change", "default", "secret"
+- Não deve ser commitado — o `.gitignore` já bloqueia `.env`
+
+### Verificar o valor atual
+
+```bash
+node -e "const s = process.env.JWT_SECRET; console.log('Tamanho:', s?.length ?? 'NÃO DEFINIDO', s && s.length >= 32 ? '✓ OK' : '✗ INVÁLIDO')"
+```
+
+### Quando rotacionar
+
+- Após qualquer exposição do valor atual (commit acidental, log, etc.)
+- A cada 90 dias em produção como boa prática
+- Ao substituir membros da equipe com acesso ao `.env`
+
+### Impacto da rotação
+
+**Todos os tokens ativos são imediatamente invalidados.** Usuários logados precisarão fazer login novamente. Planejar a rotação fora do horário de pico.
+
 ## Rotação de credenciais
 
 Sempre que uma credencial for exposta (acidentalmente commitada, logada, etc.):
 
 1. **Oracle:** Acionar o DBA para alterar a senha do usuário `CEDAE_INOVACAO`.
-2. **JWT_SECRET:** Gerar um novo valor e atualizar o `.env`. Todos os tokens ativos são invalidados.
+2. **JWT_SECRET:** Gerar um novo valor conforme seção acima. Todos os tokens ativos são invalidados.
 3. **ADMIN_PASSWORD:** Atualizar o `.env` e reiniciar a aplicação.
 
 ## Documentação técnica

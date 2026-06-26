@@ -1,48 +1,56 @@
-import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Injectable, Logger } from '@nestjs/common';
+import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
+import { RequestUser } from '../common/interfaces/request-user.interface';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly db: DatabaseService,
-  ) {}
+  private readonly logger = new Logger(AuthService.name);
 
-  validateCredentials(username: string, password: string): boolean {
-    const adminUsername = process.env.ADMIN_USERNAME;
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    return username === adminUsername && password === adminPassword;
+  constructor(private readonly db: DatabaseService) {}
+
+  async resolveUser(login: string): Promise<RequestUser> {
+    const conn = await this.db.getConnection();
+    try {
+      const result = await conn.execute(
+        'SELECT login, nome, role FROM ADMIN_USERS WHERE login = :1 AND ativo = 1',
+        [login],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT },
+      );
+      const rows = result.rows as any[];
+      if (!rows.length) {
+        return { login, nome: null, role: null, admin: false };
+      }
+      const r = rows[0];
+      return {
+        login: r.LOGIN as string,
+        nome: (r.NOME as string | null) ?? null,
+        role: (r.ROLE as 'ADM' | 'CONTRIBUTOR') ?? null,
+        admin: true,
+      };
+    } catch (e: any) {
+      if (e?.errorNum === 942) {
+        return { login, nome: null, role: null, admin: false };
+      }
+      this.logger.error('Erro ao resolver usuário:', e?.message);
+      return { login, nome: null, role: null, admin: false };
+    } finally {
+      await conn.close();
+    }
   }
 
-  generateToken(username: string): { access_token: string; is_admin: boolean } {
-    const adminUsername = process.env.ADMIN_USERNAME;
-    const is_admin = username === adminUsername;
-    const payload = { sub: username, is_admin };
-    const access_token = this.jwtService.sign(payload);
-    return { access_token, is_admin };
-  }
-
-  async registrarLog(
-    username: string,
-    acao: string,
-    detalhe: string | null = null,
-  ): Promise<void> {
-    const sql = `
-      INSERT INTO INOVACAO_LOGS (USERNAME, ACAO, DETALHE, CRIADO_EM)
-      VALUES (:1, :2, :3, SYSDATE)
-    `;
+  async registrarLog(login: string, acao: string, detalhe: string | null = null): Promise<void> {
+    const sql = `INSERT INTO INOVACAO_LOGS (USERNAME, ACAO, DETALHE, CRIADO_EM) VALUES (:1, :2, :3, SYSDATE)`;
     try {
       const conn = await this.db.getConnection();
       try {
-        await conn.execute(sql, [username, acao, detalhe]);
+        await conn.execute(sql, [login, acao, detalhe]);
         await conn.commit();
       } finally {
         await conn.close();
       }
-    } catch (e) {
-      console.error('Falha ao registrar auditoria no Oracle (Tabela INOVACAO_LOGS pode estar em falta):', e);
-      // Fail silently to not block login
+    } catch {
+      // Log nunca interrompe operação principal
     }
   }
 }

@@ -29,7 +29,6 @@
 
   <main class="admin-wrapper">
 
-    <!-- Guard: redireciona se não for admin -->
     <div id="admin-guard" class="guard-screen hidden">
       <p>Acesso restrito. Redirecionando...</p>
     </div>
@@ -55,6 +54,29 @@
           <div class="kpi-card">
             <span class="kpi-label">Em Escala</span>
             <span class="kpi-value" id="kpi-escala">—</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Status do Workflow -->
+      <section class="admin-section">
+        <h2 class="admin-section-title">Status do Workflow</h2>
+        <div class="status-kpi-row" id="status-kpi-row">
+          <div class="status-kpi-card">
+            <span class="badge badge-status-submetida">Submetida</span>
+            <span class="status-kpi-value" id="sk-submetida">—</span>
+          </div>
+          <div class="status-kpi-card">
+            <span class="badge badge-status-em_analise">Em Análise</span>
+            <span class="status-kpi-value" id="sk-em_analise">—</span>
+          </div>
+          <div class="status-kpi-card">
+            <span class="badge badge-status-aprovada">Aprovada</span>
+            <span class="status-kpi-value" id="sk-aprovada">—</span>
+          </div>
+          <div class="status-kpi-card">
+            <span class="badge badge-status-reprovada">Reprovada</span>
+            <span class="status-kpi-value" id="sk-reprovada">—</span>
           </div>
         </div>
       </section>
@@ -96,11 +118,41 @@
                 <th>Proponente</th>
                 <th>Área</th>
                 <th>Estágio</th>
+                <th>Status</th>
                 <th>Data</th>
               </tr>
             </thead>
             <tbody id="tbody-iniciativas">
-              <tr><td colspan="6" class="table-loading">Carregando...</td></tr>
+              <tr><td colspan="7" class="table-loading">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Usuários Administrativos -->
+      <section class="admin-section">
+        <div class="section-header-row">
+          <h2 class="admin-section-title" style="margin-bottom:0;border-bottom:none;">Usuários Administrativos</h2>
+          <button class="btn-action" id="btn-novo-admin" onclick="openCreateUser()">+ Novo Admin</button>
+        </div>
+        <p style="font-size:12px;color:var(--gray-500);margin:8px 0 16px;">
+          Usuários autenticados via Kerberos/IIS listados aqui têm acesso ao painel.
+        </p>
+        <div class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Login</th>
+                <th>Nome</th>
+                <th>Role</th>
+                <th>Ativo</th>
+                <th>Desde</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-usuarios">
+              <tr><td colspan="7" class="table-loading">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -134,6 +186,36 @@
     <p>CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro</p>
     <p>Assessoria de Inovação para Planejamento</p>
   </footer>
+
+  <!-- Modal: Novo Usuário Administrativo -->
+  <div id="modal-create-user" class="modal-overlay hidden" onclick="closeModalOnOverlay(event)">
+    <div class="modal-box">
+      <h3 class="modal-title">Novo Usuário Administrativo</h3>
+      <form id="form-create-user" onsubmit="submitCreateUser(event)">
+        <div class="form-group">
+          <label class="form-label">Login (domínio Kerberos) *</label>
+          <input type="text" id="cu-login" class="form-input" required autocomplete="off"
+                 placeholder="ex: joao.silva" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome (opcional)</label>
+          <input type="text" id="cu-nome" class="form-input" placeholder="ex: João da Silva" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role *</label>
+          <select id="cu-role" class="form-input" required>
+            <option value="CONTRIBUTOR">CONTRIBUTOR — Visualização e workflow</option>
+            <option value="ADM">ADM — Acesso total (gerencia admins)</option>
+          </select>
+        </div>
+        <div id="cu-result" class="cu-result hidden"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeCreateUser()">Cancelar</button>
+          <button type="submit" class="btn-primary">Adicionar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="/static/js/admin.js"></script>
 </body>

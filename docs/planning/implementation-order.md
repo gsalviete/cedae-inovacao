@@ -1,6 +1,6 @@
 # Ordem de Implementação — CEDAE Inovação
-**Versão:** 1.0  
-**Data:** 2026-06-24  
+**Versão:** 1.3  
+**Data:** 2026-06-25  
 **Fonte de verdade:** implementation-backlog.md + release-plan.md
 
 ---
@@ -10,20 +10,20 @@
 **Pré-requisito:** Nenhum
 
 ```
-E0-S01  Remover credenciais do repositório git
-E0-S02  Remover logs de credenciais e adicionar rate limiting
-E0-S03  Habilitar TypeScript strict mode e remover dependências mortas
-E0-S04  Gerar JWT_SECRET forte e documentar gestão de segredos
+E0-S01  ✅ Remover credenciais do repositório git
+E0-S02  ✅ Remover logs de credenciais e adicionar rate limiting
+E0-S03  ✅ Habilitar TypeScript strict mode e remover dependências mortas
+E0-S04  ✅ Gerar JWT_SECRET forte e documentar gestão de segredos
 ```
 
 **Gate — critérios obrigatórios para avançar para Fase 1:**
-- [ ] Nenhuma credencial (senha, token, chave) existe no repositório git ou em qualquer arquivo commitado
-- [ ] JWT_SECRET tem no mínimo 32 caracteres aleatórios e não está hardcoded
-- [ ] `POST /api/auth/login` retorna 429 após 5 tentativas falhas consecutivas do mesmo IP em 60s
-- [ ] Nenhum log em produção contém valores de credenciais
-- [ ] `pnpm run build` completa sem erros TypeScript com strict mode
-- [ ] `passport-local` removido de `package.json`
-- [ ] Comportamento funcional do sistema idêntico ao pré-Fase 0
+- [x] Nenhuma credencial (senha, token, chave) existe no repositório git ou em qualquer arquivo commitado
+- [x] JWT_SECRET tem no mínimo 32 caracteres aleatórios e não está hardcoded
+- [x] `POST /api/auth/login` retorna 429 após 5 tentativas falhas consecutivas do mesmo IP em 60s
+- [x] Nenhum log em produção contém valores de credenciais
+- [x] `pnpm run build` completa sem erros TypeScript com strict mode
+- [x] `passport-local` removido de `package.json`
+- [x] Comportamento funcional do sistema idêntico ao pré-Fase 0
 
 ---
 
@@ -32,10 +32,10 @@ E0-S04  Gerar JWT_SECRET forte e documentar gestão de segredos
 **Pré-requisito:** Gate da Fase 0 aprovado + lista de gerências fornecida pela Assessoria
 
 ```
-E1-S01  Criar tabelas de referência sem dependências externas
-E1-S02  Criar tabelas de identidade e usuário administrador seed
-E1-S03  Criar tabelas transacionais e de workflow
-E1-S04  Adicionar colunas de migração na tabela INOVACAO_INICIATIVAS
+E1-S01  ✅ Criar tabelas de referência sem dependências externas (V01–V05)
+E1-S02  ✅ Criar tabelas de identidade e usuário administrador seed (V06, V08, V09 + seedAdminIfEmpty)
+E1-S03  ✅ Criar tabelas transacionais e de workflow (V12, V13, V14)
+E1-S04  ✅ Adicionar colunas de migração na tabela INOVACAO_INICIATIVAS (V19)
 E1-S05  ETL: migração de dados históricos
 E1-S06  Criar tabela INICIATIVAS com estrutura TO-BE completa
 ```

@@ -17,10 +17,11 @@ services:
       - ORACLE_SERVICE=${ORACLE_SERVICE}
       - ORACLE_USER=${ORACLE_USER}
       - ORACLE_PASSWORD=${ORACLE_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-60m}
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-gsalviete}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-senha123}
+      - PORT=8095
+      - RATE_LIMIT_TTL=${RATE_LIMIT_TTL:-60}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
+      # Só necessário em dev/Docker sem IIS. Em produção o IIS injeta x-remote-user.
+      - DEV_REMOTE_USER=${DEV_REMOTE_USER:-}
     volumes:
       - ./backend/.env:/app/.env
       - ./frontend:/frontend
