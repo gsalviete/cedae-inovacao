@@ -6,12 +6,12 @@ export class DatabaseService implements OnModuleInit {
   private readonly logger = new Logger(DatabaseService.name);
 
   onModuleInit() {
-    // Garante thin mode (sem Oracle Client instalado)
     try {
       oracledb.initOracleClient();
     } catch {
-      // Se já inicializado ou thin mode, ignora
+      // thin mode — sem Oracle Client, ignorar
     }
+    oracledb.fetchAsString = [oracledb.CLOB];
   }
 
   /**

@@ -99,25 +99,24 @@ END;
 
 
 -- ────────────────────────────────────────────────────────────
--- BLOCO 4 — Recriar VW_HISTORICO_ATIVO com usuario_login
+-- BLOCO 4 — Novos campos do formulário em INOVACAO_INICIATIVAS
 -- ────────────────────────────────────────────────────────────
 DECLARE
-  v_count NUMBER;
+  PROCEDURE add_col(p_col VARCHAR2, p_def VARCHAR2) IS
+    v_count NUMBER;
+  BEGIN
+    SELECT COUNT(*) INTO v_count FROM user_tab_columns
+    WHERE table_name = 'INOVACAO_INICIATIVAS' AND column_name = UPPER(p_col);
+    IF v_count = 0 THEN
+      EXECUTE IMMEDIATE 'ALTER TABLE INOVACAO_INICIATIVAS ADD ' || p_col || ' ' || p_def;
+      DBMS_OUTPUT.PUT_LINE('Coluna ' || p_col || ' adicionada.');
+    END IF;
+  END;
 BEGIN
-  SELECT COUNT(*) INTO v_count FROM user_objects
-  WHERE object_name = 'VW_HISTORICO_ATIVO' AND object_type = 'VIEW';
-  IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP VIEW VW_HISTORICO_ATIVO';
-    DBMS_OUTPUT.PUT_LINE('VW_HISTORICO_ATIVO removida para recriação.');
-  END IF;
+  add_col('EMAIL_PROPONENTE',       'VARCHAR2(255)');
+  add_col('DIAGNOSTICO_OBSERVACAO', 'VARCHAR2(2000)');
 END;
 /
-
-CREATE VIEW VW_HISTORICO_ATIVO AS
-  SELECT id, iniciativa_id, status_anterior, status_novo,
-         tipo_evento, usuario_login, data_hora, justificativa
-  FROM HISTORICO_STATUS
-  ORDER BY data_hora ASC;
 
 
 -- ────────────────────────────────────────────────────────────

@@ -1,10 +1,6 @@
 -- V21__alter_historico_status_add_login.sql
--- Adiciona usuario_login (VARCHAR2) em HISTORICO_STATUS
--- O campo usuario_id (NUMBER) é mantido com seus dados históricos, mas não é mais escrito
--- A view VW_HISTORICO_ATIVO é recriada para expor usuario_login
 -- Oracle 19c | Idempotente | Schema: CEDAE_INOVACAO
 
--- ── 1. Adiciona coluna usuario_login ──────────────────────────────────
 DECLARE
   v_count NUMBER;
 BEGIN
@@ -17,7 +13,6 @@ BEGIN
 END;
 /
 
--- ── 2. Cria índice em usuario_login ──────────────────────────────────
 DECLARE
   v_count NUMBER;
 BEGIN
@@ -28,7 +23,6 @@ BEGIN
 END;
 /
 
--- ── 3. Remove índice antigo IDX_HS_USUARIO (usuario_id já não é escrito) ──
 DECLARE
   v_count NUMBER;
 BEGIN
@@ -38,23 +32,5 @@ BEGIN
   END IF;
 END;
 /
-
--- ── 4. Recria view VW_HISTORICO_ATIVO com usuario_login ──────────────
-DECLARE
-  v_count NUMBER;
-BEGIN
-  SELECT COUNT(*) INTO v_count FROM user_objects
-  WHERE object_name = 'VW_HISTORICO_ATIVO' AND object_type = 'VIEW';
-  IF v_count > 0 THEN
-    EXECUTE IMMEDIATE 'DROP VIEW VW_HISTORICO_ATIVO';
-  END IF;
-END;
-/
-
-CREATE VIEW VW_HISTORICO_ATIVO AS
-  SELECT id, iniciativa_id, status_anterior, status_novo,
-         tipo_evento, usuario_login, data_hora, justificativa
-  FROM HISTORICO_STATUS
-  ORDER BY data_hora ASC;
 
 COMMIT;
