@@ -41,46 +41,46 @@
         <div class="kpi-grid" id="kpi-grid">
           <div class="kpi-card">
             <span class="kpi-label">Total de Iniciativas</span>
-            <span class="kpi-value" id="kpi-total">—</span>
+            <span class="kpi-value" id="kpi-total"><span class="skeleton skeleton-value">00</span></span>
           </div>
           <div class="kpi-card">
             <span class="kpi-label">Em Ideação</span>
-            <span class="kpi-value" id="kpi-ideacao">—</span>
+            <span class="kpi-value" id="kpi-ideacao"><span class="skeleton skeleton-value">00</span></span>
           </div>
           <div class="kpi-card">
             <span class="kpi-label">Em Piloto</span>
-            <span class="kpi-value" id="kpi-piloto">—</span>
+            <span class="kpi-value" id="kpi-piloto"><span class="skeleton skeleton-value">00</span></span>
           </div>
           <div class="kpi-card">
             <span class="kpi-label">Em Escala</span>
-            <span class="kpi-value" id="kpi-escala">—</span>
+            <span class="kpi-value" id="kpi-escala"><span class="skeleton skeleton-value">00</span></span>
           </div>
         </div>
       </section>
 
       <!-- Status do Workflow -->
       <section class="admin-section">
-        <h2 class="admin-section-title">Status do Workflow</h2>
+        <h2 class="admin-section-title">Status das Tramitações</h2>
         <div class="status-kpi-row" id="status-kpi-row">
           <div class="status-kpi-card">
             <span class="badge badge-status-submetida">Submetida</span>
-            <span class="status-kpi-value" id="sk-submetida">—</span>
+            <span class="status-kpi-value" id="sk-submetida"><span class="skeleton skeleton-value">00</span></span>
           </div>
           <div class="status-kpi-card">
             <span class="badge badge-status-em_analise">Em Análise</span>
-            <span class="status-kpi-value" id="sk-em_analise">—</span>
+            <span class="status-kpi-value" id="sk-em_analise"><span class="skeleton skeleton-value">00</span></span>
           </div>
           <div class="status-kpi-card">
             <span class="badge badge-status-em_observacao">Em Observação</span>
-            <span class="status-kpi-value" id="sk-em_observacao">—</span>
+            <span class="status-kpi-value" id="sk-em_observacao"><span class="skeleton skeleton-value">00</span></span>
           </div>
           <div class="status-kpi-card">
             <span class="badge badge-status-aprovada">Aprovada</span>
-            <span class="status-kpi-value" id="sk-aprovada">—</span>
+            <span class="status-kpi-value" id="sk-aprovada"><span class="skeleton skeleton-value">00</span></span>
           </div>
           <div class="status-kpi-card">
             <span class="badge badge-status-reprovada">Reprovada</span>
-            <span class="status-kpi-value" id="sk-reprovada">—</span>
+            <span class="status-kpi-value" id="sk-reprovada"><span class="skeleton skeleton-value">00</span></span>
           </div>
         </div>
       </section>
@@ -88,25 +88,10 @@
       <!-- Distribuição por Dimensão -->
       <section class="admin-section">
         <h2 class="admin-section-title">Distribuição por Macrodimensão</h2>
-        <div id="dimensao-bars" class="bar-chart"></div>
-      </section>
-
-      <!-- Acessos -->
-      <section class="admin-section">
-        <h2 class="admin-section-title">Histórico de Acessos</h2>
-        <div class="table-wrapper">
-          <table class="admin-table" id="table-acessos">
-            <thead>
-              <tr>
-                <th>Usuário</th>
-                <th>Data / Hora</th>
-                <th>Detalhe</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-acessos">
-              <tr><td colspan="3" class="table-loading">Carregando...</td></tr>
-            </tbody>
-          </table>
+        <div id="dimensao-bars" class="bar-chart">
+          <div class="bar-row"><span class="bar-label"><span class="skeleton skeleton-line" style="width:120px;">label</span></span><div class="bar-track skeleton-bar-track"><span class="skeleton">.</span></div><span class="bar-count"></span></div>
+          <div class="bar-row"><span class="bar-label"><span class="skeleton skeleton-line" style="width:120px;">label</span></span><div class="bar-track skeleton-bar-track"><span class="skeleton">.</span></div><span class="bar-count"></span></div>
+          <div class="bar-row"><span class="bar-label"><span class="skeleton skeleton-line" style="width:120px;">label</span></span><div class="bar-track skeleton-bar-track"><span class="skeleton">.</span></div><span class="bar-count"></span></div>
         </div>
       </section>
 
@@ -126,7 +111,10 @@
               </tr>
             </thead>
             <tbody id="tbody-iniciativas">
-              <tr><td colspan="6" class="table-loading">Carregando...</td></tr>
+              <tr><td colspan="6"><span class="skeleton skeleton-line">.</span></td></tr>
+              <tr><td colspan="6"><span class="skeleton skeleton-line">.</span></td></tr>
+              <tr><td colspan="6"><span class="skeleton skeleton-line">.</span></td></tr>
+              <tr><td colspan="6"><span class="skeleton skeleton-line">.</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -145,40 +133,49 @@
           <table class="admin-table">
             <thead>
               <tr>
-                <th>#</th>
                 <th>Login</th>
                 <th>Nome</th>
-                <th>Role</th>
+                <th>Perfil</th>
                 <th>Ativo</th>
                 <th>Desde</th>
                 <th>Ação</th>
               </tr>
             </thead>
             <tbody id="tbody-usuarios">
-              <tr><td colspan="7" class="table-loading">Carregando...</td></tr>
+              <tr><td colspan="6"><span class="skeleton skeleton-line">.</span></td></tr>
+              <tr><td colspan="6"><span class="skeleton skeleton-line">.</span></td></tr>
+              <tr><td colspan="6"><span class="skeleton skeleton-line">.</span></td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- Logs completos -->
+      <!-- Logs completos (colapsável) -->
       <section class="admin-section">
-        <h2 class="admin-section-title">Log de Sistema</h2>
-        <div class="table-wrapper">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Usuário</th>
-                <th>Ação</th>
-                <th>Detalhe</th>
-                <th>Data / Hora</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-logs">
-              <tr><td colspan="5" class="table-loading">Carregando...</td></tr>
-            </tbody>
-          </table>
+        <button type="button" class="collapsible-header" id="logs-toggle"
+                aria-expanded="false" aria-controls="logs-body" onclick="toggleLogs()">
+          <span class="admin-section-title" style="margin:0;padding:0;border:none;">Log de Sistema</span>
+          <span class="caret" aria-hidden="true">▾</span>
+        </button>
+        <div id="logs-body" class="collapsible-body hidden">
+          <div class="table-wrapper logs-scroll">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Usuário</th>
+                  <th>Ação</th>
+                  <th>Detalhe</th>
+                  <th>Data / Hora</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-logs">
+                <tr><td colspan="5"><span class="skeleton skeleton-line">.</span></td></tr>
+                <tr><td colspan="5"><span class="skeleton skeleton-line">.</span></td></tr>
+                <tr><td colspan="5"><span class="skeleton skeleton-line">.</span></td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -205,10 +202,10 @@
           <input type="text" id="cu-nome" class="form-input" placeholder="ex: João da Silva" />
         </div>
         <div class="form-group">
-          <label class="form-label">Role *</label>
+          <label class="form-label">Perfil *</label>
           <select id="cu-role" class="form-input" required>
-            <option value="CONTRIBUTOR">CONTRIBUTOR — Visualização e workflow</option>
-            <option value="ADM">ADM — Acesso total (gerencia admins)</option>
+            <option value="CONTRIBUTOR">Colaborador — Visualização e workflow</option>
+            <option value="ADM">Administrador — Acesso total (gerencia administradores)</option>
           </select>
         </div>
         <div id="cu-result" class="cu-result hidden"></div>

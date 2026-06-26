@@ -102,38 +102,26 @@ async function loadKPIs() {
     Object.entries(dims).forEach(([key, count]) => {
       const label = DIM_MAP[key] || key;
       const pct   = Math.round((count / max) * 100);
-      barEl.innerHTML += `
-        <div class="bar-row">
+      barEl.insertAdjacentHTML('beforeend', `
+        <div class="bar-row fade-in">
           <span class="bar-label" title="${label}">${label}</span>
-          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>
           <span class="bar-count">${count}</span>
-        </div>`;
+        </div>`);
+    });
+
+    // Anima as barras preenchendo após o fade-in dos rows
+    requestAnimationFrame(() => {
+      Object.values(dims).forEach((count, idx) => {
+        const pct  = Math.round((count / max) * 100);
+        const fill = barEl.children[idx]?.querySelector('.bar-fill');
+        if (fill) fill.style.width = `${pct}%`;
+      });
     });
 
     if (!Object.keys(dims).length) {
       barEl.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Nenhuma iniciativa registrada ainda.</p>';
     }
-  } catch { /* silencioso */ }
-}
-
-/* ── Acessos ─────────────────────────────────────────── */
-async function loadAcessos() {
-  try {
-    const res = await fetch(`${API}/api/admin/acessos`);
-    if (!res.ok) return;
-    const data = await res.json();
-    const tbody = document.getElementById('tbody-acessos');
-
-    if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="3" class="table-loading">Nenhum acesso registrado.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.map(l => `
-      <tr>
-        <td>${l.username || '—'}</td>
-        <td>${fmtDate(l.criado_em)}</td>
-        <td>${l.detalhe || '—'}</td>
-      </tr>`).join('');
   } catch { /* silencioso */ }
 }
 
@@ -150,7 +138,7 @@ async function loadIniciativas() {
       return;
     }
     tbody.innerHTML = data.map(i => `
-      <tr class="row-clickable" onclick="abrirDetalhe(${i.id})" title="Ver detalhes">
+      <tr class="row-clickable fade-in" onclick="abrirDetalhe(${i.id})" title="Ver detalhes">
         <td>${i.titulo_iniciativa || '—'}</td>
         <td>${i.nome_colaborador || '—'}</td>
         <td>${i.area_proponente || '—'}</td>
@@ -174,24 +162,27 @@ async function loadUsers() {
     const tbody = document.getElementById('tbody-usuarios');
 
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="table-loading">Nenhum usuário administrativo cadastrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="table-loading">Nenhum usuário administrativo cadastrado.</td></tr>';
       return;
     }
     const isAdm = _currentUser?.role === 'ADM';
     tbody.innerHTML = data.map(u => {
       const roleLabel = u.role === 'ADM'
-        ? '<span class="badge badge-status-aprovada">ADM</span>'
-        : '<span class="badge badge-status-em_analise">CONTRIBUTOR</span>';
+        ? '<span class="badge badge-status-aprovada">Administrador</span>'
+        : '<span class="badge badge-status-em_analise">Colaborador</span>';
       const ativoLabel = u.ativo
         ? '<span class="badge badge-status-aprovada">Ativo</span>'
         : '<span class="badge badge-status-reprovada">Inativo</span>';
-      const acoes = isAdm ? `
-        <button class="${u.ativo ? 'btn-danger-sm' : 'btn-action-sm'}"
-                onclick="toggleUser(${u.id}, ${!u.ativo})">${u.ativo ? 'Desativar' : 'Ativar'}</button>
-      ` : '—';
+      const protegerAdm = u.role === 'ADM' && u.ativo;
+      const acoes = isAdm ? (
+        protegerAdm
+          ? `<button class="btn-danger-sm" disabled
+                     title="Administradores não podem ser desativados.">Desativar</button>`
+          : `<button class="${u.ativo ? 'btn-danger-sm' : 'btn-action-sm'}"
+                     onclick="toggleUser(${u.id}, ${!u.ativo})">${u.ativo ? 'Desativar' : 'Ativar'}</button>`
+      ) : '—';
       return `
-        <tr>
-          <td>${u.id}</td>
+        <tr class="fade-in">
           <td>${u.login}</td>
           <td>${u.nome || '—'}</td>
           <td>${roleLabel}</td>
@@ -262,7 +253,9 @@ async function submitCreateUser(e) {
   }
 }
 
-/* ── Logs ────────────────────────────────────────────── */
+/* ── Logs (lazy load no primeiro toggle) ─────────────── */
+let _logsLoaded = false;
+
 async function loadLogs() {
   try {
     const res = await fetch(`${API}/api/admin/logs`);
@@ -275,7 +268,7 @@ async function loadLogs() {
       return;
     }
     tbody.innerHTML = data.map(l => `
-      <tr>
+      <tr class="fade-in">
         <td>${l.id}</td>
         <td>${l.username || '—'}</td>
         <td>${l.acao || '—'}</td>
@@ -285,12 +278,22 @@ async function loadLogs() {
   } catch { /* silencioso */ }
 }
 
+function toggleLogs() {
+  const body   = document.getElementById('logs-body');
+  const toggle = document.getElementById('logs-toggle');
+  const open   = body.classList.toggle('hidden');
+  toggle.setAttribute('aria-expanded', String(!open));
+  toggle.classList.toggle('is-open', !open);
+  if (!open && !_logsLoaded) {
+    _logsLoaded = true;
+    loadLogs();
+  }
+}
+
 /* ── Init ────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
   if (!(await checkAdmin())) return;
   loadKPIs();
-  loadAcessos();
   loadIniciativas();
   loadUsers();
-  loadLogs();
 });

@@ -47,6 +47,7 @@ const TIPO_EVENTO_LABEL = {
   REPROVACAO: 'Reprovação',
   ANALISE:    'Análise',
   CORRECAO:   'Correção',
+  OBSERVACAO: 'Observação',
 };
 
 function getIniciativaId() {
@@ -132,7 +133,6 @@ async function loadDetalhe() {
     setField('d-comentarios_adicionais', data.comentarios_adicionais);
 
     await loadAcoes(id, data.status || 'SUBMETIDA');
-    await loadObservacoes(id);
     await loadHistorico(id);
   } catch {
     document.getElementById('d-titulo').textContent = 'Erro ao carregar iniciativa.';
@@ -230,31 +230,6 @@ async function confirmarTransicao() {
   }
 }
 
-/* ── Observações ─────────────────────────────────────── */
-async function loadObservacoes(id) {
-  const el = document.getElementById('observacoes-lista');
-  if (!el) return;
-  try {
-    const res = await fetch(`${API}/api/iniciativas/${id}/observacoes`);
-    if (!res.ok) return;
-    const data = await res.json();
-
-    if (!data.length) {
-      el.innerHTML = '<p class="obs-vazia">Nenhuma observação registrada.</p>';
-      return;
-    }
-    el.innerHTML = data.map(o => `
-      <div class="observacao-item">
-        <div class="observacao-meta">
-          <strong>${o.usuario_login}</strong>
-          <span class="historico-data">${fmtDate(o.criado_em)}</span>
-        </div>
-        <p class="observacao-texto">${o.texto}</p>
-      </div>
-    `).join('');
-  } catch { /* silencioso */ }
-}
-
 /* ── Modal de Observação ─────────────────────────────── */
 let _obsId = null;
 
@@ -302,34 +277,79 @@ async function confirmarObservacao() {
   }
 }
 
-/* ── Histórico de tramitação ─────────────────────────── */
+/* ── Histórico de tramitação ─────────────────────────────
+   Mescla eventos de HISTORICO_STATUS e INICIATIVA_OBSERVACOES
+   em uma única timeline cronológica. */
 async function loadHistorico(id) {
   const el = document.getElementById('historico-timeline');
   try {
-    const res = await fetch(`${API}/api/iniciativas/${id}/historico`);
-    if (!res.ok) return;
-    const data = await res.json();
+    const [histRes, obsRes] = await Promise.all([
+      fetch(`${API}/api/iniciativas/${id}/historico`),
+      fetch(`${API}/api/iniciativas/${id}/observacoes`),
+    ]);
+    if (!histRes.ok) return;
+    const historico = await histRes.json();
+    const observacoes = obsRes.ok ? await obsRes.json() : [];
 
-    if (!data.length) {
+    const eventos = [
+      ...historico.map(h => ({
+        tipo_evento: h.tipo_evento,
+        usuario_login: h.usuario_login,
+        data_hora: h.data_hora,
+        status_anterior: h.status_anterior,
+        status_novo: h.status_novo,
+        justificativa: h.justificativa,
+      })),
+      ...observacoes.map(o => ({
+        tipo_evento: 'OBSERVACAO',
+        usuario_login: o.usuario_login,
+        data_hora: o.criado_em,
+        status_anterior: null,
+        status_novo: null,
+        justificativa: o.texto,
+      })),
+    ].sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
+
+    if (!eventos.length) {
       el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Sem histórico registrado.</p>';
       return;
     }
 
-    el.innerHTML = data.map(h => {
-      const [, cls] = STATUS_MAP[h.status_novo] || ['', 'badge-default'];
-      const tipoLabel = TIPO_EVENTO_LABEL[h.tipo_evento] || h.tipo_evento;
-      const autor = h.usuario_login || 'Sistema';
-      const anterior = h.status_anterior
-        ? `<span class="historico-seta">${h.status_anterior} → ${h.status_novo}</span>`
-        : `<span class="historico-seta">Submissão inicial: ${h.status_novo}</span>`;
-      const just = h.justificativa ? `<div class="historico-just">"${h.justificativa}"</div>` : '';
+    el.innerHTML = eventos.map(ev => {
+      const tipoLabel = TIPO_EVENTO_LABEL[ev.tipo_evento] || ev.tipo_evento;
+      const autor = ev.usuario_login || 'Sistema';
+
+      if (ev.tipo_evento === 'OBSERVACAO') {
+        const cls = 'badge-status-em_observacao';
+        const texto = ev.justificativa
+          ? `<div class="historico-just">"${ev.justificativa}"</div>`
+          : '';
+        return `
+          <div class="historico-item">
+            <div class="historico-dot ${cls}"></div>
+            <div class="historico-body">
+              <div class="historico-top">
+                <span class="badge ${cls}">${tipoLabel}</span>
+                <span class="historico-data">${fmtDate(ev.data_hora)}</span>
+              </div>
+              <div class="historico-desc">Observação registrada por <strong>${autor}</strong></div>
+              ${texto}
+            </div>
+          </div>`;
+      }
+
+      const [, cls] = STATUS_MAP[ev.status_novo] || ['', 'badge-default'];
+      const anterior = ev.status_anterior
+        ? `<span class="historico-seta">${ev.status_anterior} → ${ev.status_novo}</span>`
+        : `<span class="historico-seta">Submissão inicial: ${ev.status_novo}</span>`;
+      const just = ev.justificativa ? `<div class="historico-just">"${ev.justificativa}"</div>` : '';
       return `
         <div class="historico-item">
           <div class="historico-dot ${cls}"></div>
           <div class="historico-body">
             <div class="historico-top">
               <span class="badge ${cls}">${tipoLabel}</span>
-              <span class="historico-data">${fmtDate(h.data_hora)}</span>
+              <span class="historico-data">${fmtDate(ev.data_hora)}</span>
             </div>
             <div class="historico-desc">${anterior} — por <strong>${autor}</strong></div>
             ${just}

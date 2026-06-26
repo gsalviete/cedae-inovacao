@@ -244,6 +244,14 @@
 }
 .btn-danger-sm:hover { background: #fecaca; }
 
+.btn-action-sm:disabled,
+.btn-danger-sm:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.btn-action-sm:disabled:hover,
+.btn-danger-sm:disabled:hover { background: inherit; }
+
 /* ── Modal ─────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
@@ -304,6 +312,80 @@
 .cu-result.hidden { display: none; }
 .cu-result-ok  { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
 .cu-result-err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+/* ── Skeletons & microinterações ─────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.skeleton {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--gray-100) 0%, var(--gray-200) 50%, var(--gray-100) 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: var(--radius-sm);
+  color: transparent;
+  user-select: none;
+}
+.skeleton-line  { display: block; height: 12px; width: 100%; }
+.skeleton-pill  { width: 70px; height: 18px; border-radius: 20px; }
+.skeleton-value { width: 60%; height: 32px; margin: 0 auto; }
+.skeleton-bar-track .skeleton { width: 100%; height: 12px; border-radius: 20px; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeInUp .35s ease both; }
+.fade-in:nth-child(1) { animation-delay: 0ms;   }
+.fade-in:nth-child(2) { animation-delay: 40ms;  }
+.fade-in:nth-child(3) { animation-delay: 80ms;  }
+.fade-in:nth-child(4) { animation-delay: 120ms; }
+.fade-in:nth-child(5) { animation-delay: 160ms; }
+.fade-in:nth-child(6) { animation-delay: 200ms; }
+.fade-in:nth-child(7) { animation-delay: 240ms; }
+.fade-in:nth-child(8) { animation-delay: 280ms; }
+.fade-in:nth-child(9) { animation-delay: 320ms; }
+.fade-in:nth-child(n+10) { animation-delay: 360ms; }
+
+/* ── Collapsible (Log de Sistema) ────────────────────── */
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+.collapsible-header .caret {
+  font-size: 14px;
+  color: var(--gray-500);
+  transition: transform .25s ease;
+}
+.collapsible-header.is-open .caret { transform: rotate(180deg); }
+.collapsible-body {
+  margin-top: 16px;
+  animation: fadeInUp .25s ease both;
+}
+.collapsible-body.hidden { display: none; }
+
+/* Log scroll container: ~10 linhas (cell ~38px + cabeçalho) */
+.logs-scroll {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-sm);
+}
+.logs-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
 
 /* ══════════════════════════════════════════════════════
    ADMIN RESPONSIVE — Mobile-First
