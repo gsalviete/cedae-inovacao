@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -13,12 +14,22 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AdminGuard } from '../auth/admin.guard';
-import { AdminService, CreateUserDto } from './admin.service';
+import { RequestUser } from '../common/interfaces/request-user.interface';
+import { AdminService, CreateAdminUserDto } from './admin.service';
+
+type AuthRequest = Request & { user: RequestUser };
 
 @Controller('api/admin')
 @UseGuards(AdminGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
+
+  private requireAdm(req: Request): void {
+    const user = (req as AuthRequest).user;
+    if (user.role !== 'ADM') {
+      throw new ForbiddenException('Esta operação requer role ADM');
+    }
+  }
 
   @Get('kpis')
   async getKpis(): Promise<object> {
@@ -36,29 +47,40 @@ export class AdminController {
   }
 
   @Get('users')
-  async listarUsuarios(): Promise<object[]> {
-    return this.adminService.listarUsuarios();
+  async listarAdmins(): Promise<object[]> {
+    return this.adminService.listarAdmins();
   }
 
   @Post('users')
   @HttpCode(HttpStatus.CREATED)
-  async criarUsuario(@Body() dto: CreateUserDto, @Req() req: Request): Promise<object> {
-    const payload = (req as any).user;
-    const criadoPorId: number = typeof payload?.sub === 'number' ? payload.sub : 0;
-    const result = await this.adminService.criarUsuario(dto, criadoPorId);
-    return {
-      message: 'Usuário criado com sucesso.',
-      id: result.id,
-      senha_temporaria: result.senha,
-    };
+  async criarAdmin(
+    @Body() dto: CreateAdminUserDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    this.requireAdm(req);
+    const result = await this.adminService.criarAdmin(dto);
+    return { message: 'Usuário administrativo criado.', id: result.id };
   }
 
   @Patch('users/:id/status')
-  async atualizarStatusUsuario(
+  async toggleAdmin(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { ativo: boolean },
+    @Req() req: Request,
   ): Promise<object> {
-    await this.adminService.atualizarStatusUsuario(id, body.ativo);
-    return { message: 'Status do usuário atualizado.' };
+    this.requireAdm(req);
+    await this.adminService.toggleAdmin(id, body.ativo);
+    return { message: 'Status atualizado.' };
+  }
+
+  @Patch('users/:id/role')
+  async atualizarRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { role: 'ADM' | 'CONTRIBUTOR' },
+    @Req() req: Request,
+  ): Promise<object> {
+    this.requireAdm(req);
+    await this.adminService.atualizarRole(id, body.role);
+    return { message: 'Role atualizado.' };
   }
 }

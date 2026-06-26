@@ -24,11 +24,10 @@
         </div>
       </div>
       <div class="header-actions">
+        <span id="user-greeting" class="user-greeting hidden"></span>
         <button id="btn-admin" class="btn-admin hidden" onclick="window.location.href='/admin-panel'">
           Painel Admin
         </button>
-        <button id="btn-login" class="btn-login" onclick="toggleLoginModal(true)">Entrar</button>
-        <button id="btn-logout" class="btn-logout hidden" onclick="logout()">Sair</button>
       </div>
     </div>
   </header>
@@ -381,24 +380,6 @@
     </form>
   </main>
 
-  <!-- LOGIN MODAL -->
-  <div id="login-overlay" class="modal-overlay hidden" onclick="toggleLoginModal(false)"></div>
-  <div id="login-modal" class="modal hidden">
-    <div class="modal-header">
-      <h3>Acesso Restrito</h3>
-      <button class="modal-close" onclick="toggleLoginModal(false)">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="field-group">
-        <label class="field-label" for="login-user">Usuário</label>
-        <input type="text" id="login-user" class="field-input" placeholder="Usuário" autocomplete="username" />
-      </div>
-      <div class="field-group">
-        <label class="field-label" for="login-pass">Senha</label>
-        <input type="password" id="login-pass" class="field-input" placeholder="Senha"
-          autocomplete="current-password" />
-      </div>
-
   <!-- ERROR MODAL -->
   <div id="error-overlay" class="modal-overlay hidden" onclick="toggleErrorModal(false)"></div>
   <div id="error-modal" class="modal hidden" style="border-top: 4px solid #E53E3E;">
@@ -409,10 +390,6 @@
     <div class="modal-body">
       <p id="error-modal-msg" style="margin-bottom: 24px; color: #4A5568; line-height: 1.5;">Não foi possível completar a operação neste momento. Verifique os dados e tente novamente mais tarde.</p>
       <button class="btn-primary" style="width:100%; background-color: #E53E3E; border-color: #C53030;" onclick="toggleErrorModal(false)">Entendi</button>
-    </div>
-  </div>
-      <span id="login-error" class="field-error hidden">Credenciais inválidas.</span>
-      <button class="btn-primary" style="width:100%;margin-top:8px;" onclick="doLogin()">Entrar</button>
     </div>
   </div>
 

@@ -15,10 +15,13 @@ import {
 import { Request } from 'express';
 import { AdminGuard } from '../auth/admin.guard';
 import { AuthService } from '../auth/auth.service';
+import { RequestUser } from '../common/interfaces/request-user.interface';
 import { WorkflowService } from '../workflow/workflow.service';
 import { CreateIniciativaDto } from './dto/create-iniciativa.dto';
 import { PatchStatusDto } from './dto/patch-status.dto';
 import { IniciativasService } from './iniciativas.service';
+
+type AuthRequest = Request & { user: RequestUser };
 
 @Controller('api/iniciativas')
 export class IniciativasController {
@@ -67,9 +70,7 @@ export class IniciativasController {
     @Body() dto: PatchStatusDto,
     @Req() req: Request,
   ): Promise<object> {
-    const payload = (req as any).user;
-    const perfis: string[] = payload?.perfis ?? (payload?.is_admin ? ['ADMINISTRADOR'] : []);
-    const usuario = { id: payload?.sub ?? payload?.login, login: payload?.login ?? '', perfis };
-    return this.workflowService.transicionar(id, dto.status, dto.justificativa, usuario);
+    const user = (req as AuthRequest).user;
+    return this.workflowService.transicionar(id, dto.status, dto.justificativa, user);
   }
 }

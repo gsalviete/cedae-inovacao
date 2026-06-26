@@ -6,22 +6,11 @@ import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 
-async function bootstrap() {
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret || jwtSecret.length < 32) {
-    console.error(
-      'FATAL: JWT_SECRET não definido ou tem menos de 32 caracteres.\n' +
-        'Gere um valor com: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
-    );
-    process.exit(1);
-  }
-
+async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Habilita CORS
   app.enableCors();
 
-  // Validação global de DTOs
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -29,9 +18,8 @@ async function bootstrap() {
     }),
   );
 
-  // Mapeia rotas específicas do frontend para os arquivos HTML (substituindo Jinja2)
   const frontendPath = join(__dirname, '..', '..', 'frontend');
-  
+
   app.getHttpAdapter().get('/', (req: Request, res: Response) => {
     res.sendFile(join(frontendPath, 'templates', 'index.html'));
   });
@@ -46,6 +34,10 @@ async function bootstrap() {
 
   const port = process.env.PORT || 8095;
   await app.listen(port);
+
+  if (process.env.DEV_REMOTE_USER) {
+    console.log(`[DEV] x-remote-user fallback ativo: ${process.env.DEV_REMOTE_USER}`);
+  }
   console.log(`Aplicação rodando na porta ${port}`);
 }
 bootstrap();

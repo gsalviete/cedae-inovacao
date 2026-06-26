@@ -5,34 +5,32 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import { Request } from 'express';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly authService: AuthService) {}
 
-  canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
-    const authHeader: string = request.headers['authorization'] || '';
-    const [scheme, token] = authHeader.split(' ');
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const login =
+      (request.headers['x-remote-user'] as string | undefined) ??
+      process.env.DEV_REMOTE_USER;
 
-    if (scheme?.toLowerCase() !== 'bearer' || !token) {
-      throw new UnauthorizedException('Token ausente');
+    if (!login) {
+      throw new UnauthorizedException(
+        'Usuário não identificado — header x-remote-user ausente',
+      );
     }
 
-    let payload: JwtPayload;
-    try {
-      payload = this.jwtService.verify<JwtPayload>(token);
-    } catch {
-      throw new UnauthorizedException('Token inválido ou expirado');
+    const user = await this.authService.resolveUser(login);
+    (request as Request & { user: unknown }).user = user;
+
+    if (!user.admin) {
+      throw new ForbiddenException('Acesso restrito ao painel administrativo');
     }
 
-    if (!payload?.is_admin) {
-      throw new ForbiddenException('Acesso restrito ao administrador');
-    }
-
-    request.user = payload;
     return true;
   }
 }

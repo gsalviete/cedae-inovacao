@@ -129,22 +129,25 @@
         </div>
       </section>
 
-      <!-- Usuários -->
+      <!-- Usuários Administrativos -->
       <section class="admin-section">
         <div class="section-header-row">
-          <h2 class="admin-section-title" style="margin-bottom:0;border-bottom:none;">Usuários do Sistema</h2>
-          <button class="btn-action" onclick="openCreateUser()">+ Novo Usuário</button>
+          <h2 class="admin-section-title" style="margin-bottom:0;border-bottom:none;">Usuários Administrativos</h2>
+          <button class="btn-action" id="btn-novo-admin" onclick="openCreateUser()">+ Novo Admin</button>
         </div>
-        <div class="table-wrapper" style="margin-top:16px;">
+        <p style="font-size:12px;color:var(--gray-500);margin:8px 0 16px;">
+          Usuários autenticados via Kerberos/IIS listados aqui têm acesso ao painel.
+        </p>
+        <div class="table-wrapper">
           <table class="admin-table">
             <thead>
               <tr>
                 <th>#</th>
                 <th>Login</th>
                 <th>Nome</th>
-                <th>Perfis</th>
+                <th>Role</th>
                 <th>Ativo</th>
-                <th>Último Acesso</th>
+                <th>Desde</th>
                 <th>Ação</th>
               </tr>
             </thead>
@@ -184,35 +187,31 @@
     <p>Assessoria de Inovação para Planejamento</p>
   </footer>
 
-  <!-- Modal: Criar Usuário -->
+  <!-- Modal: Novo Usuário Administrativo -->
   <div id="modal-create-user" class="modal-overlay hidden" onclick="closeModalOnOverlay(event)">
     <div class="modal-box">
-      <h3 class="modal-title">Novo Usuário</h3>
+      <h3 class="modal-title">Novo Usuário Administrativo</h3>
       <form id="form-create-user" onsubmit="submitCreateUser(event)">
         <div class="form-group">
-          <label class="form-label">Login *</label>
-          <input type="text" id="cu-login" class="form-input" required autocomplete="off" />
+          <label class="form-label">Login (domínio Kerberos) *</label>
+          <input type="text" id="cu-login" class="form-input" required autocomplete="off"
+                 placeholder="ex: joao.silva" />
         </div>
         <div class="form-group">
-          <label class="form-label">Nome Completo *</label>
-          <input type="text" id="cu-nome" class="form-input" required />
+          <label class="form-label">Nome (opcional)</label>
+          <input type="text" id="cu-nome" class="form-input" placeholder="ex: João da Silva" />
         </div>
         <div class="form-group">
-          <label class="form-label">E-mail *</label>
-          <input type="email" id="cu-email" class="form-input" required />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Perfis</label>
-          <div class="checkbox-group">
-            <label><input type="checkbox" name="perfil" value="ADMINISTRADOR"> Administrador</label>
-            <label><input type="checkbox" name="perfil" value="ANALISTA_ASSESSORIA" checked> Analista Assessoria</label>
-            <label><input type="checkbox" name="perfil" value="GESTOR_AREA"> Gestor de Área</label>
-          </div>
+          <label class="form-label">Role *</label>
+          <select id="cu-role" class="form-input" required>
+            <option value="CONTRIBUTOR">CONTRIBUTOR — Visualização e workflow</option>
+            <option value="ADM">ADM — Acesso total (gerencia admins)</option>
+          </select>
         </div>
         <div id="cu-result" class="cu-result hidden"></div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="closeCreateUser()">Cancelar</button>
-          <button type="submit" class="btn-primary">Criar Usuário</button>
+          <button type="submit" class="btn-primary">Adicionar</button>
         </div>
       </form>
     </div>

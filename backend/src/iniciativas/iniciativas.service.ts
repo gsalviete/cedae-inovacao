@@ -48,7 +48,6 @@ export class IniciativasService {
       const outBinds = result.outBinds as any[];
       const iniciativaId: number = outBinds[0];
 
-      // Registra submissão no histórico (melhor-esforço)
       this.registrarSubmissao(iniciativaId).catch(() => {});
 
       return iniciativaId;
@@ -62,7 +61,7 @@ export class IniciativasService {
     try {
       await conn.execute(
         `INSERT INTO HISTORICO_STATUS
-           (iniciativa_id, status_anterior, status_novo, tipo_evento, usuario_id, data_hora)
+           (iniciativa_id, status_anterior, status_novo, tipo_evento, usuario_login, data_hora)
          VALUES (:1, NULL, 'SUBMETIDA', 'SUBMISSAO', NULL, SYSTIMESTAMP)`,
         [iniciativaId],
       );
@@ -83,7 +82,7 @@ export class IniciativasService {
     try {
       const result = await conn.execute(sql, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
       return (result.rows as any[]).map((row) => {
-        const normalized: Record<string, any> = {};
+        const normalized: Record<string, unknown> = {};
         for (const key of Object.keys(row)) {
           normalized[key.toLowerCase()] = row[key];
         }
@@ -101,7 +100,7 @@ export class IniciativasService {
       const result = await conn.execute(sql, [id], { outFormat: oracledb.OUT_FORMAT_OBJECT });
       const rows = result.rows as any[];
       if (!rows.length) return null;
-      const normalized: Record<string, any> = {};
+      const normalized: Record<string, unknown> = {};
       for (const key of Object.keys(rows[0])) {
         normalized[key.toLowerCase()] = rows[0][key];
       }

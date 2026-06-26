@@ -1,27 +1,11 @@
 /* ══════════════════════════════════════════════════════
    CEDAE Inovação — Detalhe de Iniciativa (detalhe.js)
+   Autenticação: Kerberos/IIS via /api/me (sem JWT)
    ══════════════════════════════════════════════════════ */
 
 const API = '';
 let _pendingStatus = null;
 let _justObrig = false;
-
-function getSession() {
-  try {
-    const raw = sessionStorage.getItem('cedae_session');
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-function logout() {
-  sessionStorage.removeItem('cedae_session');
-  window.location.href = '/';
-}
-
-function authHeaders() {
-  const s = getSession();
-  return s ? { Authorization: `Bearer ${s.token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
-}
 
 function fmtDate(val) {
   if (!val) return '—';
@@ -60,6 +44,32 @@ function setField(id, val) {
   if (el) el.textContent = val || '—';
 }
 
+function logout() {
+  window.location.href = '/';
+}
+
+/* ── Guard via /api/me ───────────────────────────────── */
+async function checkAdmin() {
+  try {
+    const res = await fetch(`${API}/api/me`);
+    if (!res.ok) { redirectHome(); return false; }
+    const me = await res.json();
+    if (!me.admin) { redirectHome(); return false; }
+    return true;
+  } catch {
+    redirectHome();
+    return false;
+  }
+}
+
+function redirectHome() {
+  const content = document.getElementById('detalhe-content');
+  const guard   = document.getElementById('admin-guard');
+  if (content) content.classList.add('hidden');
+  if (guard)   guard.classList.remove('hidden');
+  setTimeout(() => window.location.href = '/', 2000);
+}
+
 /* ── Carrega dados da iniciativa ─────────────────────── */
 async function loadDetalhe() {
   const id = getIniciativaId();
@@ -69,7 +79,7 @@ async function loadDetalhe() {
   }
 
   try {
-    const res = await fetch(`${API}/api/iniciativas/${id}`, { headers: authHeaders() });
+    const res = await fetch(`${API}/api/iniciativas/${id}`);
     if (res.status === 401 || res.status === 403) {
       window.location.href = '/';
       return;
@@ -115,9 +125,6 @@ async function loadDetalhe() {
 async function loadAcoes(id, statusAtual) {
   const el = document.getElementById('workflow-acoes');
 
-  // Pega transições disponíveis a partir da listagem da iniciativa
-  // Estratégia: tenta PATCH endpoint com status vazio para obter as opções disponíveis
-  // Simplificado: mostra botões baseados no status atual (mapeamento fixo)
   const TRANSICOES = {
     SUBMETIDA:  [{ status_destino: 'EM_ANALISE',  label: 'Iniciar Análise', classe: 'btn-workflow-info', justObrig: false }],
     EM_ANALISE: [
@@ -154,12 +161,9 @@ function iniciarTransicao(id, statusDestino, justObrig) {
   document.getElementById('modal-just-title').textContent = labels[statusDestino] || statusDestino;
   document.getElementById('just-text').value = '';
   document.getElementById('just-error').classList.add('hidden');
-
-  if (justObrig) {
-    document.getElementById('just-text').placeholder = 'Justificativa obrigatória...';
-  } else {
-    document.getElementById('just-text').placeholder = 'Justificativa (opcional)...';
-  }
+  document.getElementById('just-text').placeholder = justObrig
+    ? 'Justificativa obrigatória...'
+    : 'Justificativa (opcional)...';
 
   document.getElementById('modal-justificativa').classList.remove('hidden');
 }
@@ -187,7 +191,7 @@ async function confirmarTransicao() {
   try {
     const res = await fetch(`${API}/api/iniciativas/${_pendingStatus.id}/status`, {
       method: 'PATCH',
-      headers: authHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: _pendingStatus.statusDestino, justificativa: justificativa || undefined }),
     });
     const data = await res.json();
@@ -209,7 +213,7 @@ async function confirmarTransicao() {
 async function loadHistorico(id) {
   const el = document.getElementById('historico-timeline');
   try {
-    const res = await fetch(`${API}/api/iniciativas/${id}/historico`, { headers: authHeaders() });
+    const res = await fetch(`${API}/api/iniciativas/${id}/historico`);
     if (!res.ok) return;
     const data = await res.json();
 
@@ -221,7 +225,7 @@ async function loadHistorico(id) {
     el.innerHTML = data.map(h => {
       const [, cls] = STATUS_MAP[h.status_novo] || ['', 'badge-default'];
       const tipoLabel = TIPO_EVENTO_LABEL[h.tipo_evento] || h.tipo_evento;
-      const autor = h.usuario_login ? `${h.usuario_nome || h.usuario_login}` : 'Sistema';
+      const autor = h.usuario_login || 'Sistema';
       const anterior = h.status_anterior
         ? `<span class="historico-seta">${h.status_anterior} → ${h.status_novo}</span>`
         : `<span class="historico-seta">Submissão inicial: ${h.status_novo}</span>`;
@@ -243,13 +247,7 @@ async function loadHistorico(id) {
 }
 
 /* ── Init ────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  const session = getSession();
-  if (!session || !session.is_admin) {
-    document.getElementById('detalhe-content').classList.add('hidden');
-    document.getElementById('admin-guard').classList.remove('hidden');
-    setTimeout(() => window.location.href = '/', 2000);
-    return;
-  }
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!(await checkAdmin())) return;
   loadDetalhe();
 });
