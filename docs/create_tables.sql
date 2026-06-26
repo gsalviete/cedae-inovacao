@@ -17,6 +17,7 @@ CREATE TABLE INOVACAO_INICIATIVAS (
     -- Bloco 0: Identificação
     NOME_COLABORADOR        VARCHAR2(255)   NOT NULL,
     CANAL_CONTATO           VARCHAR2(255)   NOT NULL,
+    EMAIL_PROPONENTE        VARCHAR2(255),
 
     -- Bloco I: Dados Complementares
     TITULO_INICIATIVA       VARCHAR2(500)   NOT NULL,
@@ -38,6 +39,7 @@ CREATE TABLE INOVACAO_INICIATIVAS (
 
     -- Bloco IV: Suporte
     SUPORTE_NECESSARIO      VARCHAR2(1000),  -- valores separados por "|"
+    DIAGNOSTICO_OBSERVACAO  VARCHAR2(2000),  -- preenchido quando SUPORTE_NECESSARIO contém "diagnostico"
     COMENTARIOS_ADICIONAIS  CLOB,
 
     -- Auditoria

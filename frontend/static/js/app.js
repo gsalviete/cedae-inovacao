@@ -107,6 +107,34 @@ function toggleAporte(show) {
   }
 }
 
+/* ── Máscara condicional de Canal de Contato (ramal/celular) ──
+   Até 6 dígitos: tratado como ramal (sem formatação).
+   7+ dígitos: formatado como celular (xx) xxxxx-xxxx, limitado a 11 dígitos. */
+function formatCanalContato(value) {
+  const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 6) return digits;
+  if (digits.length <= 7) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function canalContatoInputHandler(e) {
+  e.target.value = formatCanalContato(e.target.value);
+}
+
+/* ── Mostrar/ocultar observação de Apoio Diagnóstico ───── */
+function toggleDiagnosticoObservacao() {
+  const chk = document.getElementById('chk_diagnostico');
+  const wrapper = document.getElementById('diagnostico-observacao-wrapper');
+  if (!chk || !wrapper) return;
+  const show = chk.checked;
+  wrapper.classList.toggle('hidden', !show);
+  if (!show) {
+    document.getElementById('diagnostico_observacao').value = '';
+  }
+}
+
 /* ── Validação do formulário ─────────────────────────── */
 function validateForm(payload) {
   let valid = true;
@@ -114,6 +142,7 @@ function validateForm(payload) {
   const required = [
     ['nome_colaborador', 'err-nome',     'Informe seu nome completo.'],
     ['canal_contato',    'err-contato',  'Informe um canal de contato.'],
+    ['email_proponente', 'err-email',    'Informe seu e-mail.'],
     ['titulo_iniciativa','err-titulo',   'Informe o título da iniciativa.'],
     ['area_proponente',  'err-area',     'Informe a área proponente.'],
     ['local_aplicacao',  'err-local',    'Informe o local de aplicação.'],
@@ -133,6 +162,16 @@ function validateForm(payload) {
     }
   });
 
+  const emailEl  = document.getElementById('email_proponente');
+  const emailErr = document.getElementById('err-email');
+  if (emailEl && emailErr && emailEl.value.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailEl.value.trim())) {
+      emailErr.textContent = 'Informe um e-mail válido.';
+      valid = false;
+    }
+  }
+
   const suportes = document.querySelectorAll('input[name="suporte"]:checked');
   const errSup   = document.getElementById('err-suporte');
   if (suportes.length === 0) {
@@ -151,10 +190,12 @@ function collectFormData() {
   const r = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value || null;
   const checks = [...document.querySelectorAll('input[name="suporte"]:checked')]
     .map(el => el.value).join('|');
+  const diagSelecionado = checks.split('|').includes('diagnostico');
 
   return {
     nome_colaborador:        g('nome_colaborador'),
     canal_contato:           g('canal_contato'),
+    email_proponente:        g('email_proponente'),
     titulo_iniciativa:       g('titulo_iniciativa'),
     area_proponente:         g('area_proponente'),
     local_aplicacao:         g('local_aplicacao'),
@@ -172,6 +213,7 @@ function collectFormData() {
         .replace(',', '.')
     ) || null,
     suporte_necessario:      checks || null,
+    diagnostico_observacao:  diagSelecionado ? (g('diagnostico_observacao') || null) : null,
     comentarios_adicionais:  g('comentarios_adicionais') || null,
   };
 }
@@ -230,6 +272,7 @@ function resetForm() {
   document.getElementById('inovacao-form').classList.remove('hidden');
   document.getElementById('form-success').classList.add('hidden');
   document.getElementById('valor-aporte-wrapper').classList.add('hidden');
+  document.getElementById('diagnostico-observacao-wrapper').classList.add('hidden');
 }
 
 /* ── Init ──────────────────────────────────────────── */
@@ -238,4 +281,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initCurrencyMasks();
   const form = document.getElementById('inovacao-form');
   if (form) form.addEventListener('submit', submitForm);
+
+  const chkDiag = document.getElementById('chk_diagnostico');
+  if (chkDiag) chkDiag.addEventListener('change', toggleDiagnosticoObservacao);
+
+  const canalEl = document.getElementById('canal_contato');
+  if (canalEl) canalEl.addEventListener('input', canalContatoInputHandler);
 });

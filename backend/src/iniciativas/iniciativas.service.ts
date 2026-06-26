@@ -10,16 +10,16 @@ export class IniciativasService {
   async criar(data: CreateIniciativaDto): Promise<number> {
     const sql = `
       INSERT INTO INOVACAO_INICIATIVAS (
-        NOME_COLABORADOR, CANAL_CONTATO, TITULO_INICIATIVA,
+        NOME_COLABORADOR, CANAL_CONTATO, EMAIL_PROPONENTE, TITULO_INICIATIVA,
         AREA_PROPONENTE, LOCAL_APLICACAO, PROBLEMA_PRATICO,
         SOLUCAO_PROPOSTA, RISCO_MITIGADO, ESTAGIO_DESENVOLVIMENTO,
         MACRODIMENSAO, PERFIL_IMPACTO, APORTE_FINANCEIRO,
         VALOR_APORTE, RETORNO_ECONOMICO, SUPORTE_NECESSARIO,
-        COMENTARIOS_ADICIONAIS, STATUS, CRIADO_EM, ATUALIZADO_EM
+        DIAGNOSTICO_OBSERVACAO, COMENTARIOS_ADICIONAIS, STATUS, CRIADO_EM, ATUALIZADO_EM
       ) VALUES (
         :1, :2, :3, :4, :5, :6, :7, :8, :9, :10,
-        :11, :12, :13, :14, :15, :16, 'SUBMETIDA', SYSDATE, SYSDATE
-      ) RETURNING ID INTO :17
+        :11, :12, :13, :14, :15, :16, :17, :18, 'SUBMETIDA', SYSDATE, SYSDATE
+      ) RETURNING ID INTO :19
     `;
 
     const conn = await this.db.getConnection();
@@ -28,6 +28,7 @@ export class IniciativasService {
       const result = await conn.execute(sql, [
         data.nome_colaborador,
         data.canal_contato,
+        data.email_proponente,
         data.titulo_iniciativa,
         data.area_proponente,
         data.local_aplicacao,
@@ -41,6 +42,7 @@ export class IniciativasService {
         data.valor_aporte ?? null,
         data.retorno_economico ?? null,
         data.suporte_necessario ?? null,
+        data.diagnostico_observacao ?? null,
         data.comentarios_adicionais ?? null,
         idVar,
       ]);

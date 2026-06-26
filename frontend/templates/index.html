@@ -86,10 +86,21 @@
           <label class="field-label" for="canal_contato">
             Canal de Contato Direto <span class="required">*</span>
           </label>
-          <p class="field-hint">Insira seu ramal, telefone celular ou e-mail institucional.</p>
+          <p class="field-hint">Insira seu ramal ou telefone celular.</p>
           <input type="text" id="canal_contato" name="canal_contato" class="field-input" required
-            placeholder="Ex.: (21) 99999-0000 / joao.silva@cedae.com.br" />
+            inputmode="numeric" maxlength="15"
+            placeholder="Ex.: 4321 ou (21) 99999-0000" />
           <span class="field-error" id="err-contato"></span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="email_proponente">
+            E-mail <span class="required">*</span>
+          </label>
+          <p class="field-hint">Informe seu e-mail institucional para confirmações e comunicações sobre a iniciativa.</p>
+          <input type="email" id="email_proponente" name="email_proponente" class="field-input" required
+            placeholder="Ex.: joao.silva@cedae.com.br" />
+          <span class="field-error" id="err-email"></span>
         </div>
       </div>
 
@@ -349,7 +360,7 @@
               </div>
             </label>
             <label class="checkbox-option">
-              <input type="checkbox" name="suporte" value="diagnostico" />
+              <input type="checkbox" name="suporte" value="diagnostico" id="chk_diagnostico" />
               <span class="checkbox-box"></span>
               <div><strong>Apoio Diagnóstico</strong>
                 <p>Sei qual é o problema, mas preciso de orientação para definir o melhor caminho técnico.</p>
@@ -357,6 +368,15 @@
             </label>
           </div>
           <span class="field-error" id="err-suporte"></span>
+        </div>
+
+        <div class="field-group hidden" id="diagnostico-observacao-wrapper">
+          <label class="field-label" for="diagnostico_observacao">
+            Tipo de Apoio Diagnóstico Desejado
+          </label>
+          <p class="field-hint">Opcional — descreva, se quiser, o tipo de orientação ou apoio diagnóstico que você considera mais útil.</p>
+          <textarea id="diagnostico_observacao" name="diagnostico_observacao" class="field-textarea" rows="3"
+            placeholder="Ex.: levantamento técnico, análise de causa raiz, benchmark de soluções..."></textarea>
         </div>
 
         <div class="field-group">

@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsNumber,
   IsNotEmpty,
+  IsEmail,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -15,6 +16,10 @@ export class CreateIniciativaDto {
   @IsString()
   @IsNotEmpty()
   canal_contato: string;
+
+  @IsEmail()
+  @IsNotEmpty()
+  email_proponente: string;
 
   // Bloco I
   @IsString()
@@ -72,6 +77,10 @@ export class CreateIniciativaDto {
   @IsOptional()
   @IsString()
   suporte_necessario?: string;
+
+  @IsOptional()
+  @IsString()
+  diagnostico_observacao?: string;
 
   @IsOptional()
   @IsString()

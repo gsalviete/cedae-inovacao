@@ -96,6 +96,7 @@ async function loadDetalhe() {
 
     setField('d-nome_colaborador', data.nome_colaborador);
     setField('d-canal_contato', data.canal_contato);
+    setField('d-email_proponente', data.email_proponente);
     setField('d-area_proponente', data.area_proponente);
     setField('d-local_aplicacao', data.local_aplicacao);
     document.getElementById('d-criado_em').textContent = fmtDate(data.criado_em);
@@ -112,6 +113,7 @@ async function loadDetalhe() {
     setField('d-valor_aporte', data.valor_aporte);
     setField('d-retorno_economico', data.retorno_economico);
     setField('d-suporte_necessario', data.suporte_necessario);
+    setField('d-diagnostico_observacao', data.diagnostico_observacao);
     setField('d-comentarios_adicionais', data.comentarios_adicionais);
 
     await loadAcoes(id, data.status || 'SUBMETIDA');
