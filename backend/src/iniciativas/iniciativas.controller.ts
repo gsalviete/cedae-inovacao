@@ -18,6 +18,7 @@ import { AuthService } from '../auth/auth.service';
 import { RequestUser } from '../common/interfaces/request-user.interface';
 import { WorkflowService } from '../workflow/workflow.service';
 import { CreateIniciativaDto } from './dto/create-iniciativa.dto';
+import { ObservacaoDto } from './dto/observacao.dto';
 import { PatchStatusDto } from './dto/patch-status.dto';
 import { IniciativasService } from './iniciativas.service';
 
@@ -61,6 +62,24 @@ export class IniciativasController {
   @UseGuards(AdminGuard)
   async getHistorico(@Param('id', ParseIntPipe) id: number): Promise<object[]> {
     return this.workflowService.getHistorico(id);
+  }
+
+  @Get(':id/observacoes')
+  @UseGuards(AdminGuard)
+  async getObservacoes(@Param('id', ParseIntPipe) id: number): Promise<object[]> {
+    return this.workflowService.getObservacoes(id);
+  }
+
+  @Post(':id/observacao')
+  @UseGuards(AdminGuard)
+  async addObservacao(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ObservacaoDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const user = (req as AuthRequest).user;
+    await this.workflowService.registrarObservacao(id, dto.texto, user);
+    return { message: 'Observação registrada.' };
   }
 
   @Patch(':id/status')

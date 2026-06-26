@@ -132,34 +132,33 @@ async function loadDetalhe() {
     setField('d-comentarios_adicionais', data.comentarios_adicionais);
 
     await loadAcoes(id, data.status || 'SUBMETIDA');
+    await loadObservacoes(id);
     await loadHistorico(id);
   } catch {
     document.getElementById('d-titulo').textContent = 'Erro ao carregar iniciativa.';
   }
 }
 
-/* ── Ações de workflow ───────────────────────────────── */
+/* ── Ações de tramitação ─────────────────────────────── */
 async function loadAcoes(id, statusAtual) {
   const el = document.getElementById('workflow-acoes');
 
   const TRANSICOES = {
-    SUBMETIDA:     [{ status_destino: 'EM_ANALISE',    label: 'Iniciar Análise',      classe: 'btn-workflow-info', justObrig: false }],
-    EM_ANALISE:    [
-      { status_destino: 'EM_OBSERVACAO', label: 'Colocar em Observação', classe: 'btn-workflow-warn', justObrig: false },
-      { status_destino: 'APROVADA',      label: 'Aprovar',               classe: 'btn-workflow-ok',   justObrig: false },
-      { status_destino: 'REPROVADA',     label: 'Reprovar',              classe: 'btn-workflow-err',  justObrig: true  },
-    ],
-    EM_OBSERVACAO: [
+    SUBMETIDA:  [{ status_destino: 'EM_ANALISE', label: 'Iniciar Análise', classe: 'btn-workflow-info', justObrig: false }],
+    EM_ANALISE: [
       { status_destino: 'APROVADA',  label: 'Aprovar',  classe: 'btn-workflow-ok',  justObrig: false },
       { status_destino: 'REPROVADA', label: 'Reprovar', classe: 'btn-workflow-err', justObrig: true  },
     ],
-    APROVADA:      [],
-    REPROVADA:     [],
+    APROVADA:  [],
+    REPROVADA: [],
   };
 
+  const terminais = ['APROVADA', 'REPROVADA'];
   const acoes = TRANSICOES[statusAtual] || [];
-  if (!acoes.length) {
-    el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Nenhuma ação disponível — status terminal.</p>';
+  const ehTerminal = terminais.includes(statusAtual);
+
+  if (ehTerminal) {
+    el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Tramitação encerrada — nenhuma ação disponível.</p>';
     return;
   }
 
@@ -176,10 +175,9 @@ function iniciarTransicao(id, statusDestino, justObrig) {
   _justObrig = justObrig;
 
   const labels = {
-    EM_ANALISE:    'Iniciar Análise',
-    EM_OBSERVACAO: 'Colocar em Observação',
-    APROVADA:      'Aprovar Iniciativa',
-    REPROVADA:     'Reprovar Iniciativa',
+    EM_ANALISE: 'Iniciar Análise',
+    APROVADA:   'Aprovar Iniciativa',
+    REPROVADA:  'Reprovar Iniciativa',
   };
   document.getElementById('modal-just-title').textContent = labels[statusDestino] || statusDestino;
   document.getElementById('just-text').value = '';
@@ -232,7 +230,79 @@ async function confirmarTransicao() {
   }
 }
 
-/* ── Histórico de status ─────────────────────────────── */
+/* ── Observações ─────────────────────────────────────── */
+async function loadObservacoes(id) {
+  const el = document.getElementById('observacoes-lista');
+  if (!el) return;
+  try {
+    const res = await fetch(`${API}/api/iniciativas/${id}/observacoes`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (!data.length) {
+      el.innerHTML = '<p class="obs-vazia">Nenhuma observação registrada.</p>';
+      return;
+    }
+    el.innerHTML = data.map(o => `
+      <div class="observacao-item">
+        <div class="observacao-meta">
+          <strong>${o.usuario_login}</strong>
+          <span class="historico-data">${fmtDate(o.criado_em)}</span>
+        </div>
+        <p class="observacao-texto">${o.texto}</p>
+      </div>
+    `).join('');
+  } catch { /* silencioso */ }
+}
+
+/* ── Modal de Observação ─────────────────────────────── */
+let _obsId = null;
+
+function abrirModalObservacao(id) {
+  _obsId = id;
+  document.getElementById('obs-text').value = '';
+  document.getElementById('obs-error').classList.add('hidden');
+  document.getElementById('modal-observacao').classList.remove('hidden');
+}
+
+function closeObsModal() {
+  document.getElementById('modal-observacao').classList.add('hidden');
+  _obsId = null;
+}
+
+function closeObsModalOnOverlay(e) {
+  if (e.target === document.getElementById('modal-observacao')) closeObsModal();
+}
+
+async function confirmarObservacao() {
+  const texto = document.getElementById('obs-text').value.trim();
+  const errEl = document.getElementById('obs-error');
+  if (!texto) {
+    errEl.textContent = 'Digite o texto da observação.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/api/iniciativas/${_obsId}/observacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto }),
+    });
+    if (res.ok) {
+      closeObsModal();
+      await loadDetalhe();
+    } else {
+      const data = await res.json();
+      errEl.textContent = data.message || 'Erro ao registrar observação.';
+      errEl.classList.remove('hidden');
+    }
+  } catch {
+    errEl.textContent = 'Erro de comunicação com o servidor.';
+    errEl.classList.remove('hidden');
+  }
+}
+
+/* ── Histórico de tramitação ─────────────────────────── */
 async function loadHistorico(id) {
   const el = document.getElementById('historico-timeline');
   try {

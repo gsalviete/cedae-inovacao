@@ -151,7 +151,6 @@ async function loadIniciativas() {
     }
     tbody.innerHTML = data.map(i => `
       <tr class="row-clickable" onclick="abrirDetalhe(${i.id})" title="Ver detalhes">
-        <td>${i.id}</td>
         <td>${i.titulo_iniciativa || '—'}</td>
         <td>${i.nome_colaborador || '—'}</td>
         <td>${i.area_proponente || '—'}</td>

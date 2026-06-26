@@ -153,6 +153,17 @@
         </div>
       </section>
 
+      <!-- Observações -->
+      <section class="admin-section">
+        <div class="section-header-row">
+          <h2 class="admin-section-title" style="margin-bottom:0;border-bottom:none;">Observações</h2>
+          <button class="btn-action" onclick="abrirModalObservacao(getIniciativaId())">+ Nova Observação</button>
+        </div>
+        <div id="observacoes-lista" style="margin-top:12px;">
+          <p class="obs-vazia">Nenhuma observação registrada.</p>
+        </div>
+      </section>
+
       <!-- Histórico -->
       <section class="admin-section">
         <h2 class="admin-section-title">Histórico de Tramitação</h2>
@@ -164,6 +175,23 @@
     </div>
 
   </main>
+
+  <!-- Modal observação -->
+  <div id="modal-observacao" class="modal-overlay hidden" onclick="closeObsModalOnOverlay(event)">
+    <div class="modal-box">
+      <h3 class="modal-title">Registrar Observação</h3>
+      <div class="form-group">
+        <label class="form-label">Observação</label>
+        <textarea id="obs-text" class="form-input" rows="4" style="resize:vertical;"
+                  placeholder="Descreva sua observação sobre esta iniciativa..."></textarea>
+      </div>
+      <div id="obs-error" class="cu-result cu-result-err hidden"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeObsModal()">Cancelar</button>
+        <button type="button" class="btn-primary" onclick="confirmarObservacao()">Registrar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal justificativa -->
   <div id="modal-justificativa" class="modal-overlay hidden" onclick="closeJustModalOnOverlay(event)">

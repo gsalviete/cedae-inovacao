@@ -132,13 +132,61 @@ export class WorkflowService {
     }
   }
 
+  async registrarObservacao(
+    iniciativaId: number,
+    texto: string,
+    usuario: RequestUser,
+  ): Promise<void> {
+    const conn = await this.db.getConnection();
+    try {
+      const check = await conn.execute(
+        'SELECT ID FROM INOVACAO_INICIATIVAS WHERE ID = :1',
+        [iniciativaId],
+      );
+      if (!(check.rows as any[]).length)
+        throw new NotFoundException(`Iniciativa #${iniciativaId} não encontrada`);
+
+      await conn.execute(
+        `INSERT INTO INICIATIVA_OBSERVACOES (iniciativa_id, usuario_login, texto, criado_em)
+         VALUES (:1, :2, :3, SYSTIMESTAMP)`,
+        [iniciativaId, usuario.login, texto],
+      );
+      await conn.commit();
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async getObservacoes(iniciativaId: number): Promise<object[]> {
+    const sql = `
+      SELECT id, usuario_login,
+             DBMS_LOB.SUBSTR(texto, 32767, 1) AS texto, criado_em
+      FROM INICIATIVA_OBSERVACOES
+      WHERE iniciativa_id = :1
+      ORDER BY criado_em ASC
+    `;
+    const conn = await this.db.getConnection();
+    try {
+      const result = await conn.execute(sql, [iniciativaId], {
+        outFormat: oracledb.OUT_FORMAT_OBJECT,
+      });
+      return (result.rows as any[]).map((r) => ({
+        id: r.ID,
+        usuario_login: r.USUARIO_LOGIN,
+        texto: r.TEXTO,
+        criado_em: r.CRIADO_EM,
+      }));
+    } finally {
+      await conn.close();
+    }
+  }
+
   private mapTipoEvento(statusDestino: string): string {
     const mapa: Record<string, string> = {
-      SUBMETIDA:     'SUBMISSAO',
-      EM_ANALISE:    'TRIAGEM',
-      EM_OBSERVACAO: 'ANALISE',
-      APROVADA:      'APROVACAO',
-      REPROVADA:     'REPROVACAO',
+      SUBMETIDA:  'SUBMISSAO',
+      EM_ANALISE: 'TRIAGEM',
+      APROVADA:   'APROVACAO',
+      REPROVADA:  'REPROVACAO',
     };
     return mapa[statusDestino] ?? 'ANALISE';
   }

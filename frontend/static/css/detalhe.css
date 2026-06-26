@@ -81,6 +81,8 @@
 .btn-workflow-ok:hover    { background: #bbf7d0; }
 .btn-workflow-err   { background: #fee2e2; color: #991b1b; }
 .btn-workflow-err:hover   { background: #fecaca; }
+.btn-workflow-obs   { background: #f1f5f9; color: #475569; border: 1px dashed #cbd5e1; }
+.btn-workflow-obs:hover   { background: #e2e8f0; }
 
 /* ── Histórico timeline ────────────────────────────── */
 .historico-timeline {
@@ -161,6 +163,36 @@
   padding: 6px 10px;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   margin-top: 6px;
+}
+
+.observacao-item {
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: #f8fafc;
+}
+
+.observacao-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+.observacao-texto {
+  font-size: 14px;
+  color: var(--gray-800);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.obs-vazia {
+  color: var(--gray-500);
+  font-size: 13px;
+  margin: 0;
 }
 
 @media (max-width: 600px) {
