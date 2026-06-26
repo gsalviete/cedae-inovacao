@@ -14,11 +14,26 @@ function fmtDate(val) {
 }
 
 const STATUS_MAP = {
-  SUBMETIDA:   ['Submetida',   'badge-status-submetida'],
-  EM_ANALISE:  ['Em Análise',  'badge-status-em_analise'],
-  APROVADA:    ['Aprovada',    'badge-status-aprovada'],
-  REPROVADA:   ['Reprovada',   'badge-status-reprovada'],
+  SUBMETIDA:      ['Submetida',      'badge-status-submetida'],
+  EM_ANALISE:     ['Em Análise',     'badge-status-em_analise'],
+  EM_OBSERVACAO:  ['Em Observação',  'badge-status-em_observacao'],
+  APROVADA:       ['Aprovada',       'badge-status-aprovada'],
+  REPROVADA:      ['Reprovada',      'badge-status-reprovada'],
 };
+
+const SUPORTE_MAP = {
+  instrumentos_juridicos: 'Instrumentos Técnicos e Jurídicos',
+  academia:               'Conexão com Academia',
+  mercado_startups:       'Conexão com Mercado / Startups',
+  sinergia_interna:       'Sinergia Interdepartamental',
+  monitoramento:          'Monitoramento Corporativo',
+  diagnostico:            'Apoio Diagnóstico',
+};
+
+function formatSuporte(val) {
+  if (!val) return null;
+  return val.split('|').filter(Boolean).map(v => SUPORTE_MAP[v] || v).join(' · ');
+}
 
 function statusBadge(val) {
   const [label, cls] = STATUS_MAP[val] || [val || '—', 'badge-default'];
@@ -112,7 +127,7 @@ async function loadDetalhe() {
     setField('d-aporte_financeiro', data.aporte_financeiro);
     setField('d-valor_aporte', data.valor_aporte);
     setField('d-retorno_economico', data.retorno_economico);
-    setField('d-suporte_necessario', data.suporte_necessario);
+    setField('d-suporte_necessario', formatSuporte(data.suporte_necessario));
     setField('d-diagnostico_observacao', data.diagnostico_observacao);
     setField('d-comentarios_adicionais', data.comentarios_adicionais);
 
@@ -128,13 +143,18 @@ async function loadAcoes(id, statusAtual) {
   const el = document.getElementById('workflow-acoes');
 
   const TRANSICOES = {
-    SUBMETIDA:  [{ status_destino: 'EM_ANALISE',  label: 'Iniciar Análise', classe: 'btn-workflow-info', justObrig: false }],
-    EM_ANALISE: [
-      { status_destino: 'APROVADA',   label: 'Aprovar',   classe: 'btn-workflow-ok',   justObrig: false },
-      { status_destino: 'REPROVADA',  label: 'Reprovar',  classe: 'btn-workflow-err',  justObrig: true  },
+    SUBMETIDA:     [{ status_destino: 'EM_ANALISE',    label: 'Iniciar Análise',      classe: 'btn-workflow-info', justObrig: false }],
+    EM_ANALISE:    [
+      { status_destino: 'EM_OBSERVACAO', label: 'Colocar em Observação', classe: 'btn-workflow-warn', justObrig: false },
+      { status_destino: 'APROVADA',      label: 'Aprovar',               classe: 'btn-workflow-ok',   justObrig: false },
+      { status_destino: 'REPROVADA',     label: 'Reprovar',              classe: 'btn-workflow-err',  justObrig: true  },
     ],
-    APROVADA:   [],
-    REPROVADA:  [],
+    EM_OBSERVACAO: [
+      { status_destino: 'APROVADA',  label: 'Aprovar',  classe: 'btn-workflow-ok',  justObrig: false },
+      { status_destino: 'REPROVADA', label: 'Reprovar', classe: 'btn-workflow-err', justObrig: true  },
+    ],
+    APROVADA:      [],
+    REPROVADA:     [],
   };
 
   const acoes = TRANSICOES[statusAtual] || [];
@@ -156,9 +176,10 @@ function iniciarTransicao(id, statusDestino, justObrig) {
   _justObrig = justObrig;
 
   const labels = {
-    EM_ANALISE: 'Iniciar Análise',
-    APROVADA:   'Aprovar Iniciativa',
-    REPROVADA:  'Reprovar Iniciativa',
+    EM_ANALISE:    'Iniciar Análise',
+    EM_OBSERVACAO: 'Colocar em Observação',
+    APROVADA:      'Aprovar Iniciativa',
+    REPROVADA:     'Reprovar Iniciativa',
   };
   document.getElementById('modal-just-title').textContent = labels[statusDestino] || statusDestino;
   document.getElementById('just-text').value = '';

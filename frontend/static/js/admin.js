@@ -55,10 +55,11 @@ function stageBadge(val) {
 }
 
 const STATUS_MAP = {
-  SUBMETIDA:   ['Submetida',   'badge-status-submetida'],
-  EM_ANALISE:  ['Em Análise',  'badge-status-em_analise'],
-  APROVADA:    ['Aprovada',    'badge-status-aprovada'],
-  REPROVADA:   ['Reprovada',   'badge-status-reprovada'],
+  SUBMETIDA:     ['Submetida',     'badge-status-submetida'],
+  EM_ANALISE:    ['Em Análise',    'badge-status-em_analise'],
+  EM_OBSERVACAO: ['Em Observação', 'badge-status-em_observacao'],
+  APROVADA:      ['Aprovada',      'badge-status-aprovada'],
+  REPROVADA:     ['Reprovada',     'badge-status-reprovada'],
 };
 
 function statusBadge(val) {
@@ -87,10 +88,11 @@ async function loadKPIs() {
     document.getElementById('kpi-escala').textContent  = data.por_estagio?.escala  ?? 0;
 
     const ps = data.por_status || {};
-    document.getElementById('sk-submetida').textContent  = ps.SUBMETIDA  ?? 0;
-    document.getElementById('sk-em_analise').textContent = ps.EM_ANALISE ?? 0;
-    document.getElementById('sk-aprovada').textContent   = ps.APROVADA   ?? 0;
-    document.getElementById('sk-reprovada').textContent  = ps.REPROVADA  ?? 0;
+    document.getElementById('sk-submetida').textContent    = ps.SUBMETIDA    ?? 0;
+    document.getElementById('sk-em_analise').textContent   = ps.EM_ANALISE   ?? 0;
+    document.getElementById('sk-em_observacao').textContent = ps.EM_OBSERVACAO ?? 0;
+    document.getElementById('sk-aprovada').textContent     = ps.APROVADA     ?? 0;
+    document.getElementById('sk-reprovada').textContent    = ps.REPROVADA    ?? 0;
 
     const barEl = document.getElementById('dimensao-bars');
     barEl.innerHTML = '';

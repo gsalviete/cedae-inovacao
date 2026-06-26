@@ -59,7 +59,7 @@ export class AdminService {
     const por_estagio: Record<string, number> = {};
     const por_dimensao: Record<string, number> = {};
     const por_status: Record<string, number> = {
-      SUBMETIDA: 0, EM_ANALISE: 0, APROVADA: 0, REPROVADA: 0,
+      SUBMETIDA: 0, EM_ANALISE: 0, EM_OBSERVACAO: 0, APROVADA: 0, REPROVADA: 0,
     };
 
     for (const i of iniciativas) {

@@ -134,10 +134,11 @@ export class WorkflowService {
 
   private mapTipoEvento(statusDestino: string): string {
     const mapa: Record<string, string> = {
-      SUBMETIDA: 'SUBMISSAO',
-      EM_ANALISE: 'TRIAGEM',
-      APROVADA: 'APROVACAO',
-      REPROVADA: 'REPROVACAO',
+      SUBMETIDA:     'SUBMISSAO',
+      EM_ANALISE:    'TRIAGEM',
+      EM_OBSERVACAO: 'ANALISE',
+      APROVADA:      'APROVACAO',
+      REPROVADA:     'REPROVACAO',
     };
     return mapa[statusDestino] ?? 'ANALISE';
   }
