@@ -4,8 +4,12 @@
    ══════════════════════════════════════════════════════ */
 
 const API = '';
+const JANELA_EDICAO_MS = 2 * 60 * 60 * 1000;
+const TIPOS_EDITAVEIS = new Set(['TRIAGEM', 'APROVACAO', 'REPROVACAO', 'OBSERVACAO']);
 let _pendingStatus = null;
 let _justObrig = false;
+let _me = null;
+let _editTarget = null;
 
 function fmtDate(val) {
   if (!val) return '—';
@@ -71,6 +75,7 @@ async function checkAdmin() {
     if (!res.ok) { redirectHome(); return false; }
     const me = await res.json();
     if (!me.admin) { redirectHome(); return false; }
+    _me = me;
     return true;
   } catch {
     redirectHome();
@@ -293,17 +298,23 @@ async function loadHistorico(id) {
 
     const eventos = [
       ...historico.map(h => ({
+        kind: 'hist',
+        id: h.id,
         tipo_evento: h.tipo_evento,
         usuario_login: h.usuario_login,
         data_hora: h.data_hora,
+        editado_em: h.editado_em,
         status_anterior: h.status_anterior,
         status_novo: h.status_novo,
         justificativa: h.justificativa,
       })),
       ...observacoes.map(o => ({
+        kind: 'obs',
+        id: o.id,
         tipo_evento: 'OBSERVACAO',
         usuario_login: o.usuario_login,
         data_hora: o.criado_em,
+        editado_em: o.editado_em,
         status_anterior: null,
         status_novo: null,
         justificativa: o.texto,
@@ -315,48 +326,140 @@ async function loadHistorico(id) {
       return;
     }
 
-    el.innerHTML = eventos.map(ev => {
-      const tipoLabel = TIPO_EVENTO_LABEL[ev.tipo_evento] || ev.tipo_evento;
-      const autor = ev.usuario_login || 'Sistema';
-
-      if (ev.tipo_evento === 'OBSERVACAO') {
-        const cls = 'badge-status-em_observacao';
-        const texto = ev.justificativa
-          ? `<div class="historico-just">"${ev.justificativa}"</div>`
-          : '';
-        return `
-          <div class="historico-item">
-            <div class="historico-dot ${cls}"></div>
-            <div class="historico-body">
-              <div class="historico-top">
-                <span class="badge ${cls}">${tipoLabel}</span>
-                <span class="historico-data">${fmtDate(ev.data_hora)}</span>
-              </div>
-              <div class="historico-desc">Observação registrada por <strong>${autor}</strong></div>
-              ${texto}
-            </div>
-          </div>`;
-      }
-
-      const [, cls] = STATUS_MAP[ev.status_novo] || ['', 'badge-default'];
-      const anterior = ev.status_anterior
-        ? `<span class="historico-seta">${ev.status_anterior} → ${ev.status_novo}</span>`
-        : `<span class="historico-seta">Submissão inicial: ${ev.status_novo}</span>`;
-      const just = ev.justificativa ? `<div class="historico-just">"${ev.justificativa}"</div>` : '';
-      return `
-        <div class="historico-item">
-          <div class="historico-dot ${cls}"></div>
-          <div class="historico-body">
-            <div class="historico-top">
-              <span class="badge ${cls}">${tipoLabel}</span>
-              <span class="historico-data">${fmtDate(ev.data_hora)}</span>
-            </div>
-            <div class="historico-desc">${anterior} — por <strong>${autor}</strong></div>
-            ${just}
-          </div>
-        </div>`;
-    }).join('');
+    el.innerHTML = eventos.map(ev => renderEvento(ev, id)).join('');
   } catch { /* silencioso */ }
+}
+
+function podeEditar(ev) {
+  if (!_me || !TIPOS_EDITAVEIS.has(ev.tipo_evento)) return false;
+  if (ev.usuario_login !== _me.login) return false;
+  const idade = Date.now() - new Date(ev.data_hora).getTime();
+  return Number.isFinite(idade) && idade <= JANELA_EDICAO_MS;
+}
+
+function renderEvento(ev, iniciativaId) {
+  const tipoLabel = TIPO_EVENTO_LABEL[ev.tipo_evento] || ev.tipo_evento;
+  const autor = ev.usuario_login || 'Sistema';
+  const editadoBadge = ev.editado_em
+    ? `<span class="badge-editado" title="Editado em ${fmtDate(ev.editado_em)}">editado</span>`
+    : '';
+  const btnEditar = podeEditar(ev)
+    ? `<button class="btn-editar-evento"
+               onclick="iniciarEdicao('${ev.kind}', ${iniciativaId}, ${ev.id})">Editar</button>`
+    : '';
+
+  if (ev.tipo_evento === 'OBSERVACAO') {
+    const cls = 'badge-status-em_observacao';
+    const texto = ev.justificativa
+      ? `<div class="historico-just" data-evento-texto>"${escapeHtml(ev.justificativa)}"</div>`
+      : '';
+    return `
+      <div class="historico-item" data-evento-kind="${ev.kind}" data-evento-id="${ev.id}">
+        <div class="historico-dot ${cls}"></div>
+        <div class="historico-body">
+          <div class="historico-top">
+            <span class="badge ${cls}">${tipoLabel}</span>
+            ${editadoBadge}
+            <span class="historico-data">${fmtDate(ev.data_hora)}</span>
+            ${btnEditar}
+          </div>
+          <div class="historico-desc">Observação registrada por <strong>${autor}</strong></div>
+          ${texto}
+        </div>
+      </div>`;
+  }
+
+  const [, cls] = STATUS_MAP[ev.status_novo] || ['', 'badge-default'];
+  const anterior = ev.status_anterior
+    ? `<span class="historico-seta">${ev.status_anterior} → ${ev.status_novo}</span>`
+    : `<span class="historico-seta">Submissão inicial: ${ev.status_novo}</span>`;
+  const just = ev.justificativa
+    ? `<div class="historico-just" data-evento-texto>"${escapeHtml(ev.justificativa)}"</div>`
+    : '';
+  return `
+    <div class="historico-item" data-evento-kind="${ev.kind}" data-evento-id="${ev.id}">
+      <div class="historico-dot ${cls}"></div>
+      <div class="historico-body">
+        <div class="historico-top">
+          <span class="badge ${cls}">${tipoLabel}</span>
+          ${editadoBadge}
+          <span class="historico-data">${fmtDate(ev.data_hora)}</span>
+          ${btnEditar}
+        </div>
+        <div class="historico-desc">${anterior} — por <strong>${autor}</strong></div>
+        ${just}
+      </div>
+    </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* ── Edição (janela de 2h, autor) ────────────────────── */
+function iniciarEdicao(kind, iniciativaId, recordId) {
+  const item = document.querySelector(
+    `.historico-item[data-evento-kind="${kind}"][data-evento-id="${recordId}"]`,
+  );
+  const textoEl = item?.querySelector('[data-evento-texto]');
+  const textoAtual = textoEl
+    ? textoEl.textContent.replace(/^"|"$/g, '')
+    : '';
+
+  _editTarget = { kind, iniciativaId, recordId };
+  document.getElementById('edit-text').value = textoAtual;
+  document.getElementById('edit-error').classList.add('hidden');
+  document.getElementById('modal-edit-evento').classList.remove('hidden');
+}
+
+function closeEditModal() {
+  document.getElementById('modal-edit-evento').classList.add('hidden');
+  _editTarget = null;
+}
+
+function closeEditModalOnOverlay(e) {
+  if (e.target === document.getElementById('modal-edit-evento')) closeEditModal();
+}
+
+async function confirmarEdicao() {
+  if (!_editTarget) return;
+  const texto = document.getElementById('edit-text').value.trim();
+  const errEl = document.getElementById('edit-error');
+  const { kind, iniciativaId, recordId } = _editTarget;
+
+  if (kind === 'obs' && !texto) {
+    errEl.textContent = 'O texto da observação não pode ser vazio.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const url = kind === 'obs'
+    ? `${API}/api/iniciativas/${iniciativaId}/observacao/${recordId}`
+    : `${API}/api/iniciativas/${iniciativaId}/historico/${recordId}`;
+  const body = kind === 'obs'
+    ? { texto }
+    : { justificativa: texto || null };
+
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      closeEditModal();
+      await loadHistorico(iniciativaId);
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
+    errEl.textContent = data.message || 'Não foi possível salvar a edição.';
+    errEl.classList.remove('hidden');
+  } catch {
+    errEl.textContent = 'Erro de comunicação com o servidor.';
+    errEl.classList.remove('hidden');
+  }
 }
 
 /* ── Init ────────────────────────────────────────────── */

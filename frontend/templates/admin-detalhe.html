@@ -201,6 +201,26 @@
     </div>
   </div>
 
+  <!-- Modal edição (observação / evento do histórico) -->
+  <div id="modal-edit-evento" class="modal-overlay hidden" onclick="closeEditModalOnOverlay(event)">
+    <div class="modal-box">
+      <h3 class="modal-title">Editar registro</h3>
+      <p style="font-size:12px;color:var(--gray-500);margin:-12px 0 16px;">
+        Edição permitida apenas pelo autor, dentro de 2h após o registro.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Texto</label>
+        <textarea id="edit-text" class="form-input" rows="4" style="resize:vertical;"
+                  placeholder="Atualize o conteúdo..."></textarea>
+      </div>
+      <div id="edit-error" class="cu-result cu-result-err hidden"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancelar</button>
+        <button type="button" class="btn-primary" onclick="confirmarEdicao()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <p>CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro</p>
     <p>Assessoria de Inovação para Planejamento</p>

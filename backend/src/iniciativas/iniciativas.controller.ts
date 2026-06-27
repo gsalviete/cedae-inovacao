@@ -18,6 +18,8 @@ import { AuthService } from '../auth/auth.service';
 import { RequestUser } from '../common/interfaces/request-user.interface';
 import { WorkflowService } from '../workflow/workflow.service';
 import { CreateIniciativaDto } from './dto/create-iniciativa.dto';
+import { EditarHistoricoDto } from './dto/editar-historico.dto';
+import { EditarObservacaoDto } from './dto/editar-observacao.dto';
 import { ObservacaoDto } from './dto/observacao.dto';
 import { PatchStatusDto } from './dto/patch-status.dto';
 import { IniciativasService } from './iniciativas.service';
@@ -91,5 +93,31 @@ export class IniciativasController {
   ): Promise<object> {
     const user = (req as AuthRequest).user;
     return this.workflowService.transicionar(id, dto.status, dto.justificativa, user);
+  }
+
+  @Patch(':id/observacao/:obsId')
+  @UseGuards(AdminGuard)
+  async editarObservacao(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('obsId', ParseIntPipe) obsId: number,
+    @Body() dto: EditarObservacaoDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const user = (req as AuthRequest).user;
+    await this.workflowService.editarObservacao(id, obsId, dto.texto, user);
+    return { message: 'Observação atualizada.' };
+  }
+
+  @Patch(':id/historico/:eventoId')
+  @UseGuards(AdminGuard)
+  async editarEventoHistorico(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('eventoId', ParseIntPipe) eventoId: number,
+    @Body() dto: EditarHistoricoDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const user = (req as AuthRequest).user;
+    await this.workflowService.editarEventoHistorico(id, eventoId, dto.justificativa, user);
+    return { message: 'Evento atualizado.' };
   }
 }

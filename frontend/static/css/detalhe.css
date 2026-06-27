@@ -53,6 +53,9 @@
 .detalhe-value {
   font-size: 14px;
   color: var(--gray-900);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .detalhe-text {
@@ -61,6 +64,10 @@
   line-height: 1.6;
   margin: 6px 0 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* ── Workflow buttons ──────────────────────────────── */
@@ -136,6 +143,38 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.badge-editado {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border: 1px solid var(--gray-200);
+}
+
+.btn-editar-evento {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--blue-800);
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.btn-editar-evento:hover {
+  background: var(--blue-50);
+  border-color: var(--blue-100);
 }
 
 .historico-data {

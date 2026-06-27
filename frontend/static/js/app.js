@@ -4,6 +4,7 @@
    ══════════════════════════════════════════════════════ */
 
 const API = '';
+const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 
 /* ── Header: identifica usuário via /api/me ──────────── */
 async function initHeader() {
@@ -165,9 +166,8 @@ function validateForm(payload) {
   const emailEl  = document.getElementById('email_proponente');
   const emailErr = document.getElementById('err-email');
   if (emailEl && emailErr && emailEl.value.trim()) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailEl.value.trim())) {
-      emailErr.textContent = 'Informe um e-mail válido.';
+    if (!EMAIL_REGEX.test(emailEl.value.trim())) {
+      emailErr.textContent = 'Informe um e-mail válido (ex.: nome@dominio.com).';
       valid = false;
     }
   }
@@ -287,4 +287,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const canalEl = document.getElementById('canal_contato');
   if (canalEl) canalEl.addEventListener('input', canalContatoInputHandler);
+
+  const emailEl  = document.getElementById('email_proponente');
+  const emailErr = document.getElementById('err-email');
+  if (emailEl && emailErr) {
+    emailEl.addEventListener('blur', () => {
+      const v = emailEl.value.trim();
+      if (!v) { emailErr.textContent = ''; return; }
+      emailErr.textContent = EMAIL_REGEX.test(v)
+        ? ''
+        : 'Informe um e-mail válido (ex.: nome@dominio.com).';
+    });
+    emailEl.addEventListener('input', () => {
+      if (emailErr.textContent) emailErr.textContent = '';
+    });
+  }
 });

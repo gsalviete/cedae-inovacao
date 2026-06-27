@@ -64,7 +64,7 @@ export class IniciativasService {
       await conn.execute(
         `INSERT INTO HISTORICO_STATUS
            (iniciativa_id, status_anterior, status_novo, tipo_evento, usuario_login, data_hora)
-         VALUES (:1, NULL, 'SUBMETIDA', 'SUBMISSAO', NULL, SYSTIMESTAMP)`,
+         VALUES (:1, NULL, 'SUBMETIDA', 'SUBMISSAO', NULL, SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
         [iniciativaId],
       );
       await conn.commit();

@@ -86,7 +86,7 @@ export class WorkflowService {
       await conn.execute(
         `INSERT INTO HISTORICO_STATUS
            (iniciativa_id, status_anterior, status_novo, tipo_evento, usuario_login, justificativa, data_hora)
-         VALUES (:1, :2, :3, :4, :5, :6, SYSTIMESTAMP)`,
+         VALUES (:1, :2, :3, :4, :5, :6, SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
         [
           iniciativaId,
           statusAtual,
@@ -107,7 +107,7 @@ export class WorkflowService {
   async getHistorico(iniciativaId: number): Promise<object[]> {
     const sql = `
       SELECT id, iniciativa_id, status_anterior, status_novo,
-             tipo_evento, usuario_login, data_hora,
+             tipo_evento, usuario_login, data_hora, editado_em,
              DBMS_LOB.SUBSTR(justificativa, 4000, 1) AS justificativa
       FROM HISTORICO_STATUS
       WHERE iniciativa_id = :1
@@ -125,6 +125,7 @@ export class WorkflowService {
         tipo_evento: r.TIPO_EVENTO,
         usuario_login: r.USUARIO_LOGIN,
         data_hora: r.DATA_HORA,
+        editado_em: r.EDITADO_EM,
         justificativa: r.JUSTIFICATIVA,
       }));
     } finally {
@@ -148,7 +149,7 @@ export class WorkflowService {
 
       await conn.execute(
         `INSERT INTO INICIATIVA_OBSERVACOES (iniciativa_id, usuario_login, texto, criado_em)
-         VALUES (:1, :2, :3, SYSTIMESTAMP)`,
+         VALUES (:1, :2, :3, SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
         [iniciativaId, usuario.login, texto],
       );
       await conn.commit();
@@ -160,7 +161,7 @@ export class WorkflowService {
   async getObservacoes(iniciativaId: number): Promise<object[]> {
     const sql = `
       SELECT id, usuario_login,
-             DBMS_LOB.SUBSTR(texto, 32767, 1) AS texto, criado_em
+             DBMS_LOB.SUBSTR(texto, 32767, 1) AS texto, criado_em, editado_em
       FROM INICIATIVA_OBSERVACOES
       WHERE iniciativa_id = :1
       ORDER BY criado_em ASC
@@ -175,6 +176,7 @@ export class WorkflowService {
         usuario_login: r.USUARIO_LOGIN,
         texto: r.TEXTO,
         criado_em: r.CRIADO_EM,
+        editado_em: r.EDITADO_EM,
       }));
     } finally {
       await conn.close();
@@ -189,5 +191,110 @@ export class WorkflowService {
       REPROVADA:  'REPROVACAO',
     };
     return mapa[statusDestino] ?? 'ANALISE';
+  }
+
+  // Tipos de evento que o autor pode editar dentro da janela de 2h
+  private readonly EVENTOS_EDITAVEIS = new Set(['TRIAGEM', 'APROVACAO', 'REPROVACAO']);
+  private readonly JANELA_EDICAO_MS = 2 * 60 * 60 * 1000;
+
+  private dentroDaJanela(criadoEm: Date | string): boolean {
+    const criado = new Date(criadoEm).getTime();
+    return Number.isFinite(criado) && Date.now() - criado <= this.JANELA_EDICAO_MS;
+  }
+
+  async editarObservacao(
+    iniciativaId: number,
+    observacaoId: number,
+    texto: string,
+    usuario: RequestUser,
+  ): Promise<void> {
+    if (!texto?.trim()) {
+      throw new BadRequestException('Texto da observação não pode ser vazio.');
+    }
+
+    const conn = await this.db.getConnection();
+    try {
+      const result = await conn.execute(
+        `SELECT usuario_login, criado_em
+         FROM INICIATIVA_OBSERVACOES
+         WHERE id = :1 AND iniciativa_id = :2`,
+        [observacaoId, iniciativaId],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT },
+      );
+      const rows = result.rows as any[];
+      if (!rows.length) {
+        throw new NotFoundException(`Observação #${observacaoId} não encontrada.`);
+      }
+      const obs = rows[0];
+      if (obs.USUARIO_LOGIN !== usuario.login) {
+        throw new ForbiddenException('Apenas o autor pode editar esta observação.');
+      }
+      if (!this.dentroDaJanela(obs.CRIADO_EM)) {
+        throw new ForbiddenException(
+          'Janela de edição expirada (2h após o registro).',
+        );
+      }
+
+      await conn.execute(
+        `UPDATE INICIATIVA_OBSERVACOES
+         SET texto = :1, editado_em = SYS_EXTRACT_UTC(SYSTIMESTAMP)
+         WHERE id = :2`,
+        [texto.trim(), observacaoId],
+      );
+      await conn.commit();
+    } finally {
+      await conn.close().catch(() => {});
+    }
+  }
+
+  async editarEventoHistorico(
+    iniciativaId: number,
+    eventoId: number,
+    justificativa: string | undefined,
+    usuario: RequestUser,
+  ): Promise<void> {
+    const conn = await this.db.getConnection();
+    try {
+      const result = await conn.execute(
+        `SELECT usuario_login, data_hora, tipo_evento
+         FROM HISTORICO_STATUS
+         WHERE id = :1 AND iniciativa_id = :2`,
+        [eventoId, iniciativaId],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT },
+      );
+      const rows = result.rows as any[];
+      if (!rows.length) {
+        throw new NotFoundException(`Evento #${eventoId} não encontrado.`);
+      }
+      const ev = rows[0];
+      if (!this.EVENTOS_EDITAVEIS.has(ev.TIPO_EVENTO)) {
+        throw new ForbiddenException(
+          `Eventos do tipo '${ev.TIPO_EVENTO}' não são editáveis.`,
+        );
+      }
+      if (ev.USUARIO_LOGIN !== usuario.login) {
+        throw new ForbiddenException('Apenas o autor pode editar este evento.');
+      }
+      if (!this.dentroDaJanela(ev.DATA_HORA)) {
+        throw new ForbiddenException(
+          'Janela de edição expirada (2h após o registro).',
+        );
+      }
+      if (ev.TIPO_EVENTO === 'REPROVACAO' && !justificativa?.trim()) {
+        throw new BadRequestException(
+          'Justificativa obrigatória para reprovação.',
+        );
+      }
+
+      await conn.execute(
+        `UPDATE HISTORICO_STATUS
+         SET justificativa = :1, editado_em = SYS_EXTRACT_UTC(SYSTIMESTAMP)
+         WHERE id = :2`,
+        [justificativa?.trim() || null, eventoId],
+      );
+      await conn.commit();
+    } finally {
+      await conn.close().catch(() => {});
+    }
   }
 }
