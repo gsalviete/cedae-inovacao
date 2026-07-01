@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -49,6 +50,27 @@ export class AdminController {
   @Get('users')
   async listarAdmins(): Promise<object[]> {
     return this.adminService.listarAdmins();
+  }
+
+  @Get('ad-users')
+  async buscarUsuariosAD(
+    @Query('q') q: string | undefined,
+    @Req() req: Request,
+  ): Promise<object[]> {
+    this.requireAdm(req);
+    const termo = (q ?? '').trim();
+    if (termo.length < 2) return [];
+    return this.adminService.buscarUsuariosAD(termo);
+  }
+
+  @Get('ad-users/resolve')
+  async resolverUsuarioAD(
+    @Query('nome') nome: string | undefined,
+    @Req() req: Request,
+  ): Promise<object> {
+    this.requireAdm(req);
+    const resolved = await this.adminService.resolverUsuarioAD((nome ?? '').trim());
+    return resolved ?? { email: null, login: null };
   }
 
   @Post('users')

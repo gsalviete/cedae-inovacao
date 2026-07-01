@@ -206,10 +206,14 @@ async function toggleUser(id, ativo) {
 }
 
 /* ── Modal Criar Admin ───────────────────────────────── */
+let _adSelected = null;
+let _adSearchTimer = null;
+
 function openCreateUser() {
   document.getElementById('modal-create-user').classList.remove('hidden');
   document.getElementById('form-create-user').reset();
   document.getElementById('cu-result').classList.add('hidden');
+  clearAdSelection();
 }
 
 function closeCreateUser() {
@@ -220,11 +224,85 @@ function closeModalOnOverlay(e) {
   if (e.target === document.getElementById('modal-create-user')) closeCreateUser();
 }
 
+function clearAdSelection() {
+  _adSelected = null;
+  document.getElementById('cu-nome').value = '';
+  document.getElementById('cu-email').value = '';
+  document.getElementById('cu-login').value = '';
+  document.getElementById('cu-submit').disabled = true;
+  hideAdDropdown();
+}
+
+function hideAdDropdown() {
+  document.getElementById('cu-ad-dropdown').classList.add('hidden');
+}
+
+async function onAdSearchInput() {
+  clearAdSelection();
+  const termo = document.getElementById('cu-ad-search').value.trim();
+  clearTimeout(_adSearchTimer);
+  if (termo.length < 2) { hideAdDropdown(); return; }
+  _adSearchTimer = setTimeout(() => buscarUsuariosAD(termo), 300);
+}
+
+async function buscarUsuariosAD(termo) {
+  const dropdown = document.getElementById('cu-ad-dropdown');
+  try {
+    const res = await fetch(`${API}/api/admin/ad-users?q=${encodeURIComponent(termo)}`);
+    if (!res.ok) { hideAdDropdown(); return; }
+    const data = await res.json();
+
+    if (!data.length) {
+      dropdown.innerHTML = '<div class="ad-lov-empty">Nenhum usuário encontrado.</div>';
+    } else {
+      dropdown.innerHTML = data.map(u => `
+        <div class="ad-lov-item" onclick="selecionarUsuarioAD('${u.nome.replace(/'/g, "\\'")}')">
+          ${u.nome}
+          <span class="ad-lov-item-email">${u.email}</span>
+        </div>`).join('');
+    }
+    dropdown.classList.remove('hidden');
+  } catch { hideAdDropdown(); }
+}
+
+async function selecionarUsuarioAD(nome) {
+  document.getElementById('cu-ad-search').value = nome;
+  hideAdDropdown();
+
+  const resultEl = document.getElementById('cu-result');
+  resultEl.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API}/api/admin/ad-users/resolve?nome=${encodeURIComponent(nome)}`);
+    const data = await res.json();
+    if (!res.ok || !data.login || !data.email) {
+      resultEl.className = 'cu-result cu-result-err';
+      resultEl.textContent = 'Não foi possível resolver e-mail/login para esse usuário.';
+      resultEl.classList.remove('hidden');
+      return;
+    }
+    _adSelected = { nome, email: data.email, login: data.login };
+    document.getElementById('cu-nome').value = nome;
+    document.getElementById('cu-email').value = data.email;
+    document.getElementById('cu-login').value = data.login;
+    document.getElementById('cu-submit').disabled = false;
+  } catch {
+    resultEl.className = 'cu-result cu-result-err';
+    resultEl.textContent = 'Erro de comunicação com o servidor.';
+    resultEl.classList.remove('hidden');
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const wrapper = document.querySelector('.ad-lov-wrapper');
+  if (wrapper && !wrapper.contains(e.target)) hideAdDropdown();
+});
+
 async function submitCreateUser(e) {
   e.preventDefault();
-  const login = document.getElementById('cu-login').value.trim();
-  const nome  = document.getElementById('cu-nome').value.trim() || undefined;
-  const role  = document.getElementById('cu-role').value;
+  if (!_adSelected) return;
+  const { nome, email, login } = _adSelected;
+  const role = document.getElementById('cu-role').value;
 
   const resultEl = document.getElementById('cu-result');
   resultEl.classList.add('hidden');
@@ -233,12 +311,12 @@ async function submitCreateUser(e) {
     const res = await fetch(`${API}/api/admin/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login, nome, role }),
+      body: JSON.stringify({ login, nome, email, role }),
     });
     const data = await res.json();
     if (res.ok) {
       resultEl.className = 'cu-result cu-result-ok';
-      resultEl.textContent = `Usuário '${login}' adicionado como ${role}.`;
+      resultEl.textContent = `Usuário '${nome}' adicionado como ${role}.`;
       resultEl.classList.remove('hidden');
       loadUsers();
     } else {

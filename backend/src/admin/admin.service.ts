@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
+import { normalizeLogin } from '../auth/normalize-login';
 
 export class CreateAdminUserDto {
   login: string = '';
   nome?: string;
+  email?: string;
   role: 'ADM' | 'CONTRIBUTOR' = 'CONTRIBUTOR';
 }
 
@@ -111,13 +113,55 @@ export class AdminService {
     try {
       const idVar = { dir: oracledb.BIND_OUT, type: oracledb.NUMBER };
       const insertResult = await conn.execute(
-        `INSERT INTO ADMIN_USERS (login, nome, role, ativo, criado_em)
-         VALUES (:1, :2, :3, 1, SYSTIMESTAMP) RETURNING id INTO :4`,
-        [data.login, data.nome ?? null, data.role, idVar],
+        `INSERT INTO ADMIN_USERS (login, nome, email, role, ativo, criado_em)
+         VALUES (:1, :2, :3, :4, 1, SYSTIMESTAMP) RETURNING id INTO :5`,
+        [normalizeLogin(data.login), data.nome ?? null, data.email ?? null, data.role, idVar],
       );
       await conn.commit();
       const id: number = (insertResult.outBinds as any[])[0];
       return { id };
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async buscarUsuariosAD(termo: string): Promise<{ nome: string; email: string }[]> {
+    const sql = `
+      SELECT NAME, MAIL
+        FROM CONSCORP.vw_ad_user
+       WHERE MAIL IS NOT NULL
+         AND ENABLED = 'True'
+         AND (UPPER(NAME) LIKE UPPER('%' || :1 || '%') OR UPPER(MAIL) LIKE UPPER('%' || :1 || '%'))
+       ORDER BY NAME
+       FETCH FIRST 20 ROWS ONLY
+    `;
+    const conn = await this.db.getConnection();
+    try {
+      const result = await conn.execute(sql, [termo], { outFormat: oracledb.OUT_FORMAT_OBJECT });
+      return (result.rows as any[]).map((r) => ({ nome: r.NAME as string, email: r.MAIL as string }));
+    } finally {
+      await conn.close();
+    }
+  }
+
+  async resolverUsuarioAD(nome: string): Promise<{ email: string; login: string } | null> {
+    const sql = `
+      SELECT MAIL, SAMACCOUNTNAME
+        FROM CONSCORP.vw_ad_user
+       WHERE NAME = :1
+         AND MAIL IS NOT NULL
+         AND ENABLED = 'True'
+         AND ROWNUM = 1
+    `;
+    const conn = await this.db.getConnection();
+    try {
+      const result = await conn.execute(sql, [nome], { outFormat: oracledb.OUT_FORMAT_OBJECT });
+      const rows = result.rows as any[];
+      if (!rows.length) return null;
+      return {
+        email: rows[0].MAIL as string,
+        login: normalizeLogin(rows[0].SAMACCOUNTNAME as string),
+      };
     } finally {
       await conn.close();
     }
