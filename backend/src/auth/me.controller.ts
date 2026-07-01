@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { normalizeLogin } from './normalize-login';
 import { RequestUser } from '../common/interfaces/request-user.interface';
 
 @Controller('api')
@@ -14,9 +15,10 @@ export class MeController {
 
   @Get('me')
   async getMe(@Req() req: Request): Promise<RequestUser> {
-    const login =
+    const raw =
       (req.headers['x-remote-user'] as string | undefined) ??
       process.env.DEV_REMOTE_USER;
+    const login = raw ? normalizeLogin(raw) : undefined;
 
     if (!login) {
       throw new UnauthorizedException(
