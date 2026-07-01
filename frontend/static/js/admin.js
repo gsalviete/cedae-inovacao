@@ -247,9 +247,16 @@ async function onAdSearchInput() {
 
 async function buscarUsuariosAD(termo) {
   const dropdown = document.getElementById('cu-ad-dropdown');
+  dropdown.innerHTML = '<div class="ad-lov-empty">Buscando...</div>';
+  dropdown.classList.remove('hidden');
   try {
     const res = await fetch(`${API}/api/admin/ad-users?q=${encodeURIComponent(termo)}`);
-    if (!res.ok) { hideAdDropdown(); return; }
+    if (!res.ok) {
+      let msg = `Erro ao buscar (HTTP ${res.status}).`;
+      try { const err = await res.json(); if (err.message) msg = err.message; } catch { /* corpo não é JSON */ }
+      dropdown.innerHTML = `<div class="ad-lov-empty">${msg}</div>`;
+      return;
+    }
     const data = await res.json();
 
     if (!data.length) {
@@ -261,8 +268,9 @@ async function buscarUsuariosAD(termo) {
           <span class="ad-lov-item-email">${u.email}</span>
         </div>`).join('');
     }
-    dropdown.classList.remove('hidden');
-  } catch { hideAdDropdown(); }
+  } catch {
+    dropdown.innerHTML = '<div class="ad-lov-empty">Erro de comunicação com o servidor.</div>';
+  }
 }
 
 async function selecionarUsuarioAD(nome) {

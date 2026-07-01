@@ -131,13 +131,13 @@ export class AdminService {
         FROM CONSCORP.vw_ad_user
        WHERE MAIL IS NOT NULL
          AND ENABLED = 'True'
-         AND (UPPER(NAME) LIKE UPPER('%' || :1 || '%') OR UPPER(MAIL) LIKE UPPER('%' || :1 || '%'))
+         AND (UPPER(NAME) LIKE UPPER('%' || :1 || '%') OR UPPER(MAIL) LIKE UPPER('%' || :2 || '%'))
        ORDER BY NAME
        FETCH FIRST 20 ROWS ONLY
     `;
     const conn = await this.db.getConnection();
     try {
-      const result = await conn.execute(sql, [termo], { outFormat: oracledb.OUT_FORMAT_OBJECT });
+      const result = await conn.execute(sql, [termo, termo], { outFormat: oracledb.OUT_FORMAT_OBJECT });
       return (result.rows as any[]).map((r) => ({ nome: r.NAME as string, email: r.MAIL as string }));
     } finally {
       await conn.close();
