@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { normalizeLogin } from './normalize-login';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -14,9 +15,10 @@ export class AdminGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const login =
+    const raw =
       (request.headers['x-remote-user'] as string | undefined) ??
       process.env.DEV_REMOTE_USER;
+    const login = raw ? normalizeLogin(raw) : undefined;
 
     if (!login) {
       throw new UnauthorizedException(

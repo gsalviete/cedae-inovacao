@@ -1,2 +1,20 @@
-# .gitlab-ci.yml
-# Pipeline a ser configurado pelo time de DevOps
+stages:
+  - build-app
+  - docker
+
+variables:
+  GIT_SSL_NO_VERIFY: "true"
+
+cache:
+  - key: pnpm-cache
+    paths:
+      - backend/node_modules/
+
+include:
+  - project: 'devjava/ci-templates'
+    ref: develop
+    file:
+      - '/build/build-node-pnpm.yml'
+      - '/docker/docker-build-push.yml'
+    rules:
+      - if: '$CI_COMMIT_BRANCH == "develop"'
