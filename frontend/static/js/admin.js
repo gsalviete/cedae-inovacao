@@ -350,12 +350,11 @@ async function loadLogs() {
     const tbody = document.getElementById('tbody-logs');
 
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="table-loading">Nenhum log registrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="table-loading">Nenhum log registrado.</td></tr>';
       return;
     }
     tbody.innerHTML = data.map(l => `
       <tr class="fade-in">
-        <td>${l.id}</td>
         <td>${l.username || '—'}</td>
         <td>${l.acao || '—'}</td>
         <td>${l.detalhe || '—'}</td>
