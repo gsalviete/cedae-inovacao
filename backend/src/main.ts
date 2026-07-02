@@ -34,17 +34,18 @@ async function bootstrap(): Promise<void> {
 
   const frontendPath = join(__dirname, '..', '..', 'frontend');
   const basePath = projectPath ? `/${projectPath}` : '';
+  const httpAdapter = app.getHttpAdapter().getInstance();
 
   // Frontend
-  app.getHttpAdapter().get(`${basePath}/`, (_, res) => {
+  httpAdapter.get(`${basePath}/`, (_, res) => {
     res.sendFile(join(frontendPath, 'templates', 'index.html'));
   });
 
-  app.getHttpAdapter().get(`${basePath}/admin-panel`, (_, res) => {
+  httpAdapter.get(`${basePath}/admin-panel`, (_, res) => {
     res.sendFile(join(frontendPath, 'templates', 'admin.html'));
   });
 
-  app.getHttpAdapter().get(`${basePath}/admin-detalhe`, (_, res) => {
+  httpAdapter.get(`${basePath}/admin-detalhe`, (_, res) => {
     res.sendFile(join(frontendPath, 'templates', 'admin-detalhe.html'));
   });
 
