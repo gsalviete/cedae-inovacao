@@ -4,20 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Painel Admin — CEDAE Inovação</title>
-  <base id="app-base" href="/">
-  <script src="/env.js"></script>
-  <script src="/static/js/base.js"></script>
+  <script>window.__BASE_PATH__ = "{{BASE_PATH}}";</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="static/css/style.css">
-  <link rel="stylesheet" href="static/css/admin.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/style.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/admin.css">
 </head>
 <body class="admin-body">
 
   <header class="site-header">
     <div class="header-inner">
       <div class="brand">
-        <img id="logo-setor" src="static/img/logo-placeholder.png" alt="Logo CEDAE" class="brand-logo" />
+        <img id="logo-setor" src="{{BASE_PATH}}/static/img/logo-placeholder.png" alt="Logo CEDAE" class="brand-logo" />
         <div class="brand-text">
           <span class="brand-name">CEDAE</span>
           <span class="brand-sub">Painel Administrativo</span>
@@ -228,7 +226,7 @@
     </div>
   </div>
 
-  <script src="static/js/api.js"></script>
-  <script src="static/js/admin.js"></script>
+  <script src="{{BASE_PATH}}/static/js/api.js"></script>
+  <script src="{{BASE_PATH}}/static/js/admin.js"></script>
 </body>
 </html>

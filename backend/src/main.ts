@@ -3,14 +3,29 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { join } from 'path';
+import { readFileSync } from 'fs';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
 
 const projectPath = process.env.PROJECT_PATH?.trim();
 const remoteUser = process.env.DEV_REMOTE_USER;
 
+// Renderiza o HTML uma única vez no boot, substituindo {{BASE_PATH}} pelo
+// prefixo real (ex.: "/inovacao" ou ""). Todos os hrefs/srcs do template já
+// saem com o prefixo embutido — nada no cliente precisa descobrir o
+// PROJECT_PATH em runtime, então nenhum recurso depende de o reverse proxy
+// encaminhar paths fora do prefixo configurado.
+function renderTemplate(filePath: string, basePath: string): string {
+  return readFileSync(filePath, 'utf-8').split('{{BASE_PATH}}').join(basePath);
+}
+
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // Sem isso, app.close() (disparado por enableShutdownHooks no SIGTERM)
+    // espera indefinidamente conexões keep-alive existentes fecharem
+    // sozinhas — é o que fazia o container precisar de SIGKILL.
+    forceCloseConnections: true,
+  });
 
   // Permite que o Nest finalize corretamente ao receber SIGTERM/SIGINT
   app.enableShutdownHooks();
@@ -25,7 +40,6 @@ async function bootstrap(): Promise<void> {
       whitelist: true,
       transform: true,
     }),
-  
   );
 
   // Prefixo das rotas da API
@@ -37,32 +51,26 @@ async function bootstrap(): Promise<void> {
   const basePath = projectPath ? `/${projectPath}` : '';
   const httpAdapter = app.getHttpAdapter().getInstance();
 
-  // Config runtime para o frontend estático (sem prefixo — precisa ser
-  // alcançável antes que o cliente saiba o basePath da API)
-  httpAdapter.get('/env.js', (_, res) => {
-    res.type('application/javascript');
-    res.send(`window.__ENV__ = ${JSON.stringify({ PROJECT_PATH: projectPath || '' })};`);
-  });
+  // Único mecanismo de static assets, sempre sob o mesmo prefixo usado
+  // pelas páginas e pela API — funciona igual com PROJECT_PATH vazio
+  // (basePath === '') ou definido, e nunca depende do proxy encaminhar
+  // paths fora desse prefixo.
+  app.useStaticAssets(join(frontendPath, 'static'), { prefix: `${basePath}/static` });
 
-  // Assets também acessíveis sob o prefixo, pois o <base> da página
-  // (ajustado no cliente a partir de PROJECT_PATH) resolve os caminhos
-  // relativos de CSS/JS/imagens a partir dele quando PROJECT_PATH está definido
-  if (basePath) {
-    app.useStaticAssets(join(frontendPath, 'static'), { prefix: `${basePath}/static` });
+  // Frontend — cada página é renderizada uma vez no boot com o BASE_PATH
+  // já embutido nos hrefs/srcs e em window.__BASE_PATH__.
+  const pages: Record<string, string> = {
+    '/': 'index.html',
+    '/admin-panel': 'admin.html',
+    '/admin-detalhe': 'admin-detalhe.html',
+  };
+
+  for (const [route, file] of Object.entries(pages)) {
+    const rendered = renderTemplate(join(frontendPath, 'templates', file), basePath);
+    httpAdapter.get(`${basePath}${route}`, (_, res) => {
+      res.type('html').send(rendered);
+    });
   }
-
-  // Frontend
-  httpAdapter.get(`${basePath}/`, (_, res) => {
-    res.sendFile(join(frontendPath, 'templates', 'index.html'));
-  });
-
-  httpAdapter.get(`${basePath}/admin-panel`, (_, res) => {
-    res.sendFile(join(frontendPath, 'templates', 'admin.html'));
-  });
-
-  httpAdapter.get(`${basePath}/admin-detalhe`, (_, res) => {
-    res.sendFile(join(frontendPath, 'templates', 'admin-detalhe.html'));
-  });
 
   const port = Number(process.env.PORT) || 8095;
 
@@ -72,9 +80,7 @@ async function bootstrap(): Promise<void> {
     console.log(`[DEV] x-remote-user fallback ativo: ${remoteUser}`);
   }
 
-  console.log(
-    `Aplicação rodando na porta ${port}}`,
-  );
+  console.log(`Aplicação rodando na porta ${port}`);
 }
 
 void bootstrap();
