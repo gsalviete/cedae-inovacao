@@ -18,6 +18,7 @@ services:
       - ORACLE_USER=${ORACLE_USER}
       - ORACLE_PASSWORD=${ORACLE_PASSWORD}
       - PORT=8095
+      - PROJECT_PATH=${PROJECT_PATH:-}
       - RATE_LIMIT_TTL=${RATE_LIMIT_TTL:-60}
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
       # Só necessário em dev/Docker sem IIS. Em produção o IIS injeta x-remote-user.

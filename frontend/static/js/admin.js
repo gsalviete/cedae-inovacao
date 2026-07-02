@@ -3,7 +3,6 @@
    Autenticação: Kerberos/IIS via /api/me (sem JWT)
    ══════════════════════════════════════════════════════ */
 
-const API = '';
 let _currentUser = null;
 
 /* ── Guard: verifica acesso via /api/me ──────────────── */
@@ -29,11 +28,11 @@ async function checkAdmin() {
 function redirectHome() {
   document.getElementById('admin-content').classList.add('hidden');
   document.getElementById('admin-guard').classList.remove('hidden');
-  setTimeout(() => window.location.href = '/', 2000);
+  setTimeout(() => goTo('/'), 2000);
 }
 
 function logout() {
-  window.location.href = '/';
+  goTo('/');
 }
 
 /* ── Formatters ──────────────────────────────────────── */
@@ -150,7 +149,7 @@ async function loadIniciativas() {
 }
 
 function abrirDetalhe(id) {
-  window.location.href = `/admin-detalhe?id=${id}`;
+  goTo(`/admin-detalhe?id=${id}`);
 }
 
 /* ── Usuários Administrativos (ADMIN_USERS) ─────────── */

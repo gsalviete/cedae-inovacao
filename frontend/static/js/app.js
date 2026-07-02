@@ -3,7 +3,6 @@
    Autenticação: Kerberos/IIS via x-remote-user (sem senha)
    ══════════════════════════════════════════════════════ */
 
-const API = '';
 const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 
 /* ── Header: identifica usuário via /api/me ──────────── */

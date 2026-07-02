@@ -25,6 +25,7 @@ async function bootstrap(): Promise<void> {
       whitelist: true,
       transform: true,
     }),
+  
   );
 
   // Prefixo das rotas da API
@@ -35,6 +36,20 @@ async function bootstrap(): Promise<void> {
   const frontendPath = join(__dirname, '..', '..', 'frontend');
   const basePath = projectPath ? `/${projectPath}` : '';
   const httpAdapter = app.getHttpAdapter().getInstance();
+
+  // Config runtime para o frontend estático (sem prefixo — precisa ser
+  // alcançável antes que o cliente saiba o basePath da API)
+  httpAdapter.get('/env.js', (_, res) => {
+    res.type('application/javascript');
+    res.send(`window.__ENV__ = ${JSON.stringify({ PROJECT_PATH: projectPath || '' })};`);
+  });
+
+  // Assets também acessíveis sob o prefixo, pois o <base> da página
+  // (ajustado no cliente a partir de PROJECT_PATH) resolve os caminhos
+  // relativos de CSS/JS/imagens a partir dele quando PROJECT_PATH está definido
+  if (basePath) {
+    app.useStaticAssets(join(frontendPath, 'static'), { prefix: `${basePath}/static` });
+  }
 
   // Frontend
   httpAdapter.get(`${basePath}/`, (_, res) => {

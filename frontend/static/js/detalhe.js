@@ -3,7 +3,6 @@
    Autenticação: Kerberos/IIS via /api/me (sem JWT)
    ══════════════════════════════════════════════════════ */
 
-const API = '';
 const JANELA_EDICAO_MS = 2 * 60 * 60 * 1000;
 const TIPOS_EDITAVEIS = new Set(['TRIAGEM', 'APROVACAO', 'REPROVACAO', 'OBSERVACAO']);
 let _pendingStatus = null;
@@ -65,7 +64,7 @@ function setField(id, val) {
 }
 
 function logout() {
-  window.location.href = '/';
+  goTo('/');
 }
 
 /* ── Guard via /api/me ───────────────────────────────── */
@@ -88,7 +87,7 @@ function redirectHome() {
   const guard   = document.getElementById('admin-guard');
   if (content) content.classList.add('hidden');
   if (guard)   guard.classList.remove('hidden');
-  setTimeout(() => window.location.href = '/', 2000);
+  setTimeout(() => goTo('/'), 2000);
 }
 
 /* ── Carrega dados da iniciativa ─────────────────────── */
@@ -102,7 +101,7 @@ async function loadDetalhe() {
   try {
     const res = await fetch(`${API}/api/iniciativas/${id}`);
     if (res.status === 401 || res.status === 403) {
-      window.location.href = '/';
+      goTo('/');
       return;
     }
     if (!res.ok) {
