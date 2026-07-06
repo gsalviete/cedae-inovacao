@@ -9,6 +9,8 @@ import * as morgan from 'morgan';
 
 const projectPath = process.env.PROJECT_PATH?.trim();
 const remoteUser = process.env.DEV_REMOTE_USER;
+console.log('PROJECT_PATH =', process.env.PROJECT_PATH);
+console.log('projectPath =', projectPath);
 
 // Renderiza o HTML uma única vez no boot, substituindo {{BASE_PATH}} pelo
 // prefixo real (ex.: "/inovacao" ou ""). Todos os hrefs/srcs do template já
