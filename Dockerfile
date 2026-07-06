@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # pnpm rebuild mantém o estado interno do pnpm consistente
 # (npm rebuild causava inconsistência → pnpm queria purgar node_modules)
-RUN pnpm rebuild bcrypt oracledb @nestjs/core
+RUN pnpm rebuild oracledb @nestjs/core
 
 COPY backend/. .
 

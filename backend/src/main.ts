@@ -8,6 +8,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
 
 const projectPath = process.env.PROJECT_PATH?.trim();
+const basePath = projectPath ? `/${projectPath}` : '';
 const remoteUser = process.env.DEV_REMOTE_USER;
 console.log('PROJECT_PATH =', process.env.PROJECT_PATH);
 console.log('projectPath =', projectPath);
@@ -44,13 +45,27 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
+  // Normaliza a URL de entrada para sempre incluir o basePath internamente,
+  // independente de o IIS repassar o path completo (/inovacao/...) ou já
+  // remover o prefixo antes de encaminhar pro container — não há garantia
+  // de qual dos dois comportamentos o proxy de produção usa, então a app
+  // funciona nos dois casos sem precisar acertar essa configuração de antemão.
+  if (basePath) {
+    app.use((req: any, _res: any, next: any) => {
+      if (!req.url.startsWith(basePath)) {
+        console.log('[PREFIX-FIX]', req.url, '->', `${basePath}${req.url}`);
+        req.url = `${basePath}${req.url}`;
+      }
+      next();
+    });
+  }
+
   // Prefixo das rotas da API
   if (projectPath) {
     app.setGlobalPrefix(projectPath);
   }
 
   const frontendPath = join(__dirname, '..', '..', 'frontend');
-  const basePath = projectPath ? `/${projectPath}` : '';
   const httpAdapter = app.getHttpAdapter().getInstance();
 
   // ---- DEBUG TEMPORÁRIO: investigação do serving de static assets ----

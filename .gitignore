@@ -23,3 +23,5 @@ coverage/
 .idea/
 
 *.log
+
+DEPLOY-REVIEW.md
