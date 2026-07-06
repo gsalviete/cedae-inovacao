@@ -98,8 +98,15 @@ async function bootstrap(): Promise<void> {
   const port = Number(process.env.PORT) || 8095;
 
   httpAdapter.get('/teste-css', (_, res) => {
-    res.sendFile(join(frontendPath, 'static', 'css', 'style.css'));
+  const file = join(frontendPath, 'static', 'css', 'style.css');
+
+  console.log('[TESTE] file =', file);
+  console.log('[TESTE] exists =', existsSync(file));
+
+  res.sendFile(file, (err) => {
+    console.log('[TESTE] sendFile err =', err);
   });
+});
 
   await app.listen(port);
 
