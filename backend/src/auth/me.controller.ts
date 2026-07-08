@@ -15,6 +15,9 @@ export class MeController {
 
   @Get('me')
   async getMe(@Req() req: Request): Promise<RequestUser> {
+    console.log('================ /api/me ================');
+    console.log(req.headers);
+    console.log('=========================================');
     const raw =
       (req.headers['x-remote-user'] as string | undefined) ??
       process.env.DEV_REMOTE_USER;
