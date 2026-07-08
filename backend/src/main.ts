@@ -36,6 +36,7 @@ async function bootstrap(): Promise<void> {
   console.log('remote-user =', req.headers['remote-user']);
   console.log('authorization =', req.headers.authorization);
   console.log('=========================================');
+  console.log(req.headers);
   next();
 });
 
