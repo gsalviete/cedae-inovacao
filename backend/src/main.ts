@@ -30,6 +30,15 @@ async function bootstrap(): Promise<void> {
     forceCloseConnections: true,
   });
 
+  app.use((req: any, res: any, next: any) => {
+  console.log('================ HEADERS ================');
+  console.log('x-remote-user =', req.headers['x-remote-user']);
+  console.log('remote-user =', req.headers['remote-user']);
+  console.log('authorization =', req.headers.authorization);
+  console.log('=========================================');
+  next();
+});
+
   // Permite que o Nest finalize corretamente ao receber SIGTERM/SIGINT
   app.enableShutdownHooks();
 
