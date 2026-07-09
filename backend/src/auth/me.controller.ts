@@ -15,12 +15,16 @@ export class MeController {
 
   @Get('me')
   async getMe(@Req() req: Request): Promise<RequestUser> {
-    console.log('================ /api/me ================');
+    console.log('================ AQUI DOIDAO ================');
     console.log(req.headers);
     console.log('=========================================');
+
+    const header = req.headers['x-remote-user'];
+
     const raw =
-      (req.headers['X-Remote-User'] as string | undefined) ??
+      (Array.isArray(header) ? header[0] : header) ??
       process.env.DEV_REMOTE_USER;
+
     const login = raw ? normalizeLogin(raw) : undefined;
 
     if (!login) {
