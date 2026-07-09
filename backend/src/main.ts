@@ -32,7 +32,7 @@ async function bootstrap(): Promise<void> {
 
   app.use((req: any, res: any, next: any) => {
   console.log('================ HEADERS ================');
-  console.log('x-remote-user =', req.headers['x-remote-user']);
+  console.log('x-remote-user =', req.headers['X-Remote-User']);
   console.log('remote-user =', req.headers['remote-user']);
   console.log('authorization =', req.headers.authorization);
   console.log('=========================================');

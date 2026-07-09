@@ -16,7 +16,7 @@ export class AdminGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const raw =
-      (request.headers['x-remote-user'] as string | undefined) ??
+      (request.headers['REMOTE_USER'] as string | undefined) ??
       process.env.DEV_REMOTE_USER;
     const login = raw ? normalizeLogin(raw) : undefined;
 

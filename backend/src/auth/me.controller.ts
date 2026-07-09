@@ -19,7 +19,7 @@ export class MeController {
     console.log(req.headers);
     console.log('=========================================');
     const raw =
-      (req.headers['x-remote-user'] as string | undefined) ??
+      (req.headers['X-Remote-User'] as string | undefined) ??
       process.env.DEV_REMOTE_USER;
     const login = raw ? normalizeLogin(raw) : undefined;
 
