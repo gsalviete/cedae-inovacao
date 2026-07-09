@@ -12,3 +12,16 @@ const API = BASE_PATH;
 function goTo(path) {
   window.location.href = `${BASE_PATH}${path.startsWith('/') ? path : `/${path}`}`;
 }
+
+/* Redireciona para a tela de login (autenticação AD). */
+function redirectToLogin() {
+  goTo('/login');
+}
+
+/* Encerra a sessão no backend e volta para a tela de login. */
+async function logout() {
+  try {
+    await fetch(`${API}/api/auth/logout`, { method: 'POST' });
+  } catch { /* mesmo se falhar, seguimos para o login */ }
+  redirectToLogin();
+}

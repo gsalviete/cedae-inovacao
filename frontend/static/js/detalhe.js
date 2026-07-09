@@ -63,14 +63,13 @@ function setField(id, val) {
   if (el) el.textContent = val || '—';
 }
 
-function logout() {
-  goTo('/');
-}
+/* logout() é compartilhado (api.js): encerra a sessão e vai para /login. */
 
 /* ── Guard via /api/me ───────────────────────────────── */
 async function checkAdmin() {
   try {
     const res = await fetch(`${API}/api/me`);
+    if (res.status === 401) { redirectToLogin(); return false; }
     if (!res.ok) { redirectHome(); return false; }
     const me = await res.json();
     if (!me.admin) { redirectHome(); return false; }

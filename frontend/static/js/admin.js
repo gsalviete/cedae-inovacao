@@ -9,6 +9,7 @@ let _currentUser = null;
 async function checkAdmin() {
   try {
     const res = await fetch(`${API}/api/me`);
+    if (res.status === 401) { redirectToLogin(); return false; }
     if (!res.ok) { redirectHome(); return false; }
     const me = await res.json();
     if (!me.admin) { redirectHome(); return false; }
@@ -31,9 +32,7 @@ function redirectHome() {
   setTimeout(() => goTo('/'), 2000);
 }
 
-function logout() {
-  goTo('/');
-}
+/* logout() é compartilhado (api.js): encerra a sessão e vai para /login. */
 
 /* ── Formatters ──────────────────────────────────────── */
 function fmtDate(val) {

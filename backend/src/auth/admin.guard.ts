@@ -7,23 +7,21 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
-import { normalizeLogin } from './normalize-login';
+import { SessionService } from './session.service';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly session: SessionService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const raw =
-      (request.headers['x-remote-user'] as string | undefined) ??
-      process.env.DEV_REMOTE_USER;
-    const login = raw ? normalizeLogin(raw) : undefined;
+    const login = this.session.readLogin(request);
 
     if (!login) {
-      throw new UnauthorizedException(
-        'Usuário não identificado — header x-remote-user ausente',
-      );
+      throw new UnauthorizedException('Usuário não autenticado.');
     }
 
     const user = await this.authService.resolveUser(login);

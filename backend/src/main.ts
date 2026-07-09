@@ -6,6 +6,7 @@ import { join } from 'path';
 import { readFileSync, existsSync } from 'fs';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
+import * as cookieParser from 'cookie-parser';
 
 const projectPath = process.env.PROJECT_PATH?.trim();
 const basePath = projectPath ? `/${projectPath}` : '';
@@ -45,6 +46,9 @@ async function bootstrap(): Promise<void> {
 
   // Access log para stdout (docker/podman logs)
   app.use(morgan('combined'));
+
+  // Necessário para ler o cookie de sessão (inovacao_session) — ver SessionService.
+  app.use(cookieParser());
 
   app.enableCors();
 
@@ -109,6 +113,7 @@ async function bootstrap(): Promise<void> {
   // já embutido nos hrefs/srcs e em window.__BASE_PATH__.
   const pages: Record<string, string> = {
     '/': 'index.html',
+    '/login': 'login.html',
     '/admin-panel': 'admin.html',
     '/admin-detalhe': 'admin-detalhe.html',
   };

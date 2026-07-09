@@ -5,10 +5,12 @@
 
 const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 
-/* ── Header: identifica usuário via /api/me ──────────── */
+/* ── Header: identifica usuário via /api/me ──────────────
+   Sem sessão válida (401) o usuário é enviado para a tela de login (AD). */
 async function initHeader() {
   try {
     const res = await fetch(`${API}/api/me`);
+    if (res.status === 401) { redirectToLogin(); return; }
     if (!res.ok) return;
     const me = await res.json();
 
@@ -22,7 +24,10 @@ async function initHeader() {
     if (btnAdmin && me.admin) {
       btnAdmin.classList.remove('hidden');
     }
-  } catch { /* silencioso — sem IIS em dev, header pode estar ausente */ }
+
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) btnLogout.classList.remove('hidden');
+  } catch { /* silencioso — falha de rede não deve travar o formulário */ }
 }
 
 /* ── Modal de Erro ───────────────────────────────────── */
