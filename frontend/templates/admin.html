@@ -17,13 +17,16 @@
       <div class="brand">
         <img id="logo-setor" src="{{BASE_PATH}}/static/img/logo-placeholder.png" alt="Logo CEDAE" class="brand-logo" />
         <div class="brand-text">
-          <span class="brand-name">CEDAE</span>
+          <span class="brand-name">Assessoria de Inovação</span>
           <span class="brand-sub">Painel Administrativo</span>
         </div>
       </div>
       <div class="header-actions">
+        <span id="user-greeting" class="user-greeting hidden">
+          <span class="user-greeting-time" id="user-greeting-time"></span>
+          <span class="user-greeting-name" id="user-greeting-name"></span>
+        </span>
         <button class="btn-login" onclick="goTo('/')">Voltar ao Formulário</button>
-        <button class="btn-logout" onclick="logout()">Sair</button>
       </div>
     </div>
   </header>

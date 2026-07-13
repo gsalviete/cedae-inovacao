@@ -21,16 +21,18 @@
         <img id="logo-setor" src="{{BASE_PATH}}/static/img/logo-placeholder.png" alt="Logo CEDAE" class="brand-logo" />
         <div class="brand-text">
           <span class="brand-name">Assessoria de Inovação</span>
-          <!--  <span class="brand-sub">Assessoria de Inovação</span> -->
+          <span class="brand-sub">CEDAE · Planejamento</span>
         </div>
       </div>
       <div class="header-actions">
-        <span id="user-greeting" class="user-greeting hidden"></span>
+        <span id="user-greeting" class="user-greeting hidden">
+          <span class="user-greeting-time" id="user-greeting-time"></span>
+          <span class="user-greeting-name" id="user-greeting-name"></span>
+        </span>
         <button id="btn-login-header" class="btn-login hidden" onclick="goTo('/login')">Entrar</button>
         <button id="btn-admin" class="btn-admin hidden" onclick="goTo('/admin-panel')">
           Painel Admin
         </button>
-        <button id="btn-logout" class="btn-logout hidden" onclick="logout()">Sair</button>
       </div>
     </div>
   </header>
@@ -165,12 +167,11 @@
 
         <div class="field-group">
           <label class="field-label" for="solucao_proposta">
-            Como funciona ou funcionará a sua solução proposta? <span class="required">*</span>
+            Como funciona ou funcionará a sua solução proposta?
           </label>
-          <p class="field-hint">Explique como a proposta resolve ou atenua o problema citado.</p>
-          <textarea id="solucao_proposta" name="solucao_proposta" class="field-textarea" required rows="4"
-            placeholder="Descreva a solução..."></textarea>
-          <span class="field-error" id="err-solucao"></span>
+          <p class="field-hint">Opcional — explique, se já souber, como a proposta resolve ou atenua o problema citado.</p>
+          <textarea id="solucao_proposta" name="solucao_proposta" class="field-textarea" rows="4"
+            placeholder="Opcional — descreva a solução..."></textarea>
         </div>
 
         <div class="field-group">
@@ -220,7 +221,7 @@
 
         <div class="field-group">
           <label class="field-label">Em qual macrodimensão a sua iniciativa melhor se enquadra?</label>
-          <div class="radio-group">
+          <div class="radio-group" id="macrodimensao-radios">
             <label class="radio-option">
               <input type="radio" name="macrodimensao" value="tecnologica" />
               <span class="radio-box"></span>
@@ -250,12 +251,22 @@
               </div>
             </label>
             <label class="radio-option">
-              <input type="radio" name="macrodimensao" value="outros" />
+              <input type="radio" name="macrodimensao" value="outros" id="radio_macro_outros" />
               <span class="radio-box"></span>
               <div><strong>Outros / Multidimensionais</strong>
                 <p>Iniciativas híbridas ou não classificadas nas opções acima.</p>
               </div>
             </label>
+          </div>
+
+          <div class="field-reveal hidden" id="macrodimensao-observacao-wrapper">
+            <label class="field-label" for="macrodimensao_observacao">
+              Descreva a macrodimensão da sua iniciativa
+            </label>
+            <p class="field-hint">Opcional — explique, se quiser, em que dimensões a iniciativa se enquadra ou por que
+              ela não se encaixa nas opções acima.</p>
+            <textarea id="macrodimensao_observacao" name="macrodimensao_observacao" class="field-textarea" rows="3"
+              placeholder="Ex.: combina automação de processos com impacto ambiental na bacia do Guandu..."></textarea>
           </div>
         </div>
 
@@ -297,7 +308,7 @@
               </div>
             </label>
           </div>
-          <div id="valor-aporte-wrapper" class="hidden" style="margin-top:12px;">
+          <div id="valor-aporte-wrapper" class="field-reveal hidden" style="margin-top:12px;">
             <input type="text" id="valor_aporte" name="valor_aporte" class="field-input" inputmode="numeric"
               autocomplete="off" data-currency placeholder="R$ 0,00" />
           </div>
@@ -373,7 +384,7 @@
           <span class="field-error" id="err-suporte"></span>
         </div>
 
-        <div class="field-group hidden" id="diagnostico-observacao-wrapper">
+        <div class="field-group field-reveal hidden" id="diagnostico-observacao-wrapper">
           <label class="field-label" for="diagnostico_observacao">
             Tipo de Apoio Diagnóstico Desejado
           </label>

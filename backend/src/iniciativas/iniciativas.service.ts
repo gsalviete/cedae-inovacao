@@ -13,13 +13,13 @@ export class IniciativasService {
         NOME_COLABORADOR, CANAL_CONTATO, EMAIL_PROPONENTE, TITULO_INICIATIVA,
         AREA_PROPONENTE, LOCAL_APLICACAO, PROBLEMA_PRATICO,
         SOLUCAO_PROPOSTA, RISCO_MITIGADO, ESTAGIO_DESENVOLVIMENTO,
-        MACRODIMENSAO, PERFIL_IMPACTO, APORTE_FINANCEIRO,
+        MACRODIMENSAO, MACRODIMENSAO_OBSERVACAO, PERFIL_IMPACTO, APORTE_FINANCEIRO,
         VALOR_APORTE, RETORNO_ECONOMICO, SUPORTE_NECESSARIO,
         DIAGNOSTICO_OBSERVACAO, COMENTARIOS_ADICIONAIS, STATUS, CRIADO_EM, ATUALIZADO_EM
       ) VALUES (
         :1, :2, :3, :4, :5, :6, :7, :8, :9, :10,
-        :11, :12, :13, :14, :15, :16, :17, :18, 'SUBMETIDA', SYSDATE, SYSDATE
-      ) RETURNING ID INTO :19
+        :11, :12, :13, :14, :15, :16, :17, :18, :19, 'SUBMETIDA', SYSDATE, SYSDATE
+      ) RETURNING ID INTO :20
     `;
 
     const conn = await this.db.getConnection();
@@ -33,10 +33,11 @@ export class IniciativasService {
         data.area_proponente,
         data.local_aplicacao,
         data.problema_pratico,
-        data.solucao_proposta,
+        data.solucao_proposta ?? null,
         data.risco_mitigado ?? null,
         data.estagio_desenvolvimento ?? null,
         data.macrodimensao ?? null,
+        data.macrodimensao_observacao ?? null,
         data.perfil_impacto ?? null,
         data.aporte_financeiro ?? null,
         data.valor_aporte ?? null,
@@ -102,8 +103,8 @@ export class IniciativasService {
              DBMS_LOB.SUBSTR(PROBLEMA_PRATICO,       32767, 1) AS PROBLEMA_PRATICO,
              DBMS_LOB.SUBSTR(SOLUCAO_PROPOSTA,       32767, 1) AS SOLUCAO_PROPOSTA,
              DBMS_LOB.SUBSTR(RISCO_MITIGADO,         32767, 1) AS RISCO_MITIGADO,
-             ESTAGIO_DESENVOLVIMENTO, MACRODIMENSAO, PERFIL_IMPACTO,
-             APORTE_FINANCEIRO, VALOR_APORTE, RETORNO_ECONOMICO,
+             ESTAGIO_DESENVOLVIMENTO, MACRODIMENSAO, MACRODIMENSAO_OBSERVACAO,
+             PERFIL_IMPACTO, APORTE_FINANCEIRO, VALOR_APORTE, RETORNO_ECONOMICO,
              SUPORTE_NECESSARIO, DIAGNOSTICO_OBSERVACAO,
              DBMS_LOB.SUBSTR(COMENTARIOS_ADICIONAIS, 32767, 1) AS COMENTARIOS_ADICIONAIS,
              CRIADO_EM, NVL(STATUS, 'SUBMETIDA') AS STATUS, ATUALIZADO_EM

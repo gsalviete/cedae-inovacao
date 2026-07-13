@@ -14,6 +14,7 @@ async function checkAdmin() {
     const me = await res.json();
     if (!me.admin) { redirectHome(); return false; }
     _currentUser = me;
+    renderGreeting(me);
 
     // Oculta botão "+ Novo Admin" para CONTRIBUTOR
     const btnNovo = document.getElementById('btn-novo-admin');
@@ -31,8 +32,6 @@ function redirectHome() {
   document.getElementById('admin-guard').classList.remove('hidden');
   setTimeout(() => goTo('/'), 2000);
 }
-
-/* logout() é compartilhado (api.js): encerra a sessão e vai para /login. */
 
 /* ── Formatters ──────────────────────────────────────── */
 function fmtDate(val) {

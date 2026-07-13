@@ -18,13 +18,16 @@
       <div class="brand">
         <img src="{{BASE_PATH}}/static/img/logo-placeholder.png" alt="Logo CEDAE" class="brand-logo" />
         <div class="brand-text">
-          <span class="brand-name">CEDAE</span>
+          <span class="brand-name">Assessoria de Inovação</span>
           <span class="brand-sub">Detalhes da Iniciativa</span>
         </div>
       </div>
       <div class="header-actions">
+        <span id="user-greeting" class="user-greeting hidden">
+          <span class="user-greeting-time" id="user-greeting-time"></span>
+          <span class="user-greeting-name" id="user-greeting-name"></span>
+        </span>
         <button class="btn-login" onclick="goTo('/admin-panel')">← Voltar ao Painel</button>
-        <button class="btn-logout" onclick="logout()">Sair</button>
       </div>
     </div>
   </header>
@@ -107,6 +110,10 @@
           <div class="detalhe-field">
             <span class="detalhe-label">Macrodimensão</span>
             <span class="detalhe-value" id="d-macrodimensao">—</span>
+          </div>
+          <div class="detalhe-field hidden" id="d-macrodimensao_observacao-field">
+            <span class="detalhe-label">Descrição da Macrodimensão</span>
+            <span class="detalhe-value" id="d-macrodimensao_observacao">—</span>
           </div>
           <div class="detalhe-field">
             <span class="detalhe-label">Perfil de Impacto</span>

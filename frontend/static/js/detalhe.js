@@ -63,8 +63,6 @@ function setField(id, val) {
   if (el) el.textContent = val || '—';
 }
 
-/* logout() é compartilhado (api.js): encerra a sessão e vai para /login. */
-
 /* ── Guard via /api/me ───────────────────────────────── */
 async function checkAdmin() {
   try {
@@ -74,6 +72,7 @@ async function checkAdmin() {
     const me = await res.json();
     if (!me.admin) { redirectHome(); return false; }
     _me = me;
+    renderGreeting(me);
     return true;
   } catch {
     redirectHome();
@@ -126,6 +125,12 @@ async function loadDetalhe() {
 
     setField('d-estagio_desenvolvimento', data.estagio_desenvolvimento);
     setField('d-macrodimensao', data.macrodimensao);
+    // Só existe quando a macrodimensão é "outros" — sem isso o campo apareceria
+    // vazio para todas as demais iniciativas.
+    setField('d-macrodimensao_observacao', data.macrodimensao_observacao);
+    document
+      .getElementById('d-macrodimensao_observacao-field')
+      ?.classList.toggle('hidden', !data.macrodimensao_observacao);
     setField('d-perfil_impacto', data.perfil_impacto);
 
     setField('d-aporte_financeiro', data.aporte_financeiro);

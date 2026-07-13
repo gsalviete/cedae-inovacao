@@ -7,8 +7,9 @@ const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 
 /* ── Header: identifica usuário via /api/me ──────────────
    O formulário é PÚBLICO: usuário anônimo (401) usa a página normalmente,
-   apenas sem saudação/painel. Se houver sessão (login AD), mostra nome,
-   botão de admin (quando aplicável) e "Sair". */
+   apenas sem saudação/painel. Se houver sessão (login AD), mostra a saudação
+   e o botão de admin (quando aplicável). Não há logout: a identidade vem do
+   AD e o usuário não se desloga da aplicação. */
 async function initHeader() {
   const btnLogin = document.getElementById('btn-login-header');
   try {
@@ -20,19 +21,12 @@ async function initHeader() {
     }
     const me = await res.json();
 
-    const greeting = document.getElementById('user-greeting');
-    if (greeting) {
-      greeting.textContent = me.nome || me.login;
-      greeting.classList.remove('hidden');
-    }
+    renderGreeting(me);
 
     const btnAdmin = document.getElementById('btn-admin');
     if (btnAdmin && me.admin) {
       btnAdmin.classList.remove('hidden');
     }
-
-    const btnLogout = document.getElementById('btn-logout');
-    if (btnLogout) btnLogout.classList.remove('hidden');
   } catch {
     // falha de rede não deve travar o formulário; ainda oferece login
     if (btnLogin) btnLogin.classList.remove('hidden');
@@ -149,6 +143,19 @@ function toggleDiagnosticoObservacao() {
   }
 }
 
+/* ── Mostrar/ocultar descrição da Macrodimensão ─────────
+   Aparece só em "Outros / Multidimensionais", mesmo padrão do Apoio Diagnóstico. */
+function toggleMacrodimensaoObservacao() {
+  const outros = document.getElementById('radio_macro_outros');
+  const wrapper = document.getElementById('macrodimensao-observacao-wrapper');
+  if (!outros || !wrapper) return;
+  const show = outros.checked;
+  wrapper.classList.toggle('hidden', !show);
+  if (!show) {
+    document.getElementById('macrodimensao_observacao').value = '';
+  }
+}
+
 /* ── Validação do formulário ─────────────────────────── */
 function validateForm(payload) {
   let valid = true;
@@ -161,7 +168,6 @@ function validateForm(payload) {
     ['area_proponente',  'err-area',     'Informe a área proponente.'],
     ['local_aplicacao',  'err-local',    'Informe o local de aplicação.'],
     ['problema_pratico', 'err-problema', 'Descreva o problema prático.'],
-    ['solucao_proposta', 'err-solucao',  'Descreva a solução proposta.'],
   ];
 
   required.forEach(([field, errId, msg]) => {
@@ -204,6 +210,7 @@ function collectFormData() {
   const checks = [...document.querySelectorAll('input[name="suporte"]:checked')]
     .map(el => el.value).join('|');
   const diagSelecionado = checks.split('|').includes('diagnostico');
+  const macroOutros = r('macrodimensao') === 'outros';
 
   return {
     nome_colaborador:        g('nome_colaborador'),
@@ -213,10 +220,11 @@ function collectFormData() {
     area_proponente:         g('area_proponente'),
     local_aplicacao:         g('local_aplicacao'),
     problema_pratico:        g('problema_pratico'),
-    solucao_proposta:        g('solucao_proposta'),
+    solucao_proposta:        g('solucao_proposta') || null,
     risco_mitigado:          g('risco_mitigado') || null,
     estagio_desenvolvimento: r('estagio_desenvolvimento'),
     macrodimensao:           r('macrodimensao'),
+    macrodimensao_observacao: macroOutros ? (g('macrodimensao_observacao') || null) : null,
     perfil_impacto:          r('perfil_impacto'),
     aporte_financeiro:       r('aporte_financeiro'),
     valor_aporte:      parseBRL(document.getElementById('valor_aporte'))?.toString() || null,
@@ -286,6 +294,7 @@ function resetForm() {
   document.getElementById('form-success').classList.add('hidden');
   document.getElementById('valor-aporte-wrapper').classList.add('hidden');
   document.getElementById('diagnostico-observacao-wrapper').classList.add('hidden');
+  document.getElementById('macrodimensao-observacao-wrapper').classList.add('hidden');
 }
 
 /* ── Init ──────────────────────────────────────────── */
@@ -297,6 +306,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const chkDiag = document.getElementById('chk_diagnostico');
   if (chkDiag) chkDiag.addEventListener('change', toggleDiagnosticoObservacao);
+
+  // Qualquer troca no grupo dispara o toggle — inclusive sair de "outros"
+  // para outra opção, que precisa esconder e limpar o campo.
+  document.querySelectorAll('input[name="macrodimensao"]').forEach((el) => {
+    el.addEventListener('change', toggleMacrodimensaoObservacao);
+  });
 
   const canalEl = document.getElementById('canal_contato');
   if (canalEl) canalEl.addEventListener('input', canalContatoInputHandler);

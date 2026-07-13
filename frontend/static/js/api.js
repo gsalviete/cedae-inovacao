@@ -18,10 +18,35 @@ function redirectToLogin() {
   goTo('/login');
 }
 
-/* Encerra a sessão no backend e volta para a tela de login. */
-async function logout() {
-  try {
-    await fetch(`${API}/api/auth/logout`, { method: 'POST' });
-  } catch { /* mesmo se falhar, seguimos para o login */ }
-  redirectToLogin();
+/* ── Saudação do header ──────────────────────────────────
+   Compartilhada pelas três páginas autenticadas. Não há logout: a identidade
+   vem do AD e o usuário não se desloga da aplicação. */
+
+/** Bom dia / Boa tarde / Boa noite conforme o horário local do usuário. */
+function saudacaoPorHorario(hora = new Date().getHours()) {
+  if (hora >= 5 && hora < 12) return 'Bom dia';
+  if (hora >= 12 && hora < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+/** "Gabriel Salviete" → "Gabriel". Cai no login quando não há nome. */
+function primeiroNome(me) {
+  const nome = (me?.nome || '').trim();
+  if (nome) return nome.split(/\s+/)[0];
+  return (me?.login || '').split('@')[0];
+}
+
+/**
+ * Preenche a saudação do header ("Boa tarde, Gabriel!") e a revela.
+ * Silenciosamente não faz nada se a página não tiver o elemento.
+ */
+function renderGreeting(me) {
+  const wrapper = document.getElementById('user-greeting');
+  const timeEl = document.getElementById('user-greeting-time');
+  const nameEl = document.getElementById('user-greeting-name');
+  if (!wrapper || !timeEl || !nameEl) return;
+
+  timeEl.textContent = `${saudacaoPorHorario()},`;
+  nameEl.textContent = `${primeiroNome(me)}!`;
+  wrapper.classList.remove('hidden');
 }

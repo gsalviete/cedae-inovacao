@@ -39,9 +39,9 @@ export class CreateIniciativaDto {
   @IsNotEmpty()
   problema_pratico: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  solucao_proposta: string;
+  solucao_proposta?: string;
 
   @IsOptional()
   @IsString()
@@ -55,6 +55,11 @@ export class CreateIniciativaDto {
   @IsOptional()
   @IsString()
   macrodimensao?: string;
+
+  /** Texto livre exibido quando macrodimensao === 'outros'. */
+  @IsOptional()
+  @IsString()
+  macrodimensao_observacao?: string;
 
   @IsOptional()
   @IsString()
