@@ -6,12 +6,18 @@
 const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 
 /* ── Header: identifica usuário via /api/me ──────────────
-   Sem sessão válida (401) o usuário é enviado para a tela de login (AD). */
+   O formulário é PÚBLICO: usuário anônimo (401) usa a página normalmente,
+   apenas sem saudação/painel. Se houver sessão (login AD), mostra nome,
+   botão de admin (quando aplicável) e "Sair". */
 async function initHeader() {
+  const btnLogin = document.getElementById('btn-login-header');
   try {
     const res = await fetch(`${API}/api/me`);
-    if (res.status === 401) { redirectToLogin(); return; }
-    if (!res.ok) return;
+    if (!res.ok) {
+      // anônimo — segue usando o formulário; oferece caminho para login (admins)
+      if (btnLogin) btnLogin.classList.remove('hidden');
+      return;
+    }
     const me = await res.json();
 
     const greeting = document.getElementById('user-greeting');
@@ -27,7 +33,10 @@ async function initHeader() {
 
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) btnLogout.classList.remove('hidden');
-  } catch { /* silencioso — falha de rede não deve travar o formulário */ }
+  } catch {
+    // falha de rede não deve travar o formulário; ainda oferece login
+    if (btnLogin) btnLogin.classList.remove('hidden');
+  }
 }
 
 /* ── Modal de Erro ───────────────────────────────────── */
