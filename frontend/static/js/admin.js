@@ -56,8 +56,8 @@ const STATUS_MAP = {
   SUBMETIDA:     ['Submetida',     'badge-status-submetida'],
   EM_ANALISE:    ['Em Análise',    'badge-status-em_analise'],
   EM_OBSERVACAO: ['Em Observação', 'badge-status-em_observacao'],
-  APROVADA:      ['Aprovada',      'badge-status-aprovada'],
-  REPROVADA:     ['Reprovada',     'badge-status-reprovada'],
+  HOMOLOGADA:      ['Homologada',      'badge-status-homologada'],
+  DESCLASSIFICADA: ['Desclassificada', 'badge-status-desclassificada'],
 };
 
 function statusBadge(val) {
@@ -89,8 +89,8 @@ async function loadKPIs() {
     document.getElementById('sk-submetida').textContent    = ps.SUBMETIDA    ?? 0;
     document.getElementById('sk-em_analise').textContent   = ps.EM_ANALISE   ?? 0;
     document.getElementById('sk-em_observacao').textContent = ps.EM_OBSERVACAO ?? 0;
-    document.getElementById('sk-aprovada').textContent     = ps.APROVADA     ?? 0;
-    document.getElementById('sk-reprovada').textContent    = ps.REPROVADA    ?? 0;
+    document.getElementById('sk-homologada').textContent      = ps.HOMOLOGADA      ?? 0;
+    document.getElementById('sk-desclassificada').textContent = ps.DESCLASSIFICADA ?? 0;
 
     const barEl = document.getElementById('dimensao-bars');
     barEl.innerHTML = '';
@@ -166,11 +166,11 @@ async function loadUsers() {
     const isAdm = _currentUser?.role === 'ADM';
     tbody.innerHTML = data.map(u => {
       const roleLabel = u.role === 'ADM'
-        ? '<span class="badge badge-status-aprovada">Administrador</span>'
+        ? '<span class="badge badge-status-homologada">Administrador</span>'
         : '<span class="badge badge-status-em_analise">Colaborador</span>';
       const ativoLabel = u.ativo
-        ? '<span class="badge badge-status-aprovada">Ativo</span>'
-        : '<span class="badge badge-status-reprovada">Inativo</span>';
+        ? '<span class="badge badge-status-homologada">Ativo</span>'
+        : '<span class="badge badge-status-desclassificada">Inativo</span>';
       const protegerAdm = u.role === 'ADM' && u.ativo;
       const acoes = isAdm ? (
         protegerAdm

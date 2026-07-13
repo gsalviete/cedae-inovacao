@@ -185,16 +185,20 @@ export class WorkflowService {
 
   private mapTipoEvento(statusDestino: string): string {
     const mapa: Record<string, string> = {
-      SUBMETIDA:  'SUBMISSAO',
-      EM_ANALISE: 'TRIAGEM',
-      APROVADA:   'APROVACAO',
-      REPROVADA:  'REPROVACAO',
+      SUBMETIDA:       'SUBMISSAO',
+      EM_ANALISE:      'TRIAGEM',
+      HOMOLOGADA:      'HOMOLOGACAO',
+      DESCLASSIFICADA: 'DESCLASSIFICACAO',
     };
     return mapa[statusDestino] ?? 'ANALISE';
   }
 
   // Tipos de evento que o autor pode editar dentro da janela de 2h
-  private readonly EVENTOS_EDITAVEIS = new Set(['TRIAGEM', 'APROVACAO', 'REPROVACAO']);
+  private readonly EVENTOS_EDITAVEIS = new Set([
+    'TRIAGEM',
+    'HOMOLOGACAO',
+    'DESCLASSIFICACAO',
+  ]);
   private readonly JANELA_EDICAO_MS = 2 * 60 * 60 * 1000;
 
   private dentroDaJanela(criadoEm: Date | string): boolean {
@@ -280,9 +284,9 @@ export class WorkflowService {
           'Janela de edição expirada (2h após o registro).',
         );
       }
-      if (ev.TIPO_EVENTO === 'REPROVACAO' && !justificativa?.trim()) {
+      if (ev.TIPO_EVENTO === 'DESCLASSIFICACAO' && !justificativa?.trim()) {
         throw new BadRequestException(
-          'Justificativa obrigatória para reprovação.',
+          'Justificativa obrigatória para desclassificação.',
         );
       }
 

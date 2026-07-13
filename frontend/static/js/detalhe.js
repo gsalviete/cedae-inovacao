@@ -4,7 +4,7 @@
    ══════════════════════════════════════════════════════ */
 
 const JANELA_EDICAO_MS = 2 * 60 * 60 * 1000;
-const TIPOS_EDITAVEIS = new Set(['TRIAGEM', 'APROVACAO', 'REPROVACAO', 'OBSERVACAO']);
+const TIPOS_EDITAVEIS = new Set(['TRIAGEM', 'HOMOLOGACAO', 'DESCLASSIFICACAO', 'OBSERVACAO']);
 let _pendingStatus = null;
 let _justObrig = false;
 let _me = null;
@@ -20,8 +20,8 @@ const STATUS_MAP = {
   SUBMETIDA:      ['Submetida',      'badge-status-submetida'],
   EM_ANALISE:     ['Em Análise',     'badge-status-em_analise'],
   EM_OBSERVACAO:  ['Em Observação',  'badge-status-em_observacao'],
-  APROVADA:       ['Aprovada',       'badge-status-aprovada'],
-  REPROVADA:      ['Reprovada',      'badge-status-reprovada'],
+  HOMOLOGADA:      ['Homologada',      'badge-status-homologada'],
+  DESCLASSIFICADA: ['Desclassificada', 'badge-status-desclassificada'],
 };
 
 const SUPORTE_MAP = {
@@ -44,13 +44,13 @@ function statusBadge(val) {
 }
 
 const TIPO_EVENTO_LABEL = {
-  SUBMISSAO:  'Submissão',
-  TRIAGEM:    'Triagem',
-  APROVACAO:  'Aprovação',
-  REPROVACAO: 'Reprovação',
-  ANALISE:    'Análise',
-  CORRECAO:   'Correção',
-  OBSERVACAO: 'Observação',
+  SUBMISSAO:        'Submissão',
+  TRIAGEM:          'Triagem',
+  HOMOLOGACAO:      'Homologação',
+  DESCLASSIFICACAO: 'Desclassificação',
+  ANALISE:          'Análise',
+  CORRECAO:         'Correção',
+  OBSERVACAO:       'Observação',
 };
 
 function getIniciativaId() {
@@ -149,14 +149,14 @@ async function loadAcoes(id, statusAtual) {
   const TRANSICOES = {
     SUBMETIDA:  [{ status_destino: 'EM_ANALISE', label: 'Iniciar Análise', classe: 'btn-workflow-info', justObrig: false }],
     EM_ANALISE: [
-      { status_destino: 'APROVADA',  label: 'Aprovar',  classe: 'btn-workflow-ok',  justObrig: false },
-      { status_destino: 'REPROVADA', label: 'Reprovar', classe: 'btn-workflow-err', justObrig: true  },
+      { status_destino: 'HOMOLOGADA',      label: 'Homologar',      classe: 'btn-workflow-ok',  justObrig: false },
+      { status_destino: 'DESCLASSIFICADA', label: 'Desclassificar', classe: 'btn-workflow-err', justObrig: true  },
     ],
-    APROVADA:  [],
-    REPROVADA: [],
+    HOMOLOGADA:      [],
+    DESCLASSIFICADA: [],
   };
 
-  const terminais = ['APROVADA', 'REPROVADA'];
+  const terminais = ['HOMOLOGADA', 'DESCLASSIFICADA'];
   const acoes = TRANSICOES[statusAtual] || [];
   const ehTerminal = terminais.includes(statusAtual);
 
@@ -178,9 +178,9 @@ function iniciarTransicao(id, statusDestino, justObrig) {
   _justObrig = justObrig;
 
   const labels = {
-    EM_ANALISE: 'Iniciar Análise',
-    APROVADA:   'Aprovar Iniciativa',
-    REPROVADA:  'Reprovar Iniciativa',
+    EM_ANALISE:      'Iniciar Análise',
+    HOMOLOGADA:      'Homologar Iniciativa',
+    DESCLASSIFICADA: 'Desclassificar Iniciativa',
   };
   document.getElementById('modal-just-title').textContent = labels[statusDestino] || statusDestino;
   document.getElementById('just-text').value = '';

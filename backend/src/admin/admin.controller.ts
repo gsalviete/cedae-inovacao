@@ -16,7 +16,8 @@ import {
 import { Request } from 'express';
 import { AdminGuard } from '../auth/admin.guard';
 import { RequestUser } from '../common/interfaces/request-user.interface';
-import { AdminService, CreateAdminUserDto } from './admin.service';
+import { AdminService } from './admin.service';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 
 type AuthRequest = Request & { user: RequestUser };
 

@@ -133,8 +133,8 @@
 
 .historico-dot.badge-status-submetida  { background: #3b82f6; }
 .historico-dot.badge-status-em_analise { background: #f59e0b; }
-.historico-dot.badge-status-aprovada   { background: #22c55e; }
-.historico-dot.badge-status-reprovada  { background: #ef4444; }
+.historico-dot.badge-status-homologada      { background: #22c55e; }
+.historico-dot.badge-status-desclassificada { background: #ef4444; }
 
 .historico-body { flex: 1; }
 

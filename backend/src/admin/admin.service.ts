@@ -1,14 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
 import { normalizeLogin } from '../auth/normalize-login';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 
-export class CreateAdminUserDto {
-  login: string = '';
-  nome?: string;
-  email?: string;
-  role: 'ADM' | 'CONTRIBUTOR' = 'CONTRIBUTOR';
-}
+/** ORA-00001: violação de constraint UNIQUE (aqui, UQ_AU_LOGIN). */
+const ORA_UNIQUE_VIOLATION = 1;
 
 @Injectable()
 export class AdminService {
@@ -61,7 +58,7 @@ export class AdminService {
     const por_estagio: Record<string, number> = {};
     const por_dimensao: Record<string, number> = {};
     const por_status: Record<string, number> = {
-      SUBMETIDA: 0, EM_ANALISE: 0, EM_OBSERVACAO: 0, APROVADA: 0, REPROVADA: 0,
+      SUBMETIDA: 0, EM_ANALISE: 0, EM_OBSERVACAO: 0, HOMOLOGADA: 0, DESCLASSIFICADA: 0,
     };
 
     for (const i of iniciativas) {
@@ -109,17 +106,24 @@ export class AdminService {
   }
 
   async criarAdmin(data: CreateAdminUserDto): Promise<{ id: number }> {
+    const login = normalizeLogin(data.login);
     const conn = await this.db.getConnection();
     try {
       const idVar = { dir: oracledb.BIND_OUT, type: oracledb.NUMBER };
       const insertResult = await conn.execute(
         `INSERT INTO ADMIN_USERS (login, nome, email, role, ativo, criado_em)
          VALUES (:1, :2, :3, :4, 1, SYSTIMESTAMP) RETURNING id INTO :5`,
-        [normalizeLogin(data.login), data.nome ?? null, data.email ?? null, data.role, idVar],
+        [login, data.nome ?? null, data.email ?? null, data.role, idVar],
       );
       await conn.commit();
-      const id: number = (insertResult.outBinds as any[])[0];
+      // RETURNING INTO devolve um array de valores (um por linha afetada).
+      const id: number = (insertResult.outBinds as number[][])[0][0];
       return { id };
+    } catch (e: any) {
+      if (e?.errorNum === ORA_UNIQUE_VIOLATION) {
+        throw new ConflictException(`O usuário '${login}' já está cadastrado.`);
+      }
+      throw e;
     } finally {
       await conn.close();
     }
