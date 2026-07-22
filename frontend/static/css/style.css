@@ -12,11 +12,22 @@
   --blue-50:  #f0f7fd;
 
   --gray-900: #111827;
+  --gray-800: #1f2937;
   --gray-700: #374151;
+  --gray-600: #4b5563;
   --gray-500: #6b7280;
+  --gray-400: #9ca3af;
   --gray-300: #d1d5db;
+  --gray-200: #e5e7eb;
   --gray-100: #f3f4f6;
   --gray-50:  #f9fafb;
+
+  --teal-600: #0f766e;
+  --teal-100: #ccfbf1;
+  --indigo-600: #4f46e5;
+  --indigo-100: #e0e7ff;
+  --amber-600: #b45309;
+  --amber-100: #fef3c7;
 
   --white:    #ffffff;
   --error:    #b91c1c;
@@ -86,62 +97,42 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;          /* permite truncar se necessário */
   flex-shrink: 1;
+  text-decoration: none;
 }
 
 .brand-logo {
-  height: 36px;
+  height: 38px;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-/* Serif display — a mesma família do título do hero. Dá peso institucional à
-   marca e a separa visualmente da UI (que é toda Inter). */
-.brand-name {
-  font-family: var(--font-serif);
-  font-size: 19px;
-  font-weight: 400;
-  line-height: 1.15;
-  color: var(--blue-900);
-  letter-spacing: .01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.brand-sub {
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--gray-500);
-  letter-spacing: .10em;
-  text-transform: uppercase;
-  margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Divisor fino entre a logomarca e o contexto da página. */
+.brand-divider {
+  width: 1px;
+  height: 26px;
+  background: var(--gray-200);
+  flex-shrink: 0;
 }
 
-/* Sublinhado que cresce do centro no hover da marca. */
-.brand-name::after {
-  content: '';
-  display: block;
-  height: 1.5px;
-  width: 0;
-  margin-top: 2px;
-  background: var(--blue-600);
-  transition: width var(--dur-base) var(--ease-out);
+/* Rótulo de contexto da página ("Painel Administrativo" etc.). */
+.brand-context {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--gray-600);
+  letter-spacing: .01em;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.brand:hover .brand-name::after { width: 100%; }
 
 .brand-logo { transition: transform var(--dur-base) var(--ease-spring); }
-.brand:hover .brand-logo { transform: scale(1.06) rotate(-2deg); }
+.brand:hover .brand-logo { transform: scale(1.03); }
 
 .header-actions {
   display: flex;
@@ -522,6 +513,35 @@ body {
 .success-card h2 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
 .success-card p { color: var(--gray-500); margin-bottom: 28px; font-size: 14px; }
 
+/* Protocolo (INOV-AAAA-NNN) exibido ao proponente após a submissão. */
+.success-protocol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin: 0 auto 28px;
+  max-width: 360px;
+  animation: pop-in var(--dur-slow) var(--ease-spring) 200ms both;
+}
+.success-protocol-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--blue-800);
+}
+.success-protocol-code {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  color: var(--blue-900);
+  letter-spacing: .02em;
+}
+.success-protocol-hint { font-size: 12px; color: var(--gray-500); }
+
 /* ── Modal ─────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
@@ -801,10 +821,9 @@ body {
 
 /* ── 320 – 374px (telefones muito pequenos) ────────── */
 @media (max-width: 374px) {
-  /* Header: logo menor, texto pode ser ocultado */
-  .brand-logo { height: 28px; }
-  .brand-name { font-size: 15px; }
-  .brand-sub  { display: none; }
+  /* Header: logo menor, contexto oculto */
+  .brand-logo { height: 26px; }
+  .brand-context, .brand-divider { display: none; }
 
   /* Saudação sai: nesta largura ela competiria com o botão de admin. */
   .user-greeting { display: none; }
@@ -842,8 +861,8 @@ body {
 
 /* ── 375 – 413px (iPhone padrão e similares) ───────── */
 @media (min-width: 375px) and (max-width: 413px) {
-  .brand-logo { height: 32px; }
-  .brand-name { font-size: 16px; }
+  .brand-logo { height: 30px; }
+  .brand-context, .brand-divider { display: none; }
   /* Só o nome, sem o "Boa tarde," — não cabe ao lado do botão. */
   .user-greeting-time { display: none; }
 
@@ -927,8 +946,7 @@ body {
 /* ── 1024px+ (desktop) ─────────────────────────────── */
 @media (min-width: 1024px) {
   .header-inner { padding: 14px 24px; }
-  .brand-logo   { height: 40px; }
-  .brand-name   { font-size: 22px; }
+  .brand-logo   { height: 44px; }
 
   .hero { padding: 80px 24px 72px; }
 

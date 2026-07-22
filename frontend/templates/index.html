@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Esteira de Inovação — CEDAE</title>
   <script>window.__BASE_PATH__ = "{{BASE_PATH}}";</script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C16 2 6 13.5 6 21a10 10 0 0 0 20 0C26 13.5 16 2 16 2Z' fill='%230B4F8A'/%3E%3Cpath d='M12 20a4 4 0 0 0 4 4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap"
     rel="stylesheet">
@@ -17,13 +18,12 @@
   <!-- HEADER -->
   <header class="site-header">
     <div class="header-inner">
-      <div class="brand">
-        <img id="logo-setor" src="{{BASE_PATH}}/static/img/logo-placeholder.png" alt="Logo CEDAE" class="brand-logo" />
-        <div class="brand-text">
-          <span class="brand-name">Assessoria de Inovação</span>
-          <span class="brand-sub">CEDAE · Planejamento</span>
-        </div>
-      </div>
+      <a class="brand" href="{{BASE_PATH}}/" aria-label="Inovação CEDAE — página inicial">
+        <img src="{{BASE_PATH}}/static/img/logo-cedae-horizontal.png"
+             alt="Inovação CEDAE — Conexões que Transformam" class="brand-logo" />
+        <span class="brand-divider"></span>
+        <span class="brand-context">Assessoria de Inovação<br>CEDAE · Planejamento</span>
+      </a>
       <div class="header-actions">
         <span id="user-greeting" class="user-greeting hidden">
           <span class="user-greeting-time" id="user-greeting-time"></span>
@@ -63,6 +63,11 @@
       </div>
       <h2>Iniciativa registrada com sucesso.</h2>
       <p>A Assessoria de Inovação entrará em contato em breve. Obrigado pela contribuição.</p>
+      <div class="success-protocol hidden" id="success-protocol">
+        <span class="success-protocol-label">Protocolo</span>
+        <span class="success-protocol-code" id="success-protocol-code">—</span>
+        <span class="success-protocol-hint">Guarde este código para acompanhar sua iniciativa.</span>
+      </div>
       <button onclick="resetForm()" class="btn-primary">Registrar outra iniciativa</button>
     </div>
 

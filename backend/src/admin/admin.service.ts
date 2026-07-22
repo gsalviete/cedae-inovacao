@@ -34,45 +34,103 @@ export class AdminService {
     }
   }
 
-  async listarIniciativas(): Promise<object[]> {
+  /** Executa um GROUP BY simples e devolve um mapa chave→contagem. */
+  private async agrupar(
+    conn: oracledb.Connection,
+    expr: string,
+    where = '',
+  ): Promise<Record<string, number>> {
     const sql = `
-      SELECT ID, TITULO_INICIATIVA, NOME_COLABORADOR, AREA_PROPONENTE,
-             ESTAGIO_DESENVOLVIMENTO, MACRODIMENSAO,
-             NVL(STATUS, 'SUBMETIDA') AS STATUS, CRIADO_EM
+      SELECT ${expr} AS K, COUNT(*) AS N
       FROM INOVACAO_INICIATIVAS
-      ORDER BY CRIADO_EM DESC
+      ${where}
+      GROUP BY ${expr}
     `;
+    const result = await conn.execute(sql, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
+    const out: Record<string, number> = {};
+    for (const r of result.rows as any[]) {
+      out[(r.K ?? 'Não informado') as string] = Number(r.N);
+    }
+    return out;
+  }
+
+  /**
+   * Indicadores agregados por SQL (ADR-013 §14): dimensões existentes + a nova
+   * dimensão transversal de canal/origem. Os estados seguem §9 (sem EM_OBSERVACAO).
+   */
+  async getKpis(): Promise<object> {
     const conn = await this.db.getConnection();
     try {
-      const result = await conn.execute(sql, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
-      return (result.rows as Record<string, unknown>[]).map((r) => this.normalize(r));
+      const totalRes = await conn.execute(
+        'SELECT COUNT(*) AS N FROM INOVACAO_INICIATIVAS',
+        [],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT },
+      );
+      const total = Number((totalRes.rows as any[])[0].N);
+
+      const por_estagio = await this.agrupar(
+        conn,
+        `NVL(ESTAGIO_DESENVOLVIMENTO, 'Não informado')`,
+      );
+      const por_dimensao = await this.agrupar(
+        conn,
+        `NVL(MACRODIMENSAO, 'Não informado')`,
+      );
+      const por_status_raw = await this.agrupar(conn, `NVL(STATUS, 'SUBMETIDA')`);
+      const por_canal = await this.agrupar(conn, `NVL(CANAL_CODIGO, 'VIA_2')`);
+      const por_proponente = await this.agrupar(conn, `NVL(PROPONENTE_TIPO, 'INTERNO')`);
+      const via1_por_sistema = await this.agrupar(
+        conn,
+        `SISTEMA_ORIGEM`,
+        `WHERE CANAL_CODIGO = 'VIA_1' AND SISTEMA_ORIGEM IS NOT NULL`,
+      );
+      const externa_por_tipo = await this.agrupar(
+        conn,
+        `TIPO_INSTITUICAO`,
+        `WHERE CANAL_CODIGO = 'MAPEAMENTO_EXTERNO' AND TIPO_INSTITUICAO IS NOT NULL`,
+      );
+
+      // Estados reais (§9) — garante presença das chaves esperadas pelo frontend.
+      const por_status: Record<string, number> = {
+        SUBMETIDA: 0, EM_ANALISE: 0, HOMOLOGADA: 0, DESCLASSIFICADA: 0,
+      };
+      for (const [k, v] of Object.entries(por_status_raw)) por_status[k] = v;
+
+      // Taxa de homologação por canal: homologadas / total por via.
+      const homologRes = await conn.execute(
+        `SELECT NVL(CANAL_CODIGO, 'VIA_2') AS CANAL,
+                COUNT(*) AS TOTAL,
+                SUM(CASE WHEN STATUS = 'HOMOLOGADA' THEN 1 ELSE 0 END) AS HOMOLOGADAS
+           FROM INOVACAO_INICIATIVAS
+          GROUP BY NVL(CANAL_CODIGO, 'VIA_2')`,
+        [],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT },
+      );
+      const homologacao_por_canal: Record<string, { total: number; homologadas: number; taxa: number }> = {};
+      for (const r of homologRes.rows as any[]) {
+        const t = Number(r.TOTAL);
+        const h = Number(r.HOMOLOGADAS);
+        homologacao_por_canal[r.CANAL as string] = {
+          total: t,
+          homologadas: h,
+          taxa: t ? Math.round((h / t) * 100) : 0,
+        };
+      }
+
+      return {
+        total_iniciativas: total,
+        por_estagio,
+        por_dimensao,
+        por_status,
+        por_canal,
+        por_proponente,
+        homologacao_por_canal,
+        via1_por_sistema,
+        externa_por_tipo,
+      };
     } finally {
       await conn.close();
     }
-  }
-
-  async getKpis(): Promise<object> {
-    const iniciativas = await this.listarIniciativas() as Record<string, unknown>[];
-    const total = iniciativas.length;
-
-    const por_estagio: Record<string, number> = {};
-    const por_dimensao: Record<string, number> = {};
-    const por_status: Record<string, number> = {
-      SUBMETIDA: 0, EM_ANALISE: 0, EM_OBSERVACAO: 0, HOMOLOGADA: 0, DESCLASSIFICADA: 0,
-    };
-
-    for (const i of iniciativas) {
-      const estagio = (i['estagio_desenvolvimento'] as string | null) ?? 'Não informado';
-      por_estagio[estagio] = (por_estagio[estagio] ?? 0) + 1;
-
-      const dimensao = (i['macrodimensao'] as string | null) ?? 'Não informado';
-      por_dimensao[dimensao] = (por_dimensao[dimensao] ?? 0) + 1;
-
-      const status = (i['status'] as string | null) ?? 'SUBMETIDA';
-      por_status[status] = (por_status[status] ?? 0) + 1;
-    }
-
-    return { total_iniciativas: total, por_estagio, por_dimensao, por_status };
   }
 
   async getAcessos(): Promise<object[]> {

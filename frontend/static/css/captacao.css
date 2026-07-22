@@ -1,0 +1,96 @@
+/* ══════════════════════════════════════════════════════
+   CEDAE Inovação — Captação Multicanal (captacao.css)
+   Registro manual das Vias 1, 3 e Captação Externa.
+   Reaproveita .form-block / .field-group de style.css.
+   ══════════════════════════════════════════════════════ */
+
+.captacao-wrapper {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 16px 80px;
+}
+
+.captacao-intro { margin-bottom: 24px; }
+.captacao-title {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--gray-900);
+  margin: 0 0 8px;
+}
+.captacao-subtitle {
+  font-size: 14px;
+  color: var(--gray-500);
+  line-height: 1.6;
+  max-width: 560px;
+}
+
+/* ── Seletor de via ──────────────────────────────────── */
+.via-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.via-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.via-card:hover {
+  border-color: var(--blue-400);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+.via-card.is-active {
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(21,112,184,.14);
+}
+.via-card-badge { align-self: flex-start; }
+.via-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+.via-card-desc {
+  font-size: 12.5px;
+  color: var(--gray-500);
+  line-height: 1.5;
+}
+
+/* ── Formulário ──────────────────────────────────────── */
+.captacao-form { animation: rise-in var(--dur-slow) var(--ease-out) both; }
+
+.form-block--origem {
+  border-color: var(--blue-100);
+  background: linear-gradient(180deg, var(--blue-50) 0%, var(--white) 60%);
+}
+
+.field-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.field-two-col .field-group { margin-bottom: 24px; }
+
+.captacao-success-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .field-two-col { grid-template-columns: 1fr; gap: 0; }
+  .captacao-title { font-size: 24px; }
+}

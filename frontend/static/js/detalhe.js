@@ -109,8 +109,13 @@ async function loadDetalhe() {
     const data = await res.json();
 
     document.getElementById('d-titulo').textContent = data.titulo_iniciativa || 'Sem título';
-    document.getElementById('d-id').textContent = `#${data.id}`;
-    document.getElementById('d-status-badge').innerHTML = statusBadge(data.status || 'SUBMETIDA');
+    document.getElementById('d-id').textContent = data.codigo_publico
+      ? `${data.codigo_publico} · #${data.id}`
+      : `#${data.id}`;
+    document.getElementById('d-status-badge').innerHTML =
+      `${canalBadge(data.canal_codigo || 'VIA_2', true)} ${statusBadge(data.status || 'SUBMETIDA')}`;
+
+    renderOrigem(data);
 
     setField('d-nome_colaborador', data.nome_colaborador);
     setField('d-canal_contato', data.canal_contato);
@@ -145,6 +150,28 @@ async function loadDetalhe() {
   } catch {
     document.getElementById('d-titulo').textContent = 'Erro ao carregar iniciativa.';
   }
+}
+
+/* ── Bloco de origem (ADR-013) ───────────────────────── */
+function renderOrigem(data) {
+  const canal = data.canal_codigo || 'VIA_2';
+  document.getElementById('d-canal-badge').innerHTML = canalBadge(canal, true);
+
+  const tipo = data.proponente_tipo || 'INTERNO';
+  setField('d-proponente_tipo', tipo === 'EXTERNO' ? 'Externo' : 'Interno');
+
+  const show = (fieldId, valueId, value) => {
+    const has = value !== null && value !== undefined && value !== '';
+    document.getElementById(fieldId)?.classList.toggle('hidden', !has);
+    if (has) setField(valueId, value);
+  };
+
+  show('d-sistema-field', 'd-sistema_origem', data.sistema_origem);
+  show('d-codigo-origem-field', 'd-codigo_origem', data.codigo_origem);
+  show('d-org-field', 'd-organizacao_externa', data.organizacao_externa);
+  show('d-tipo-inst-field', 'd-tipo_instituicao',
+    data.tipo_instituicao ? (TIPO_INSTITUICAO_LABEL[data.tipo_instituicao] || data.tipo_instituicao) : null);
+  show('d-registrado-field', 'd-registrado_por_login', data.registrado_por_login);
 }
 
 /* ── Ações de tramitação ─────────────────────────────── */

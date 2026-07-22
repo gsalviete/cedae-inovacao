@@ -20,6 +20,11 @@ async function checkAdmin() {
     const btnNovo = document.getElementById('btn-novo-admin');
     if (btnNovo && me.role !== 'ADM') btnNovo.classList.add('hidden');
 
+    // Gestão de canais é exclusiva de ADM (RN-11).
+    if (me.role === 'ADM') {
+      document.getElementById('section-canais')?.classList.remove('hidden');
+    }
+
     return true;
   } catch {
     redirectHome();
@@ -87,7 +92,6 @@ async function loadKPIs() {
     const ps = data.por_status || {};
     document.getElementById('sk-submetida').textContent    = ps.SUBMETIDA    ?? 0;
     document.getElementById('sk-em_analise').textContent   = ps.EM_ANALISE   ?? 0;
-    document.getElementById('sk-em_observacao').textContent = ps.EM_OBSERVACAO ?? 0;
     document.getElementById('sk-homologada').textContent      = ps.HOMOLOGADA      ?? 0;
     document.getElementById('sk-desclassificada').textContent = ps.DESCLASSIFICADA ?? 0;
 
@@ -119,31 +123,143 @@ async function loadKPIs() {
     if (!Object.keys(dims).length) {
       barEl.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Nenhuma iniciativa registrada ainda.</p>';
     }
+
+    renderCanalKpis(data);
   } catch { /* silencioso */ }
 }
 
+/* ── KPIs por canal (ADR-013 §14) ────────────────────── */
+const CANAL_ORDER = ['VIA_1', 'VIA_2', 'VIA_3', 'MAPEAMENTO_EXTERNO'];
+
+function renderCanalKpis(data) {
+  const porCanal = data.por_canal || {};
+  const homolog = data.homologacao_por_canal || {};
+
+  CANAL_ORDER.forEach((canal) => {
+    const valEl = document.getElementById(`ck-${canal}`);
+    const rateEl = document.getElementById(`cr-${canal}`);
+    if (valEl) valEl.textContent = porCanal[canal] ?? 0;
+    if (rateEl) {
+      const h = homolog[canal];
+      rateEl.textContent = h && h.total ? `${h.taxa}% homolog.` : '—';
+    }
+  });
+
+  // Interno vs. Externo
+  const prop = data.por_proponente || {};
+  const interno = prop.INTERNO ?? 0;
+  const externo = prop.EXTERNO ?? 0;
+  const totalProp = interno + externo || 1;
+  setText('split-interno', interno);
+  setText('split-externo', externo);
+  setWidth('split-interno-fill', Math.round((interno / totalProp) * 100));
+  setWidth('split-externo-fill', Math.round((externo / totalProp) * 100));
+
+  // Recortes: Via 1 por sistema de origem · Externa por tipo de instituição
+  const breakdown = document.getElementById('canal-breakdown');
+  if (breakdown) {
+    const blocks = [];
+    const sist = data.via1_por_sistema || {};
+    if (Object.keys(sist).length) {
+      blocks.push(breakdownBlock('Via 1 · por sistema de origem',
+        Object.entries(sist).map(([k, v]) => [k, v])));
+    }
+    const tipos = data.externa_por_tipo || {};
+    if (Object.keys(tipos).length) {
+      blocks.push(breakdownBlock('Captação Externa · por instituição',
+        Object.entries(tipos).map(([k, v]) => [TIPO_INSTITUICAO_LABEL[k] || k, v])));
+    }
+    breakdown.innerHTML = blocks.join('');
+  }
+}
+
+function breakdownBlock(titulo, pares) {
+  const chips = pares
+    .map(([label, count]) => `<span class="mini-chip">${label}<b>${count}</b></span>`)
+    .join('');
+  return `<div class="canal-breakdown-block"><span class="canal-breakdown-title">${titulo}</span><div class="mini-chip-row">${chips}</div></div>`;
+}
+
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function setWidth(id, pct) {
+  const el = document.getElementById(id);
+  if (el) requestAnimationFrame(() => { el.style.width = `${pct}%`; });
+}
+
 /* ── Iniciativas ─────────────────────────────────────── */
+let _iniciativas = [];
+let _filtroCanal = '';
+
 async function loadIniciativas() {
   try {
     const res = await fetch(`${API}/api/iniciativas/`);
     if (!res.ok) return;
-    const data = await res.json();
-    const tbody = document.getElementById('tbody-iniciativas');
+    _iniciativas = await res.json();
+    renderIniciativas();
+  } catch { /* silencioso */ }
+}
 
-    if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="table-loading">Nenhuma iniciativa registrada ainda.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.map(i => `
+function setFiltroCanal(btn) {
+  _filtroCanal = btn.dataset.canal || '';
+  document.querySelectorAll('#filtro-canais .filter-chip')
+    .forEach(c => c.classList.toggle('is-active', c === btn));
+  renderIniciativas();
+}
+
+function aplicarFiltros() { renderIniciativas(); }
+
+function renderIniciativas() {
+  const tbody = document.getElementById('tbody-iniciativas');
+  const countEl = document.getElementById('filtro-count');
+  const termo = (document.getElementById('filtro-busca')?.value || '').trim().toLowerCase();
+
+  let lista = _iniciativas;
+  if (_filtroCanal) lista = lista.filter(i => (i.canal_codigo || 'VIA_2') === _filtroCanal);
+  if (termo) {
+    lista = lista.filter(i =>
+      (i.titulo_iniciativa || '').toLowerCase().includes(termo) ||
+      (i.nome_colaborador || '').toLowerCase().includes(termo) ||
+      (i.area_proponente || '').toLowerCase().includes(termo) ||
+      (i.codigo_publico || '').toLowerCase().includes(termo) ||
+      (i.organizacao_externa || '').toLowerCase().includes(termo));
+  }
+
+  if (countEl) {
+    countEl.textContent = _iniciativas.length
+      ? `${lista.length} de ${_iniciativas.length} iniciativa(s)`
+      : '';
+  }
+
+  if (!_iniciativas.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="table-loading">Nenhuma iniciativa registrada ainda.</td></tr>';
+    return;
+  }
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="table-loading">Nenhuma iniciativa corresponde ao filtro.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map(i => {
+    const externoTag = (i.proponente_tipo === 'EXTERNO')
+      ? '<span class="badge badge-externo-tag" title="Proponente externo">Externo</span>' : '';
+    return `
       <tr class="row-clickable fade-in" onclick="abrirDetalhe(${i.id})" title="Ver detalhes">
-        <td>${i.titulo_iniciativa || '—'}</td>
-        <td>${i.nome_colaborador || '—'}</td>
-        <td>${i.area_proponente || '—'}</td>
+        <td class="cell-protocol">${i.codigo_publico || '—'}</td>
+        <td>${escapeHtmlAdmin(i.titulo_iniciativa) || '—'}</td>
+        <td>${canalBadge(i.canal_codigo || 'VIA_2')} ${externoTag}</td>
+        <td>${escapeHtmlAdmin(i.nome_colaborador) || '—'}</td>
+        <td>${escapeHtmlAdmin(i.area_proponente) || '—'}</td>
         <td>${stageBadge(i.estagio_desenvolvimento)}</td>
         <td>${statusBadge(i.status)}</td>
         <td>${fmtDate(i.criado_em)}</td>
-      </tr>`).join('');
-  } catch { /* silencioso */ }
+      </tr>`;
+  }).join('');
+}
+
+function escapeHtmlAdmin(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function abrirDetalhe(id) {
@@ -372,10 +488,54 @@ function toggleLogs() {
   }
 }
 
+/* ── Gestão de Canais (ADM — RN-11) ──────────────────── */
+async function loadCanais() {
+  try {
+    const res = await fetch(`${API}/api/admin/canais`);
+    if (!res.ok) return;
+    const canais = await res.json();
+    const tbody = document.getElementById('tbody-canais');
+    if (!canais.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="table-loading">Nenhum canal cadastrado.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = canais.map(c => {
+      const situacao = c.ativo
+        ? '<span class="badge badge-status-homologada">Ativo</span>'
+        : '<span class="badge badge-status-desclassificada">Inativo</span>';
+      // VIA_2 (formulário público) não pode ser desativada — é a via de autosserviço.
+      const bloqueado = c.codigo === 'VIA_2';
+      const acao = bloqueado
+        ? '<button class="btn-action-sm" disabled title="A Via 2 (formulário público) não pode ser desativada.">—</button>'
+        : `<button class="${c.ativo ? 'btn-danger-sm' : 'btn-action-sm'}"
+                   onclick="toggleCanal('${c.codigo}', ${!c.ativo})">${c.ativo ? 'Desativar' : 'Ativar'}</button>`;
+      return `
+        <tr class="fade-in">
+          <td>${canalBadge(c.codigo)}</td>
+          <td>${escapeHtmlAdmin(c.nome)}</td>
+          <td>${situacao}</td>
+          <td>${acao}</td>
+        </tr>`;
+    }).join('');
+  } catch { /* silencioso */ }
+}
+
+async function toggleCanal(codigo, ativo) {
+  try {
+    const res = await fetch(`${API}/api/admin/canais/${codigo}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ativo }),
+    });
+    if (res.ok) loadCanais();
+  } catch { /* silencioso */ }
+}
+
 /* ── Init ────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
   if (!(await checkAdmin())) return;
   loadKPIs();
   loadIniciativas();
   loadUsers();
+  if (_currentUser?.role === 'ADM') loadCanais();
 });

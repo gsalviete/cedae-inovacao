@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registrar Iniciativa — CEDAE Inovação</title>
+  <script>window.__BASE_PATH__ = "{{BASE_PATH}}";</script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C16 2 6 13.5 6 21a10 10 0 0 0 20 0C26 13.5 16 2 16 2Z' fill='%230B4F8A'/%3E%3Cpath d='M12 20a4 4 0 0 0 4 4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/style.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/admin.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/captacao.css">
+</head>
+<body class="admin-body">
+
+  <header class="site-header">
+    <div class="header-inner header-inner--wide">
+      <a class="brand" href="{{BASE_PATH}}/admin-panel" aria-label="Painel Administrativo">
+        <img src="{{BASE_PATH}}/static/img/logo-cedae-horizontal.png"
+             alt="Inovação CEDAE — Conexões que Transformam" class="brand-logo" />
+        <span class="brand-divider"></span>
+        <span class="brand-context">Captação de Iniciativas</span>
+      </a>
+      <div class="header-actions">
+        <span id="user-greeting" class="user-greeting hidden">
+          <span class="user-greeting-time" id="user-greeting-time"></span>
+          <span class="user-greeting-name" id="user-greeting-name"></span>
+        </span>
+        <button class="btn-login" onclick="goTo('/admin-panel')">← Voltar ao Painel</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="captacao-wrapper">
+
+    <div id="admin-guard" class="guard-screen hidden">
+      <p>Acesso restrito. Redirecionando...</p>
+    </div>
+
+    <div id="captacao-content">
+
+      <div class="captacao-intro">
+        <h1 class="captacao-title">Registrar Iniciativa</h1>
+        <p class="captacao-subtitle">
+          Cadastre manualmente uma iniciativa identificada fora do formulário público.
+          Selecione a via de captação para começar.
+        </p>
+      </div>
+
+      <!-- Seletor de via -->
+      <div class="via-selector" id="via-selector">
+        <button type="button" class="via-card" data-canal="VIA_1" onclick="selecionarVia('VIA_1')">
+          <span class="via-card-badge badge badge-canal-via_1">SGE/SGP</span>
+          <span class="via-card-title">Sistemas Corporativos</span>
+          <span class="via-card-desc">Iniciativa identificada manualmente no SGE ou SGP.</span>
+        </button>
+        <button type="button" class="via-card" data-canal="VIA_3" onclick="selecionarVia('VIA_3')">
+          <span class="via-card-badge badge badge-canal-via_3">Reunião</span>
+          <span class="via-card-title">Reuniões com Áreas</span>
+          <span class="via-card-desc">Iniciativa levantada em reunião com uma área.</span>
+        </button>
+        <button type="button" class="via-card" data-canal="MAPEAMENTO_EXTERNO" onclick="selecionarVia('MAPEAMENTO_EXTERNO')">
+          <span class="via-card-badge badge badge-canal-externo">Externa</span>
+          <span class="via-card-title">Captação Externa</span>
+          <span class="via-card-desc">Iniciativa de ICT, universidade, empresa pública ou parceiro.</span>
+        </button>
+      </div>
+
+      <!-- Sucesso -->
+      <div id="captacao-success" class="success-card hidden">
+        <div class="success-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="24" fill="#0B4F8A" opacity=".12" />
+            <path d="M14 24l7 7 13-14" stroke="#0B4F8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <h2>Iniciativa registrada com sucesso.</h2>
+        <p>A iniciativa já está na base consolidada, com status Submetida e pronta para triagem.</p>
+        <div class="success-protocol">
+          <span class="success-protocol-label">Protocolo</span>
+          <span class="success-protocol-code" id="cap-protocol-code">—</span>
+        </div>
+        <div class="captacao-success-actions">
+          <button class="btn-secondary" onclick="novoRegistro()">Registrar outra</button>
+          <button class="btn-primary" id="cap-ver-detalhe">Ver iniciativa</button>
+        </div>
+      </div>
+
+      <!-- Formulário -->
+      <form id="captacao-form" class="captacao-form hidden" novalidate>
+
+        <!-- Procedência (swappable) -->
+        <div class="form-block form-block--origem">
+          <div class="block-header">
+            <span class="block-tag" id="origem-tag">Origem</span>
+            <h2 class="block-title" id="origem-title">Procedência</h2>
+          </div>
+
+          <!-- VIA 1 -->
+          <div class="origem-fields hidden" data-origem="VIA_1">
+            <div class="field-group">
+              <label class="field-label">Sistema de Origem <span class="required">*</span></label>
+              <p class="field-hint">Sistema corporativo em que a iniciativa foi identificada.</p>
+              <div class="radio-group radio-group--horizontal">
+                <label class="radio-option">
+                  <input type="radio" name="sistema_origem" value="SGE" />
+                  <span class="radio-box"></span>
+                  <div><strong>SGE</strong><p>Sistema de Gestão Empresarial.</p></div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="sistema_origem" value="SGP" />
+                  <span class="radio-box"></span>
+                  <div><strong>SGP</strong><p>Sistema de Gestão de Projetos.</p></div>
+                </label>
+              </div>
+              <span class="field-error" id="err-sistema"></span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="codigo_origem">Código do Projeto na Origem</label>
+              <p class="field-hint">Opcional — identificador do projeto no SGE/SGP, apenas para rastreabilidade.</p>
+              <input type="text" id="codigo_origem" class="field-input" placeholder="Ex.: PRJ-2026-0142" />
+            </div>
+          </div>
+
+          <!-- VIA 3 -->
+          <div class="origem-fields hidden" data-origem="VIA_3">
+            <div class="field-group">
+              <label class="field-label" for="data_reuniao">Data da Reunião</label>
+              <p class="field-hint">Quando a iniciativa foi levantada.</p>
+              <input type="date" id="data_reuniao" class="field-input" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="area_reuniao">Área Participante</label>
+              <p class="field-hint">Área/gerência que participou da reunião.</p>
+              <input type="text" id="area_reuniao" class="field-input" placeholder="Ex.: Superintendência de Operações" />
+            </div>
+          </div>
+
+          <!-- EXTERNA -->
+          <div class="origem-fields hidden" data-origem="MAPEAMENTO_EXTERNO">
+            <div class="field-group">
+              <label class="field-label" for="organizacao_externa">Instituição de Origem <span class="required">*</span></label>
+              <p class="field-hint">Nome da ICT, universidade, empresa pública ou parceiro.</p>
+              <input type="text" id="organizacao_externa" class="field-input" placeholder="Ex.: COPPE/UFRJ" />
+              <span class="field-error" id="err-organizacao"></span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="tipo_instituicao">Tipo de Instituição <span class="required">*</span></label>
+              <select id="tipo_instituicao" class="field-input">
+                <option value="">Selecione…</option>
+                <option value="ICT">ICT — Instituição de Ciência e Tecnologia</option>
+                <option value="UNIVERSIDADE">Universidade</option>
+                <option value="EMPRESA_PUBLICA">Empresa Pública</option>
+                <option value="PARCERIA">Parceria</option>
+                <option value="OUTRO">Outro</option>
+              </select>
+              <span class="field-error" id="err-tipo"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Identificação do proponente -->
+        <div class="form-block">
+          <div class="block-header">
+            <span class="block-tag">Bloco 0</span>
+            <h2 class="block-title" id="bloco-proponente-title">Identificação do Proponente</h2>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="nome_colaborador" id="lbl-nome">Nome do Proponente <span class="required">*</span></label>
+            <input type="text" id="nome_colaborador" class="field-input" placeholder="Nome completo" />
+            <span class="field-error" id="err-nome"></span>
+          </div>
+          <div class="field-two-col">
+            <div class="field-group">
+              <label class="field-label" for="canal_contato">Canal de Contato <span class="required">*</span></label>
+              <input type="text" id="canal_contato" class="field-input" placeholder="Ramal, telefone ou e-mail" />
+              <span class="field-error" id="err-contato"></span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="email_proponente">E-mail</label>
+              <input type="email" id="email_proponente" class="field-input" placeholder="nome@dominio.com" />
+              <span class="field-error" id="err-email"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dados da iniciativa -->
+        <div class="form-block">
+          <div class="block-header">
+            <span class="block-tag">Bloco I</span>
+            <h2 class="block-title">Dados da Iniciativa</h2>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="titulo_iniciativa">Título da Iniciativa <span class="required">*</span></label>
+            <input type="text" id="titulo_iniciativa" class="field-input" placeholder="Nome direto do projeto ou ideia" />
+            <span class="field-error" id="err-titulo"></span>
+          </div>
+          <div class="field-two-col">
+            <div class="field-group">
+              <label class="field-label" for="area_proponente">Área Proponente <span class="required">*</span></label>
+              <input type="text" id="area_proponente" class="field-input" placeholder="Gerência / Diretoria" />
+              <span class="field-error" id="err-area"></span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="local_aplicacao">Local de Aplicação <span class="required">*</span></label>
+              <input type="text" id="local_aplicacao" class="field-input" placeholder="Unidade operacional / administrativa" />
+              <span class="field-error" id="err-local"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Escopo -->
+        <div class="form-block">
+          <div class="block-header">
+            <span class="block-tag">Bloco II</span>
+            <h2 class="block-title">Escopo</h2>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="problema_pratico">Problema prático ou gargalo <span class="required">*</span></label>
+            <textarea id="problema_pratico" class="field-textarea" rows="3" placeholder="Qual dor motivou a iniciativa?"></textarea>
+            <span class="field-error" id="err-problema"></span>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="solucao_proposta">Solução proposta</label>
+            <textarea id="solucao_proposta" class="field-textarea" rows="3" placeholder="Opcional — como a proposta resolve o problema."></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="risco_mitigado">Risco mitigado</label>
+            <textarea id="risco_mitigado" class="field-textarea" rows="2" placeholder="Opcional — risco corporativo, regulatório ou operacional."></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="estagio_desenvolvimento">Estágio de desenvolvimento</label>
+            <select id="estagio_desenvolvimento" class="field-input">
+              <option value="">Não informado</option>
+              <option value="ideacao">Ideação</option>
+              <option value="piloto">Teste / Piloto (MVP)</option>
+              <option value="escala">Escala / Operação Ativa</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Classificação -->
+        <div class="form-block">
+          <div class="block-header">
+            <span class="block-tag">Bloco III</span>
+            <h2 class="block-title">Classificação &amp; Orçamento</h2>
+          </div>
+          <div class="field-two-col">
+            <div class="field-group">
+              <label class="field-label" for="macrodimensao">Macrodimensão</label>
+              <select id="macrodimensao" class="field-input" onchange="toggleMacroObs()">
+                <option value="">Não informado</option>
+                <option value="tecnologica">Inovação Tecnológica</option>
+                <option value="operacional">Inovação Operacional</option>
+                <option value="gerencial">Inovação Gerencial / Administrativa</option>
+                <option value="social_ambiental">Inovação Social e Ambiental</option>
+                <option value="outros">Outros / Multidimensionais</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="perfil_impacto">Perfil de impacto</label>
+              <select id="perfil_impacto" class="field-input">
+                <option value="">Não informado</option>
+                <option value="incremental">Incremental</option>
+                <option value="radical">Radical / Disruptivo</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group field-reveal hidden" id="macro-obs-wrapper">
+            <label class="field-label" for="macrodimensao_observacao">Descrição da macrodimensão</label>
+            <textarea id="macrodimensao_observacao" class="field-textarea" rows="2" placeholder="Explique em que dimensões a iniciativa se enquadra."></textarea>
+          </div>
+          <div class="field-two-col">
+            <div class="field-group">
+              <label class="field-label" for="aporte_financeiro">Aporte financeiro?</label>
+              <select id="aporte_financeiro" class="field-input" onchange="toggleValorAporte()">
+                <option value="">Não informado</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+              </select>
+            </div>
+            <div class="field-group hidden" id="valor-aporte-wrapper">
+              <label class="field-label" for="valor_aporte">Valor estimado</label>
+              <input type="text" id="valor_aporte" class="field-input" inputmode="numeric" data-currency placeholder="R$ 0,00" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="retorno_economico">Retorno econômico estimado (R$/ano)</label>
+            <input type="text" id="retorno_economico" class="field-input" inputmode="numeric" placeholder="Ex.: R$ 120.000,00" />
+          </div>
+        </div>
+
+        <!-- Complementos -->
+        <div class="form-block">
+          <div class="block-header">
+            <span class="block-tag">Bloco IV</span>
+            <h2 class="block-title">Complementos</h2>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="comentarios_adicionais">Comentários adicionais</label>
+            <textarea id="comentarios_adicionais" class="field-textarea" rows="3" placeholder="Observações livres, links de referência, histórico da iniciativa."></textarea>
+          </div>
+        </div>
+
+        <div id="captacao-error" class="cu-result cu-result-err hidden"></div>
+
+        <div class="form-footer">
+          <p class="form-footer-note">Campos com <span class="required">*</span> são obrigatórios. O registro fica atribuído ao seu login.</p>
+          <button type="submit" class="btn-primary btn-submit" id="btn-cap-submit">
+            <span id="btn-cap-text">Registrar Iniciativa</span>
+            <span id="btn-cap-loader" class="hidden">Registrando...</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro</p>
+    <p>Assessoria de Inovação para Planejamento</p>
+  </footer>
+
+  <script src="{{BASE_PATH}}/static/js/api.js"></script>
+  <script src="{{BASE_PATH}}/static/js/captacao.js"></script>
+</body>
+</html>

@@ -83,6 +83,7 @@ async function bootstrap(): Promise<void> {
     '/login': 'login.html',
     '/admin-panel': 'admin.html',
     '/admin-detalhe': 'admin-detalhe.html',
+    '/admin-captacao': 'admin-captacao.html',
   };
 
   for (const [route, file] of Object.entries(pages)) {

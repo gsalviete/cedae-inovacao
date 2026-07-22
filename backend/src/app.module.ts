@@ -4,6 +4,7 @@ import { DatabaseModule } from './database/database.module';
 import { IniciativasModule } from './iniciativas/iniciativas.module';
 import { AdminModule } from './admin/admin.module';
 import { WorkflowModule } from './workflow/workflow.module';
+import { CanaisModule } from './canais/canais.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { WorkflowModule } from './workflow/workflow.module';
     WorkflowModule,
     IniciativasModule,
     AdminModule,
+    CanaisModule,
   ],
 })
 export class AppModule {}

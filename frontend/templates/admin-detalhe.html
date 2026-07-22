@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Detalhes da Iniciativa — CEDAE Inovação</title>
   <script>window.__BASE_PATH__ = "{{BASE_PATH}}";</script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C16 2 6 13.5 6 21a10 10 0 0 0 20 0C26 13.5 16 2 16 2Z' fill='%230B4F8A'/%3E%3Cpath d='M12 20a4 4 0 0 0 4 4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{BASE_PATH}}/static/css/style.css">
@@ -15,13 +16,12 @@
 
   <header class="site-header">
     <div class="header-inner">
-      <div class="brand">
-        <img src="{{BASE_PATH}}/static/img/logo-placeholder.png" alt="Logo CEDAE" class="brand-logo" />
-        <div class="brand-text">
-          <span class="brand-name">Assessoria de Inovação</span>
-          <span class="brand-sub">Detalhes da Iniciativa</span>
-        </div>
-      </div>
+      <a class="brand" href="{{BASE_PATH}}/admin-panel" aria-label="Painel Administrativo">
+        <img src="{{BASE_PATH}}/static/img/logo-cedae-horizontal.png"
+             alt="Inovação CEDAE — Conexões que Transformam" class="brand-logo" />
+        <span class="brand-divider"></span>
+        <span class="brand-context">Detalhes da Iniciativa</span>
+      </a>
       <div class="header-actions">
         <span id="user-greeting" class="user-greeting hidden">
           <span class="user-greeting-time" id="user-greeting-time"></span>
@@ -47,7 +47,42 @@
             <h1 class="detalhe-titulo" id="d-titulo">Carregando...</h1>
             <p class="detalhe-id" id="d-id"></p>
           </div>
-          <div id="d-status-badge"></div>
+          <div class="detalhe-header-badges" id="d-status-badge"></div>
+        </div>
+      </section>
+
+      <!-- Origem (ADR-013) -->
+      <section class="admin-section">
+        <h2 class="admin-section-title">Origem</h2>
+        <div class="detalhe-grid">
+          <div class="detalhe-field">
+            <span class="detalhe-label">Via de Captação</span>
+            <span class="detalhe-value" id="d-canal-badge">—</span>
+          </div>
+          <div class="detalhe-field">
+            <span class="detalhe-label">Tipo de Proponente</span>
+            <span class="detalhe-value" id="d-proponente_tipo">—</span>
+          </div>
+          <div class="detalhe-field hidden" id="d-sistema-field">
+            <span class="detalhe-label">Sistema de Origem</span>
+            <span class="detalhe-value" id="d-sistema_origem">—</span>
+          </div>
+          <div class="detalhe-field hidden" id="d-codigo-origem-field">
+            <span class="detalhe-label">Código na Origem</span>
+            <span class="detalhe-value" id="d-codigo_origem">—</span>
+          </div>
+          <div class="detalhe-field hidden" id="d-org-field">
+            <span class="detalhe-label">Instituição de Origem</span>
+            <span class="detalhe-value" id="d-organizacao_externa">—</span>
+          </div>
+          <div class="detalhe-field hidden" id="d-tipo-inst-field">
+            <span class="detalhe-label">Tipo de Instituição</span>
+            <span class="detalhe-value" id="d-tipo_instituicao">—</span>
+          </div>
+          <div class="detalhe-field hidden" id="d-registrado-field">
+            <span class="detalhe-label">Registrado Por</span>
+            <span class="detalhe-value" id="d-registrado_por_login">—</span>
+          </div>
         </div>
       </section>
 

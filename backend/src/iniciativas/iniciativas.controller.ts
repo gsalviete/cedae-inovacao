@@ -37,11 +37,15 @@ export class IniciativasController {
   @Post()
   async submeter(@Body() dto: CreateIniciativaDto, @Req() req: Request): Promise<object> {
     try {
-      const id = await this.iniciativasService.criar(dto);
+      const { id, codigo_publico } = await this.iniciativasService.criar(dto);
       this.authService
-        .registrarLog(dto.nome_colaborador, 'submit_formulario', `Iniciativa #${id} - ${dto.titulo_iniciativa}`)
+        .registrarLog(
+          dto.nome_colaborador,
+          'submit_formulario',
+          `Iniciativa ${codigo_publico} (#${id}) - ${dto.titulo_iniciativa}`,
+        )
         .catch(() => {});
-      return { message: 'Iniciativa registrada com sucesso.', id };
+      return { message: 'Iniciativa registrada com sucesso.', id, codigo_publico };
     } catch (err: any) {
       throw new HttpException(err.message || 'Erro interno', HttpStatus.INTERNAL_SERVER_ERROR);
     }

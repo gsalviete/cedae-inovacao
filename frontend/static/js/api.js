@@ -50,3 +50,31 @@ function renderGreeting(me) {
   nameEl.textContent = `${primeiroNome(me)}!`;
   wrapper.classList.remove('hidden');
 }
+
+/* ── Origem / Canais (ADR-013) ────────────────────────────
+   Rótulos e badges estáveis por canal, compartilhados por todas as telas.
+   Nunca expor o código cru (MAPEAMENTO_EXTERNO) na UI — sempre o rótulo. */
+const CANAL_INFO = {
+  VIA_1:              { curto: 'SGE/SGP',    nome: 'Registro de Sistemas Corporativos (SGE/SGP)', cls: 'badge-canal-via_1' },
+  VIA_2:              { curto: 'Formulário', nome: 'Formulário Interno de Submissão',             cls: 'badge-canal-via_2' },
+  VIA_3:              { curto: 'Reunião',    nome: 'Registro de Reuniões com Áreas',              cls: 'badge-canal-via_3' },
+  MAPEAMENTO_EXTERNO: { curto: 'Externa',   nome: 'Captação Externa',                            cls: 'badge-canal-externo' },
+};
+
+function canalInfo(codigo) {
+  return CANAL_INFO[codigo] || { curto: codigo || '—', nome: codigo || '—', cls: 'badge-default' };
+}
+
+/** Badge de origem para listagens. `full=true` usa o rótulo completo. */
+function canalBadge(codigo, full = false) {
+  const info = canalInfo(codigo);
+  return `<span class="badge ${info.cls}" title="${info.nome}">${full ? info.nome : info.curto}</span>`;
+}
+
+const TIPO_INSTITUICAO_LABEL = {
+  ICT:             'ICT',
+  UNIVERSIDADE:    'Universidade',
+  EMPRESA_PUBLICA: 'Empresa Pública',
+  PARCERIA:        'Parceria',
+  OUTRO:           'Outro',
+};

@@ -276,6 +276,16 @@ async function submitForm(e) {
       return;
     }
 
+    // Exibe o protocolo gerado (INOV-AAAA-NNN) na tela de sucesso.
+    let codigo = null;
+    try { codigo = (await res.json())?.codigo_publico ?? null; } catch { /* sem corpo */ }
+    const protoWrap = document.getElementById('success-protocol');
+    const protoCode = document.getElementById('success-protocol-code');
+    if (protoWrap && protoCode && codigo) {
+      protoCode.textContent = codigo;
+      protoWrap.classList.remove('hidden');
+    }
+
     document.getElementById('inovacao-form').classList.add('hidden');
     document.getElementById('form-success').classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -292,6 +302,7 @@ function resetForm() {
   document.getElementById('inovacao-form').reset();
   document.getElementById('inovacao-form').classList.remove('hidden');
   document.getElementById('form-success').classList.add('hidden');
+  document.getElementById('success-protocol')?.classList.add('hidden');
   document.getElementById('valor-aporte-wrapper').classList.add('hidden');
   document.getElementById('diagnostico-observacao-wrapper').classList.add('hidden');
   document.getElementById('macrodimensao-observacao-wrapper').classList.add('hidden');

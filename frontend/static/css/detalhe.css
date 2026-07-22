@@ -23,6 +23,16 @@
   font-size: 13px;
   color: var(--gray-500);
   margin: 0;
+  font-family: var(--font-serif);
+  letter-spacing: .01em;
+}
+
+.detalhe-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* ── Grid de campos ────────────────────────────────── */

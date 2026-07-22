@@ -21,6 +21,7 @@ declare module 'oracledb' {
   interface ExecuteResult {
     rows?: unknown[];
     outBinds?: unknown[];
+    rowsAffected?: number;
   }
 
   interface Connection {
