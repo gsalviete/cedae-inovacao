@@ -76,20 +76,116 @@ async function bootstrap(): Promise<void> {
   // paths fora desse prefixo.
   app.useStaticAssets(staticDir, { prefix: `${basePath}/static` });
 
-  // Frontend — cada página é renderizada uma vez no boot com o BASE_PATH
-  // já embutido nos hrefs/srcs e em window.__BASE_PATH__.
-  const pages: Record<string, string> = {
+  const templatesPath = join(frontendPath, 'templates');
+
+  // Páginas públicas — renderizadas uma vez no boot com o BASE_PATH embutido.
+  const simplePages: Record<string, string> = {
     '/': 'index.html',
     '/login': 'login.html',
-    '/admin-panel': 'admin.html',
-    '/admin-detalhe': 'admin-detalhe.html',
-    '/admin-captacao': 'admin-captacao.html',
   };
-
-  for (const [route, file] of Object.entries(pages)) {
-    const rendered = renderTemplate(join(frontendPath, 'templates', file), basePath);
+  for (const [route, file] of Object.entries(simplePages)) {
+    const rendered = renderTemplate(join(templatesPath, file), basePath);
     httpAdapter.get(`${basePath}${route}`, (_, res) => {
       res.type('html').send(rendered);
+    });
+  }
+
+  // ── Painel administrativo — cada módulo é uma página própria ──────────
+  // O shell (sidebar + topbar) fica num layout único; cada rota injeta apenas
+  // seu conteúdo e metadados (título, subtítulo, breadcrumb, script). Assim a
+  // navegação deixa de ser por âncoras e passa a ter uma URL por módulo.
+  const adminLayout = readFileSync(join(templatesPath, 'admin', '_layout.html'), 'utf-8');
+
+  interface AdminMeta {
+    active: string;
+    title: string;
+    subtitle?: string;
+    breadcrumb?: string;
+    script: string;
+  }
+
+  function renderAdmin(contentFile: string, meta: AdminMeta): string {
+    const content = readFileSync(join(templatesPath, 'admin', contentFile), 'utf-8');
+    const composed = adminLayout
+      .split('{{CONTENT}}').join(content)
+      .split('{{NAV_ACTIVE}}').join(meta.active)
+      .split('{{PAGE_TITLE}}').join(meta.title)
+      .split('{{PAGE_SUBTITLE}}').join(meta.subtitle ?? '')
+      .split('{{BREADCRUMB}}').join(meta.breadcrumb ?? '')
+      .split('{{PAGE_SCRIPT}}').join(meta.script);
+    return composed.split('{{BASE_PATH}}').join(basePath);
+  }
+
+  const crumb = (...parts: string[]): string =>
+    parts.join(' <span class="crumb-sep">/</span> ');
+  const crumbLink = (label: string, route: string): string =>
+    `<a href="{{BASE_PATH}}${route}">${label}</a>`;
+
+  const adminPages: Array<{ route: string; content: string; meta: AdminMeta }> = [
+    {
+      route: '/admin/dashboard', content: 'dashboard.html',
+      meta: { active: 'dashboard', title: 'Dashboard',
+        subtitle: 'Acompanhe a esteira da inovação, da ideação à escala, em tempo real.',
+        breadcrumb: crumb('Painel'), script: 'page-dashboard.js' },
+    },
+    {
+      route: '/admin/iniciativas', content: 'iniciativas.html',
+      meta: { active: 'iniciativas', title: 'Iniciativas',
+        subtitle: 'Toda a base consolidada — busque, filtre e abra os detalhes.',
+        breadcrumb: crumb('Painel', 'Iniciativas'), script: 'page-iniciativas.js' },
+    },
+    {
+      route: '/admin/iniciativa', content: 'iniciativa.html',
+      meta: { active: 'iniciativas', title: 'Detalhes da Iniciativa',
+        subtitle: '',
+        breadcrumb: crumb(crumbLink('Painel', '/admin/dashboard'), crumbLink('Iniciativas', '/admin/iniciativas'), 'Detalhe'),
+        script: 'detalhe.js' },
+    },
+    {
+      route: '/admin/usuarios', content: 'usuarios.html',
+      meta: { active: 'usuarios', title: 'Usuários administrativos',
+        subtitle: 'Usuários do Active Directory (LDAP) habilitados no painel.',
+        breadcrumb: crumb('Painel', 'Usuários'), script: 'page-usuarios.js' },
+    },
+    {
+      route: '/admin/canais', content: 'canais.html',
+      meta: { active: 'canais', title: 'Canais de captação',
+        subtitle: 'Ative ou desative as vias de entrada de iniciativas.',
+        breadcrumb: crumb('Painel', 'Canais'), script: 'page-canais.js' },
+    },
+    {
+      route: '/admin/logs', content: 'logs.html',
+      meta: { active: 'logs', title: 'Log de sistema',
+        subtitle: 'Auditoria das ações administrativas.',
+        breadcrumb: crumb('Painel', 'Logs'), script: 'page-logs.js' },
+    },
+    {
+      route: '/admin/registrar', content: 'registrar.html',
+      meta: { active: 'registrar', title: 'Registrar iniciativa',
+        subtitle: 'Cadastre manualmente uma iniciativa captada fora do formulário público.',
+        breadcrumb: crumb('Painel', 'Registrar'), script: 'captacao.js' },
+    },
+  ];
+
+  for (const page of adminPages) {
+    const rendered = renderAdmin(page.content, page.meta);
+    httpAdapter.get(`${basePath}${page.route}`, (_, res) => {
+      res.type('html').send(rendered);
+    });
+  }
+
+  // Compatibilidade com as rotas anteriores (preserva a query string).
+  const legacyRedirects: Record<string, string> = {
+    '/admin': '/admin/dashboard',
+    '/admin-panel': '/admin/dashboard',
+    '/admin-captacao': '/admin/registrar',
+    '/admin-detalhe': '/admin/iniciativa',
+  };
+  for (const [from, to] of Object.entries(legacyRedirects)) {
+    httpAdapter.get(`${basePath}${from}`, (req: any, res: any) => {
+      const q = req.url.indexOf('?');
+      const qs = q >= 0 ? req.url.slice(q) : '';
+      res.redirect(`${basePath}${to}${qs}`);
     });
   }
 

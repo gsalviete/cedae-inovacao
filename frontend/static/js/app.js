@@ -306,6 +306,8 @@ function resetForm() {
   document.getElementById('valor-aporte-wrapper').classList.add('hidden');
   document.getElementById('diagnostico-observacao-wrapper').classList.add('hidden');
   document.getElementById('macrodimensao-observacao-wrapper').classList.add('hidden');
+  // Volta o wizard para a primeira etapa (quando presente).
+  window.CedaeWizard?.reset();
 }
 
 /* ── Init ──────────────────────────────────────────── */

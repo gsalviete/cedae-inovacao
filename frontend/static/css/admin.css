@@ -2,7 +2,7 @@
    CEDAE Inovação — Admin Panel Styles
    ══════════════════════════════════════════════════════ */
 
-.admin-body { background: var(--gray-100); }
+.admin-body { background: var(--surface-subtle); }
 
 .admin-wrapper {
   max-width: 1100px;
@@ -18,12 +18,20 @@
 
 /* ── Section ───────────────────────────────────────── */
 .admin-section {
-  background: var(--white);
-  border: 1px solid var(--gray-300);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 28px;
-  margin-bottom: 24px;
-  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-xs);
+}
+
+/* Seção sem "casca" — usada quando o conteúdo já é um grid de cards. */
+.admin-section--flush {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
 .admin-section-title {
@@ -32,7 +40,7 @@
   color: var(--gray-900);
   margin-bottom: 20px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--border);
 }
 
 .section-header-row {
@@ -88,19 +96,27 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
+  gap: 10px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 16px 24px;
-  min-width: 120px;
+  padding: 18px 24px;
+  min-width: 128px;
+  flex: 1;
+  transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.status-kpi-card:hover {
+  border-color: var(--blue-200);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
 }
 
 .status-kpi-value {
   font-size: 32px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -.02em;
   color: var(--gray-900);
-  font-family: var(--font-serif);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Bar Chart ─────────────────────────────────────── */
@@ -188,50 +204,72 @@
 .row-clickable { cursor: pointer; }
 .row-clickable:hover td { background: var(--blue-50) !important; }
 
-/* ── Badges estágio ────────────────────────────────── */
+/* ── Badges ────────────────────────────────────────── */
 .badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: .01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
-.badge-ideacao  { background: #fef9c3; color: #854d0e; }
-.badge-piloto   { background: #dbeafe; color: #1e40af; }
-.badge-escala   { background: #dcfce7; color: #166534; }
-.badge-default  { background: var(--gray-100); color: var(--gray-500); }
+/* Ponto de cor herdado — dá o "status dot" sem markup extra no JS. */
+.badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .85;
+  flex-shrink: 0;
+}
+.badge-ideacao  { background: var(--amber-50);  color: #92610e; border-color: #f5e2b8; }
+.badge-piloto   { background: var(--blue-50);   color: var(--blue-800); border-color: var(--blue-100); }
+.badge-escala   { background: var(--green-50);  color: var(--green-700); border-color: var(--green-100); }
+.badge-default  { background: var(--gray-100);  color: var(--gray-500); border-color: var(--gray-200); }
 
 /* ── Badges workflow ───────────────────────────────── */
-.badge-status-submetida     { background: #dbeafe; color: #1e40af; }
-.badge-status-em_analise    { background: #fef9c3; color: #854d0e; }
-.badge-status-em_observacao { background: #ede9fe; color: #6b21a8; }
-.badge-status-homologada      { background: #dcfce7; color: #166534; }
-.badge-status-desclassificada { background: #fee2e2; color: #991b1b; }
+.badge-status-submetida     { background: var(--blue-50);   color: var(--blue-800);  border-color: var(--blue-100); }
+.badge-status-em_analise    { background: var(--amber-50);  color: #92610e;          border-color: #f5e2b8; }
+.badge-status-em_observacao { background: #f2effc;          color: #6b21a8;          border-color: #e4dcfa; }
+.badge-status-homologada      { background: var(--green-50); color: var(--green-700); border-color: var(--green-100); }
+.badge-status-desclassificada { background: var(--red-50);   color: #b02020;          border-color: #f6cccc; }
 
 /* ── Badges de canal / origem (ADR-013) ────────────── */
-.badge-canal-via_1   { background: var(--indigo-100); color: var(--indigo-600); }
-.badge-canal-via_2   { background: var(--blue-100);   color: var(--blue-800); }
-.badge-canal-via_3   { background: var(--teal-100);   color: var(--teal-600); }
-.badge-canal-externo { background: var(--amber-100);  color: var(--amber-600); }
+.badge-canal-via_1   { background: var(--indigo-100); color: var(--indigo-600); border-color: #cdd6fb; }
+.badge-canal-via_2   { background: var(--blue-50);    color: var(--blue-800);   border-color: var(--blue-100); }
+.badge-canal-via_3   { background: var(--teal-100);   color: var(--teal-600);   border-color: #b9ede6; }
+.badge-canal-externo { background: var(--amber-50);   color: var(--amber-600);  border-color: #f5e2b8; }
 .badge-externo-tag {
   background: transparent;
   color: var(--amber-600);
-  border: 1px solid var(--amber-100);
+  border: 1px solid #f0d9a8;
 }
+.badge-externo-tag::before { display: none; }
 
 /* ── Buttons ───────────────────────────────────────── */
 .btn-action {
-  background: var(--blue-600);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-800);
   color: #fff;
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  padding: 8px 16px;
+  padding: 8px 15px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: var(--shadow-xs);
+  transition: background .2s;
 }
-.btn-action:hover { background: var(--blue-800); }
+.btn-action svg { width: 15px; height: 15px; }
+.btn-action:hover { background: var(--blue-900); }
 
 .btn-action-sm {
   background: var(--blue-600);
@@ -409,10 +447,16 @@
   color: inherit;
 }
 .collapsible-header .caret {
-  font-size: 14px;
+  display: grid;
+  place-items: center;
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
   color: var(--gray-500);
-  transition: transform .25s ease;
+  flex-shrink: 0;
+  transition: transform .25s ease, background .2s ease;
 }
+.collapsible-header .caret svg { width: 18px; height: 18px; }
+.collapsible-header:hover .caret { background: var(--gray-100); color: var(--gray-800); }
 .collapsible-header.is-open .caret { transform: rotate(180deg); }
 .collapsible-body {
   margin-top: 16px;
@@ -467,9 +511,10 @@
 }
 .canal-kpi-value {
   font-size: 30px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -.02em;
   color: var(--gray-900);
-  font-family: var(--font-serif);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .canal-kpi-rate { font-size: 11.5px; color: var(--gray-500); }
@@ -545,23 +590,40 @@
 .filter-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
+.filter-search {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+  max-width: 380px;
+}
+.filter-search-ic {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+  pointer-events: none;
+  display: grid; place-items: center;
+}
+.filter-search-ic svg { width: 16px; height: 16px; }
 .filter-input {
-  padding: 8px 14px;
-  border: 1px solid var(--gray-300);
+  width: 100%;
+  padding: 9px 14px 9px 36px;
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-family: var(--font-sans);
   color: var(--gray-900);
-  min-width: 220px;
+  background: var(--surface);
   transition: border-color .2s, box-shadow .2s;
 }
 .filter-input:focus {
   outline: none;
   border-color: var(--blue-600);
-  box-shadow: 0 0 0 3px rgba(21,112,184,.12);
+  box-shadow: var(--ring);
 }
 .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .filter-chip {
@@ -587,8 +649,9 @@
   margin: 14px 0 4px;
 }
 .cell-protocol {
-  font-family: var(--font-serif);
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--blue-800);
   white-space: nowrap;
 }

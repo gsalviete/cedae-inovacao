@@ -33,33 +33,47 @@
   margin-bottom: 28px;
 }
 .via-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   text-align: left;
-  background: var(--white);
-  border: 1px solid var(--gray-300);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 22px 20px;
   cursor: pointer;
+  box-shadow: var(--shadow-xs);
   transition: border-color var(--dur-base) var(--ease-out),
               box-shadow var(--dur-base) var(--ease-out),
               transform var(--dur-fast) var(--ease-out);
 }
 .via-card:hover {
-  border-color: var(--blue-400);
+  border-color: var(--blue-200);
   box-shadow: var(--shadow-md);
   transform: translateY(-3px);
 }
 .via-card.is-active {
   border-color: var(--blue-600);
-  box-shadow: 0 0 0 3px rgba(21,112,184,.14);
+  box-shadow: var(--ring);
 }
+.via-card-ic {
+  width: 42px; height: 42px;
+  border-radius: var(--radius-md);
+  display: grid; place-items: center;
+  background: var(--blue-50);
+  color: var(--blue-800);
+  border: 1px solid var(--blue-100);
+  margin-bottom: 2px;
+}
+.via-card-ic svg { width: 21px; height: 21px; }
+.via-card.is-active .via-card-ic { background: var(--blue-800); color: #fff; border-color: var(--blue-800); }
 .via-card-badge { align-self: flex-start; }
 .via-card-title {
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 600;
+  letter-spacing: -.01em;
   color: var(--gray-900);
 }
 .via-card-desc {

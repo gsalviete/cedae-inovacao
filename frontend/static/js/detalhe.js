@@ -63,31 +63,6 @@ function setField(id, val) {
   if (el) el.textContent = val || '—';
 }
 
-/* ── Guard via /api/me ───────────────────────────────── */
-async function checkAdmin() {
-  try {
-    const res = await fetch(`${API}/api/me`);
-    if (res.status === 401) { redirectToLogin(); return false; }
-    if (!res.ok) { redirectHome(); return false; }
-    const me = await res.json();
-    if (!me.admin) { redirectHome(); return false; }
-    _me = me;
-    renderGreeting(me);
-    return true;
-  } catch {
-    redirectHome();
-    return false;
-  }
-}
-
-function redirectHome() {
-  const content = document.getElementById('detalhe-content');
-  const guard   = document.getElementById('admin-guard');
-  if (content) content.classList.add('hidden');
-  if (guard)   guard.classList.remove('hidden');
-  setTimeout(() => goTo('/'), 2000);
-}
-
 /* ── Carrega dados da iniciativa ─────────────────────── */
 async function loadDetalhe() {
   const id = getIniciativaId();
@@ -494,6 +469,8 @@ async function confirmarEdicao() {
 
 /* ── Init ────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!(await checkAdmin())) return;
+  const me = await Admin.guard();
+  if (!me) return;
+  _me = me;
   loadDetalhe();
 });

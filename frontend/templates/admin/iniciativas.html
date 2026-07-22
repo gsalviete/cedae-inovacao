@@ -1,0 +1,39 @@
+<section class="admin-section" id="sec-iniciativas">
+  <div class="filter-bar">
+    <div class="filter-search">
+      <span class="filter-search-ic"><i data-icon="search-check"></i></span>
+      <input type="search" id="filtro-busca" class="filter-input" placeholder="Buscar título, proponente, protocolo…" oninput="aplicarFiltros()" />
+    </div>
+    <div class="filter-chips" id="filtro-canais">
+      <button type="button" class="filter-chip is-active" data-canal="" onclick="setFiltroCanal(this)">Todos</button>
+      <button type="button" class="filter-chip" data-canal="VIA_1" onclick="setFiltroCanal(this)">SGE/SGP</button>
+      <button type="button" class="filter-chip" data-canal="VIA_2" onclick="setFiltroCanal(this)">Formulário</button>
+      <button type="button" class="filter-chip" data-canal="VIA_3" onclick="setFiltroCanal(this)">Reunião</button>
+      <button type="button" class="filter-chip" data-canal="MAPEAMENTO_EXTERNO" onclick="setFiltroCanal(this)">Externa</button>
+    </div>
+  </div>
+  <p class="filter-count" id="filtro-count"></p>
+  <div class="table-wrapper">
+    <table class="admin-table" id="table-iniciativas">
+      <thead>
+        <tr>
+          <th>Protocolo</th>
+          <th>Título</th>
+          <th>Origem</th>
+          <th>Proponente</th>
+          <th>Área</th>
+          <th>Estágio</th>
+          <th>Status</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-iniciativas">
+        <tr><td colspan="8"><span class="skeleton skeleton-line">.</span></td></tr>
+        <tr><td colspan="8"><span class="skeleton skeleton-line">.</span></td></tr>
+        <tr><td colspan="8"><span class="skeleton skeleton-line">.</span></td></tr>
+        <tr><td colspan="8"><span class="skeleton skeleton-line">.</span></td></tr>
+        <tr><td colspan="8"><span class="skeleton skeleton-line">.</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>

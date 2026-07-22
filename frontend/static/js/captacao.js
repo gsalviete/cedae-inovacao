@@ -27,28 +27,6 @@ const VIA_META = {
   },
 };
 
-/* ── Guard via /api/me ───────────────────────────────── */
-async function checkAdmin() {
-  try {
-    const res = await fetch(`${API}/api/me`);
-    if (res.status === 401) { redirectToLogin(); return false; }
-    if (!res.ok) { redirectHome(); return false; }
-    const me = await res.json();
-    if (!me.admin) { redirectHome(); return false; }
-    renderGreeting(me);
-    return true;
-  } catch {
-    redirectHome();
-    return false;
-  }
-}
-
-function redirectHome() {
-  document.getElementById('captacao-content')?.classList.add('hidden');
-  document.getElementById('admin-guard')?.classList.remove('hidden');
-  setTimeout(() => goTo('/'), 2000);
-}
-
 /* ── Seleção de via ──────────────────────────────────── */
 function selecionarVia(canal) {
   _canal = canal;
@@ -269,15 +247,15 @@ function novoRegistro() {
   document.getElementById('via-selector').classList.remove('hidden');
   document.querySelectorAll('#via-selector .via-card').forEach((c) => c.classList.remove('is-active'));
   _canal = null;
-  document.querySelector('.captacao-intro')?.scrollIntoView({ behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ── Init ────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!(await checkAdmin())) return;
+  if (!(await Admin.guard())) return;
   initCurrency();
   document.getElementById('captacao-form').addEventListener('submit', submitCaptacao);
   document.getElementById('cap-ver-detalhe').addEventListener('click', () => {
-    if (_ultimaIniciativaId) goTo(`/admin-detalhe?id=${_ultimaIniciativaId}`);
+    if (_ultimaIniciativaId) goTo(`/admin/iniciativa?id=${_ultimaIniciativaId}`);
   });
 });

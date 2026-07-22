@@ -1,48 +1,116 @@
 /* ══════════════════════════════════════════════════════
-   CEDAE Inovação — Stylesheet Principal
-   Tema: Água / Saneamento / Azul institucional
+   CEDAE Inovação — Design System
+   Identidade institucional CEDAE · Azul #0067AC · Verde #8DC63F
+   Linguagem visual: Linear / Stripe / Vercel — sóbria e institucional.
    ══════════════════════════════════════════════════════ */
 
 :root {
-  --blue-900: #042b52;
-  --blue-800: #0B4F8A;
-  --blue-600: #1570b8;
-  --blue-400: #4fa3d8;
-  --blue-100: #ddeef8;
-  --blue-50:  #f0f7fd;
+  /* ── Marca institucional ─────────────────────────────
+     Azul CEDAE  rgb(0 103 172) · Verde CEDAE rgb(141 198 63).
+     Toda a escala de azul é derivada do tom institucional para que a cor
+     predominante da interface seja, de fato, a cor da companhia. */
+  --brand-blue:  #0067AC;   /* azul institucional CEDAE */
+  --brand-green: #8DC63F;   /* verde institucional CEDAE */
 
-  --gray-900: #111827;
-  --gray-800: #1f2937;
-  --gray-700: #374151;
-  --gray-600: #4b5563;
-  --gray-500: #6b7280;
-  --gray-400: #9ca3af;
-  --gray-300: #d1d5db;
-  --gray-200: #e5e7eb;
-  --gray-100: #f3f4f6;
-  --gray-50:  #f9fafb;
+  /* Escala de azul (institucional no -800, que é o primário do sistema) */
+  --blue-950: #04283f;
+  --blue-900: #05365d;
+  --blue-800: #0067AC;   /* primário — cor da marca */
+  --blue-700: #0a5c99;
+  --blue-600: #0f79c0;   /* links / acentos */
+  --blue-400: #4fa0d4;
+  --blue-200: #b3d6ee;
+  --blue-100: #d4e7f5;
+  --blue-50:  #eff6fc;
 
+  /* Escala de verde (destaques positivos / sucesso) */
+  --green-700: #4d7c1a;
+  --green-600: #5f9622;   /* texto/ícone sobre claro (contraste AA) */
+  --green-500: #8DC63F;   /* verde da marca */
+  --green-100: #e6f3d2;
+  --green-50:  #f3f9e8;
+
+  /* ── Neutros (slate — frio, limpo, institucional) ──── */
+  --gray-950: #0a0f1a;
+  --gray-900: #0f172a;
+  --gray-800: #1e293b;
+  --gray-700: #334155;
+  --gray-600: #475569;
+  --gray-500: #64748b;
+  --gray-400: #94a3b8;
+  --gray-300: #cbd5e1;
+  --gray-200: #e2e8f0;
+  --gray-150: #eaeef4;
+  --gray-100: #f1f5f9;
+  --gray-50:  #f8fafc;
+
+  /* ── Cores de estado ─────────────────────────────────
+     Sucesso → verde · Informação → azul · Alerta → âmbar discreto ·
+     Erro → vermelho discreto. */
   --teal-600: #0f766e;
   --teal-100: #ccfbf1;
   --indigo-600: #4f46e5;
   --indigo-100: #e0e7ff;
   --amber-600: #b45309;
+  --amber-500: #d97706;
   --amber-100: #fef3c7;
+  --amber-50:  #fffbeb;
+  --red-600:   #dc2626;
+  --red-100:   #fee2e2;
+  --red-50:    #fef2f2;
 
   --white:    #ffffff;
-  --error:    #b91c1c;
-  --success:  #065f46;
+  --error:    #c22929;   /* vermelho discreto */
+  --success:  var(--green-600);
+  --info:     var(--blue-800);
+  --warning:  var(--amber-600);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  /* Superfícies semânticas */
+  --surface:        #ffffff;
+  --surface-subtle: var(--gray-50);
+  --surface-muted:  var(--gray-100);
+  --border:         var(--gray-200);
+  --border-strong:  var(--gray-300);
+  --text:           var(--gray-900);
+  --text-muted:     var(--gray-500);
+
+  /* ── Raios ───────────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 999px;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
+  /* ── Elevação — sombras em camadas, suaves (estilo Stripe) ── */
+  --shadow-xs: 0 1px 2px rgba(15,23,42,.05);
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.07);
+  --shadow-md: 0 2px 4px rgba(15,23,42,.04), 0 6px 16px rgba(15,23,42,.08);
+  --shadow-lg: 0 4px 8px rgba(15,23,42,.04), 0 16px 40px rgba(15,23,42,.12);
+  --shadow-xl: 0 8px 16px rgba(15,23,42,.06), 0 28px 64px rgba(15,23,42,.16);
+  --ring: 0 0 0 3px rgba(0,103,172,.16);          /* anel de foco azul */
+  --ring-green: 0 0 0 3px rgba(141,198,63,.28);
 
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'DM Serif Display', Georgia, serif;
+  /* ── Tipografia ──────────────────────────────────────
+     Inter em toda a interface. Escala: página 32 · seção 24 · subtítulo 20 ·
+     texto 16 · secundário 14 · legenda 12. Pesos 400/500/600/700. */
+  --font-sans:  'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-sans);
+  --font-serif:   var(--font-sans);   /* alias legado → Inter (sem serifa) */
+  --font-mono:  ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', monospace;
+
+  --fs-display: 32px;
+  --fs-h1: 28px;
+  --fs-h2: 24px;
+  --fs-h3: 20px;
+  --fs-lg: 18px;
+  --fs-base: 16px;
+  --fs-sm: 14px;
+  --fs-xs: 12px;
+
+  /* ── Espaçamento (base 4px) ──────────────────────────── */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
 
   /* ── Motion ──────────────────────────────────────────
      Uma escala só, usada por todas as microinterações. Curvas separadas por
@@ -60,27 +128,47 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
   font-family: var(--font-sans);
-  color: var(--gray-900);
-  background: var(--gray-50);
+  font-size: var(--fs-base);
+  font-feature-settings: 'cv02','cv03','cv04','cv11';   /* letras Inter mais legíveis */
+  color: var(--text);
+  background: var(--surface-subtle);
+  line-height: 1.5;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
+
+::selection { background: var(--blue-100); color: var(--blue-900); }
+
+/* Scrollbar discreta e institucional (WebKit) */
+* { scrollbar-width: thin; scrollbar-color: var(--gray-300) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--gray-400); background-clip: content-box; }
 
 /* ── Utilities ─────────────────────────────────────── */
 .hidden { display: none !important; }
-.required { color: var(--blue-600); }
+.required { color: var(--blue-600); font-weight: 600; }
 
 /* ── Header ────────────────────────────────────────── */
 .site-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-300);
-  box-shadow: var(--shadow-sm);
+  background: rgba(255,255,255,.82);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border);
 }
 
 .header-inner {
@@ -142,32 +230,39 @@ body {
 }
 
 .btn-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background: var(--blue-800);
   color: var(--white);
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  padding: 7px 14px;
+  padding: 8px 15px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
+  box-shadow: var(--shadow-xs);
   transition: background .2s;
   white-space: nowrap;
 }
 .btn-admin:hover { background: var(--blue-900); }
 
 .btn-login {
-  background: transparent;
-  border: 1px solid var(--gray-300);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  padding: 7px 14px;
+  padding: 8px 15px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--gray-700);
   cursor: pointer;
-  transition: border-color .2s, color .2s;
+  transition: border-color .2s, color .2s, background .2s;
   white-space: nowrap;
 }
-.btn-login:hover { border-color: var(--blue-600); color: var(--blue-600); }
+.btn-login:hover { border-color: var(--blue-400); color: var(--blue-800); background: var(--blue-50); }
 
 /* ── Saudação do usuário ───────────────────────────────
    "Boa tarde, Gabriel!" — o horário em peso normal, o nome em destaque.
@@ -206,57 +301,93 @@ body {
 /* ── Hero ──────────────────────────────────────────── */
 .hero {
   position: relative;
-  background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 60%, var(--blue-600) 100%);
+  background: linear-gradient(135deg, var(--blue-950) 0%, var(--blue-900) 42%, var(--blue-800) 100%);
   overflow: hidden;
-  padding: 64px 20px 60px;
+  padding: 72px 20px 64px;
 }
 
 .hero-water {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(ellipse 80% 50% at 110% 110%, rgba(79,163,216,.25) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at -10% 80%, rgba(255,255,255,.06) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 50% at 108% 115%, rgba(141,198,63,.16) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 55% at -8% 78%, rgba(79,160,212,.30) 0%, transparent 55%),
+    radial-gradient(circle at 50% -20%, rgba(255,255,255,.10) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+/* Grade fina sobre o hero — textura tecnológica discreta. */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 90% at 50% 0%, #000 0%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 90% at 50% 0%, #000 0%, transparent 75%);
   pointer-events: none;
 }
 
 .hero-content {
   position: relative;
+  z-index: 1;
   max-width: 680px;
   margin: 0 auto;
   text-align: center;
 }
 
 .hero-label {
-  display: inline-block;
-  background: rgba(255,255,255,.12);
-  color: rgba(255,255,255,.85);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.16);
+  color: rgba(255,255,255,.90);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
-  padding: 4px 12px;
-  border-radius: 20px;
-  margin-bottom: 16px;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  margin-bottom: 18px;
+  backdrop-filter: blur(4px);
+}
+/* Ponto verde institucional pulsando — sinal de canal ativo. */
+.hero-label::before {
+  content: '';
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--brand-green);
+  box-shadow: 0 0 0 0 rgba(141,198,63,.6);
+  animation: pulse-dot 2.4s var(--ease-in-out) infinite;
 }
 
 .hero-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -.02em;
   /* clamp garante leitura em telas de 320px até desktop */
-  font-size: clamp(22px, 6vw, 44px);
+  font-size: clamp(26px, 6vw, 44px);
   color: var(--white);
-  line-height: 1.2;
+  line-height: 1.12;
   margin-bottom: 20px;
   word-break: break-word;
   hyphens: auto;
 }
 
 .hero-desc {
-  font-size: clamp(13px, 3.5vw, 15px);
+  font-size: clamp(14px, 3.5vw, 16px);
   line-height: 1.7;
-  color: rgba(255,255,255,.78);
+  color: rgba(255,255,255,.80);
   max-width: 600px;
   margin: 0 auto;
+}
+
+@keyframes pulse-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(141,198,63,.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(141,198,63,0); }
+  100% { box-shadow: 0 0 0 0 rgba(141,198,63,0); }
 }
 
 /* ── Form Wrapper ──────────────────────────────────── */
@@ -268,10 +399,10 @@ body {
 
 /* ── Form Block ────────────────────────────────────── */
 .form-block {
-  background: var(--white);
-  border: 1px solid var(--gray-300);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 28px 24px;
+  padding: 28px 26px;
   margin-bottom: 20px;
   box-shadow: var(--shadow-sm);
 }
@@ -279,25 +410,29 @@ body {
 .block-header {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--border);
 }
 
 .block-tag {
-  display: inline-block;
-  background: var(--blue-100);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-50);
   color: var(--blue-800);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
-  padding: 3px 10px;
-  border-radius: 20px;
-  margin-bottom: 8px;
+  padding: 4px 11px;
+  border-radius: var(--radius-full);
+  margin-bottom: 10px;
+  border: 1px solid var(--blue-100);
 }
 
 .block-title {
-  font-size: 18px;
+  font-size: var(--fs-h3);
   font-weight: 600;
+  letter-spacing: -.01em;
   color: var(--gray-900);
 }
 
@@ -328,10 +463,10 @@ body {
 .field-input,
 .field-textarea {
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--gray-300);
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-family: var(--font-sans);
   color: var(--gray-900);
   background: var(--white);
@@ -340,12 +475,23 @@ body {
 }
 
 .field-input::placeholder,
-.field-textarea::placeholder { color: var(--gray-300); }
+.field-textarea::placeholder { color: var(--gray-400); }
 
 .field-input:focus,
 .field-textarea:focus {
   border-color: var(--blue-600);
-  box-shadow: 0 0 0 3px rgba(21,112,184,.12);
+  box-shadow: var(--ring);
+}
+
+/* select nativo herda o mesmo visual de input */
+select.field-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 38px;
+  cursor: pointer;
 }
 
 .field-textarea { resize: vertical; min-height: 100px; }
@@ -484,20 +630,26 @@ body {
 .form-footer-note { font-size: 12.5px; color: var(--gray-500); }
 
 .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: var(--blue-800);
   color: var(--white);
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  padding: 12px 28px;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 12px 26px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: .01em;
   cursor: pointer;
-  transition: background .2s, transform .1s;
+  box-shadow: var(--shadow-xs), inset 0 1px 0 rgba(255,255,255,.14);
+  transition: background .2s, transform .1s, box-shadow .2s;
 }
 .btn-primary:hover { background: var(--blue-900); }
 .btn-primary:active { transform: scale(.98); }
 
-.btn-submit { min-width: 200px; }
+.btn-submit { min-width: 210px; }
 
 /* ── Success Card ──────────────────────────────────── */
 .success-card {
@@ -535,8 +687,9 @@ body {
   color: var(--blue-800);
 }
 .success-protocol-code {
-  font-family: var(--font-serif);
-  font-size: 28px;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
   color: var(--blue-900);
   letter-spacing: .02em;
 }
@@ -585,13 +738,15 @@ body {
 
 /* ── Footer ────────────────────────────────────────── */
 .site-footer {
-  background: var(--blue-900);
-  color: rgba(255,255,255,.55);
+  background: var(--blue-950);
+  color: rgba(255,255,255,.58);
   text-align: center;
-  padding: 28px 24px;
+  padding: 30px 24px;
   font-size: 12.5px;
   line-height: 1.8;
+  border-top: 3px solid var(--brand-green);
 }
+.site-footer p:first-child { color: rgba(255,255,255,.82); font-weight: 500; }
 
 /* ══════════════════════════════════════════════════════
    MOTION — microinterações
