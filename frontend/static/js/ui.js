@@ -142,8 +142,31 @@
     if (avEl)   avEl.textContent = (primeiro.charAt(0) || '·').toUpperCase();
   }
 
+  /* ── Toast de feedback ─────────────────────────────────
+     Notificação efêmera, reutilizável por qualquer página do painel.
+     tipo: 'ok' (padrão) | 'erro'. Cria o container sob demanda. */
+  function toast(msg, tipo) {
+    let host = document.getElementById('toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'toast-host';
+      host.className = 'toast-host';
+      document.body.appendChild(host);
+    }
+    const el = document.createElement('div');
+    el.className = `toast toast-${tipo === 'erro' ? 'erro' : 'ok'}`;
+    el.textContent = msg;
+    host.appendChild(el);
+    // força reflow para a transição de entrada e agenda a saída.
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+    setTimeout(() => {
+      el.classList.remove('is-visible');
+      setTimeout(() => el.remove(), 250);
+    }, 3200);
+  }
+
   // Exposição global (os templates chamam via onclick / os scripts de página usam os helpers)
-  window.CedaeUI = { icon, hydrateIcons, animateCount, renderSidebarUser };
+  window.CedaeUI = { icon, hydrateIcons, animateCount, renderSidebarUser, toast };
   window.renderSidebarUser = renderSidebarUser;
   window.toggleNav = toggleNav;
   window.closeDrawer = closeDrawer;

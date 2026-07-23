@@ -27,6 +27,12 @@ async function initHeader() {
     if (btnAdmin && me.admin) {
       btnAdmin.classList.remove('hidden');
     }
+
+    // Usuário autenticado SEM perfil administrativo: exige aceite dos Termos
+    // de Uso no primeiro acesso (ADR-014 §12-bis).
+    if (me.login && !me.admin && typeof verificarTermos === 'function') {
+      verificarTermos();
+    }
   } catch {
     // falha de rede não deve travar o formulário; ainda oferece login
     if (btnLogin) btnLogin.classList.remove('hidden');

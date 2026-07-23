@@ -20,10 +20,11 @@ async function loadKPIs() {
     if (!res.ok) return;
     const data = await res.json();
 
-    Admin.setNum('kpi-total',   data.total_iniciativas ?? 0);
-    Admin.setNum('kpi-ideacao', data.por_estagio?.ideacao ?? 0);
-    Admin.setNum('kpi-piloto',  data.por_estagio?.piloto  ?? 0);
-    Admin.setNum('kpi-escala',  data.por_estagio?.escala  ?? 0);
+    Admin.setNum('kpi-total',      data.total_iniciativas ?? 0);
+    Admin.setNum('kpi-ideacao',    data.por_estagio?.ideacao ?? 0);
+    Admin.setNum('kpi-piloto',     data.por_estagio?.piloto  ?? 0);
+    Admin.setNum('kpi-escala',     data.por_estagio?.escala  ?? 0);
+    Admin.setNum('kpi-paralisada', data.por_estagio?.paralisada ?? 0);
 
     const ps = data.por_status || {};
     Admin.setNum('sk-submetida',       ps.SUBMETIDA       ?? 0);

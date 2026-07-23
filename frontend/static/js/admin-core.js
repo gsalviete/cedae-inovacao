@@ -9,9 +9,10 @@
   'use strict';
 
   const ESTAGIO_MAP = {
-    ideacao: ['Ideação', 'badge-ideacao'],
-    piloto:  ['Piloto',  'badge-piloto'],
-    escala:  ['Escala',  'badge-escala'],
+    ideacao:    ['Ideação',    'badge-ideacao'],
+    piloto:     ['Piloto',     'badge-piloto'],
+    escala:     ['Escala',     'badge-escala'],
+    paralisada: ['Paralisada', 'badge-paralisada'],
   };
 
   const STATUS_MAP = {

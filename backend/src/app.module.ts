@@ -5,6 +5,8 @@ import { IniciativasModule } from './iniciativas/iniciativas.module';
 import { AdminModule } from './admin/admin.module';
 import { WorkflowModule } from './workflow/workflow.module';
 import { CanaisModule } from './canais/canais.module';
+import { MailModule } from './mail/mail.module';
+import { TermosModule } from './termos/termos.module';
 
 @Module({
   imports: [
@@ -14,10 +16,12 @@ import { CanaisModule } from './canais/canais.module';
       limit: parseInt(process.env.RATE_LIMIT_MAX || '100'),
     }]),
     DatabaseModule,
+    MailModule,
     WorkflowModule,
     IniciativasModule,
     AdminModule,
     CanaisModule,
+    TermosModule,
   ],
 })
 export class AppModule {}

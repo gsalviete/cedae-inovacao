@@ -51,6 +51,14 @@
   justify-content: flex-end;
 }
 
+/* Lado direito do cabeçalho: badges + botão de editar (ADM). */
+.detalhe-header-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
 /* ── Grid de campos ────────────────────────────────── */
 .detalhe-grid {
   display: grid;

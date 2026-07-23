@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpException,
   HttpStatus,
@@ -9,10 +10,12 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { AdminGuard } from '../auth/admin.guard';
 import { AuthService } from '../auth/auth.service';
 import { RequestUser } from '../common/interfaces/request-user.interface';
@@ -22,9 +25,31 @@ import { EditarHistoricoDto } from './dto/editar-historico.dto';
 import { EditarObservacaoDto } from './dto/editar-observacao.dto';
 import { ObservacaoDto } from './dto/observacao.dto';
 import { PatchStatusDto } from './dto/patch-status.dto';
+import { UpdateIniciativaDto } from './dto/update-iniciativa.dto';
+import { ExportService, IniciativaExport } from './export.service';
 import { IniciativasService } from './iniciativas.service';
 
 type AuthRequest = Request & { user: RequestUser };
+
+/** Aplica os mesmos filtros da listagem do painel (canal, status, busca livre). */
+function filtrarIniciativas(
+  lista: IniciativaExport[],
+  filtros: { canal?: string; status?: string; q?: string },
+): IniciativaExport[] {
+  let out = lista;
+  if (filtros.canal) out = out.filter((i) => (i.canal_codigo || 'VIA_2') === filtros.canal);
+  if (filtros.status) out = out.filter((i) => (i.status || 'SUBMETIDA') === filtros.status);
+  const termo = (filtros.q ?? '').trim().toLowerCase();
+  if (termo) {
+    out = out.filter((i) =>
+      (i.titulo_iniciativa || '').toLowerCase().includes(termo) ||
+      (i.nome_colaborador || '').toLowerCase().includes(termo) ||
+      (i.area_proponente || '').toLowerCase().includes(termo) ||
+      (i.codigo_publico || '').toLowerCase().includes(termo) ||
+      (i.organizacao_externa || '').toLowerCase().includes(termo));
+  }
+  return out;
+}
 
 @Controller('api/iniciativas')
 export class IniciativasController {
@@ -32,6 +57,7 @@ export class IniciativasController {
     private readonly iniciativasService: IniciativasService,
     private readonly authService: AuthService,
     private readonly workflowService: WorkflowService,
+    private readonly exportService: ExportService,
   ) {}
 
   @Post()
@@ -56,12 +82,69 @@ export class IniciativasController {
     return this.iniciativasService.listar();
   }
 
+  /**
+   * Exportação da base (Excel ou PDF) — disponível a ADM e CONTRIBUTOR
+   * (ADR-014 §11). Respeita os mesmos filtros da listagem do painel.
+   * Declarado antes de `:id` para não ser capturado pela rota paramétrica.
+   */
+  @Get('export')
+  @UseGuards(AdminGuard)
+  async exportar(
+    @Query('format') format: string | undefined,
+    @Query('canal') canal: string | undefined,
+    @Query('status') status: string | undefined,
+    @Query('q') q: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    const todas = (await this.iniciativasService.listar()) as IniciativaExport[];
+    const rows = filtrarIniciativas(todas, { canal, status, q });
+    const stamp = new Date().toISOString().slice(0, 10);
+
+    if ((format ?? 'xlsx').toLowerCase() === 'pdf') {
+      const buffer = await this.exportService.toPdf(rows);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="iniciativas-${stamp}.pdf"`);
+      res.end(buffer);
+      return;
+    }
+
+    const buffer = await this.exportService.toExcel(rows);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="iniciativas-${stamp}.xlsx"`);
+    res.end(buffer);
+  }
+
   @Get(':id')
   @UseGuards(AdminGuard)
   async getById(@Param('id', ParseIntPipe) id: number): Promise<object> {
     const ini = await this.iniciativasService.getById(id);
     if (!ini) throw new NotFoundException(`Iniciativa #${id} não encontrada`);
     return ini;
+  }
+
+  /**
+   * Edição administrativa dos dados da iniciativa (ADR-014). Exclusivo de ADM —
+   * o colaborador visualiza, mas não altera o conteúdo. Auditado em INOVACAO_LOGS.
+   */
+  @Patch(':id')
+  @UseGuards(AdminGuard)
+  async atualizar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateIniciativaDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const user = (req as AuthRequest).user;
+    if (user.role !== 'ADM') {
+      throw new ForbiddenException('Apenas administradores podem editar iniciativas.');
+    }
+    await this.iniciativasService.atualizar(id, dto);
+    this.authService
+      .registrarLog(user.login, 'editar_iniciativa', `Iniciativa #${id} editada`)
+      .catch(() => {});
+    return { message: 'Iniciativa atualizada.' };
   }
 
   @Get(':id/historico')

@@ -5,7 +5,12 @@
       <h1 class="detalhe-titulo" id="d-titulo">Carregando...</h1>
       <p class="detalhe-id" id="d-id"></p>
     </div>
-    <div class="detalhe-header-badges" id="d-status-badge"></div>
+    <div class="detalhe-header-side">
+      <div class="detalhe-header-badges" id="d-status-badge"></div>
+      <button id="btn-editar-iniciativa" class="btn-action hidden" onclick="abrirEdicaoIniciativa()">
+        <i data-icon="file-text"></i> Editar
+      </button>
+    </div>
   </div>
 </section>
 
@@ -215,6 +220,124 @@
     <div class="modal-actions">
       <button type="button" class="btn-secondary" onclick="closeJustModal()">Cancelar</button>
       <button type="button" class="btn-primary" onclick="confirmarTransicao()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edição da Iniciativa (ADM) -->
+<div id="modal-edit-iniciativa" class="modal-overlay hidden" onclick="closeEditIniciativaOnOverlay(event)">
+  <div class="modal-box modal-box--wide">
+    <h3 class="modal-title">Editar iniciativa</h3>
+    <div class="edit-scroll">
+      <div class="edit-grid">
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-titulo_iniciativa">Título</label>
+          <input type="text" id="e-titulo_iniciativa" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-nome_colaborador">Nome do Proponente</label>
+          <input type="text" id="e-nome_colaborador" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-canal_contato">Canal de Contato</label>
+          <input type="text" id="e-canal_contato" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-email_proponente">E-mail</label>
+          <input type="text" id="e-email_proponente" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-area_proponente">Área Proponente</label>
+          <input type="text" id="e-area_proponente" class="form-input" />
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-local_aplicacao">Local de Aplicação</label>
+          <input type="text" id="e-local_aplicacao" class="form-input" />
+        </div>
+
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-problema_pratico">Problema Prático</label>
+          <textarea id="e-problema_pratico" class="form-input" rows="3" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-solucao_proposta">Solução Proposta</label>
+          <textarea id="e-solucao_proposta" class="form-input" rows="3" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-risco_mitigado">Risco / Benefício Mitigado</label>
+          <textarea id="e-risco_mitigado" class="form-input" rows="2" style="resize:vertical;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="e-estagio_desenvolvimento">Estágio de Desenvolvimento</label>
+          <select id="e-estagio_desenvolvimento" class="form-input">
+            <option value="">—</option>
+            <option value="ideacao">Ideação</option>
+            <option value="piloto">Teste / Piloto (MVP)</option>
+            <option value="escala">Escala / Operação Ativa</option>
+            <option value="paralisada">Paralisada</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-macrodimensao">Macrodimensão</label>
+          <select id="e-macrodimensao" class="form-input">
+            <option value="">—</option>
+            <option value="tecnologica">Tecnológica</option>
+            <option value="operacional">Operacional</option>
+            <option value="gerencial">Gerencial / Administrativa</option>
+            <option value="social_ambiental">Social e Ambiental</option>
+            <option value="outros">Outros / Multidimensionais</option>
+          </select>
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-macrodimensao_observacao">Descrição da Macrodimensão</label>
+          <input type="text" id="e-macrodimensao_observacao" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-perfil_impacto">Perfil de Impacto</label>
+          <select id="e-perfil_impacto" class="form-input">
+            <option value="">—</option>
+            <option value="incremental">Incremental</option>
+            <option value="radical">Radical / Disruptivo</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="e-aporte_financeiro">Aporte Financeiro?</label>
+          <select id="e-aporte_financeiro" class="form-input">
+            <option value="">—</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-valor_aporte">Valor Estimado do Aporte</label>
+          <input type="text" id="e-valor_aporte" class="form-input" placeholder="Ex.: R$ 0,00" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-retorno_economico">Retorno Econômico (R$/ano)</label>
+          <input type="number" id="e-retorno_economico" class="form-input" step="0.01" min="0" />
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-suporte_necessario">Suporte Necessário</label>
+          <input type="text" id="e-suporte_necessario" class="form-input" />
+          <span class="field-hint" style="font-size:12px;color:var(--gray-500);">Valores separados por “|”.</span>
+        </div>
+
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-diagnostico_observacao">Apoio Diagnóstico Desejado</label>
+          <textarea id="e-diagnostico_observacao" class="form-input" rows="2" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-comentarios_adicionais">Comentários Adicionais</label>
+          <textarea id="e-comentarios_adicionais" class="form-input" rows="3" style="resize:vertical;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div id="edit-ini-error" class="cu-result cu-result-err hidden"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" onclick="closeEditIniciativa()">Cancelar</button>
+      <button type="button" class="btn-primary" id="btn-salvar-iniciativa" onclick="salvarEdicaoIniciativa()">Salvar alterações</button>
     </div>
   </div>
 </div>

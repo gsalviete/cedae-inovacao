@@ -9,6 +9,7 @@ let _pendingStatus = null;
 let _justObrig = false;
 let _me = null;
 let _editTarget = null;
+let _iniciativaData = null;
 
 function fmtDate(val) {
   if (!val) return '—';
@@ -82,6 +83,7 @@ async function loadDetalhe() {
       return;
     }
     const data = await res.json();
+    _iniciativaData = data;
 
     document.getElementById('d-titulo').textContent = data.titulo_iniciativa || 'Sem título';
     document.getElementById('d-id').textContent = data.codigo_publico
@@ -164,11 +166,22 @@ async function loadAcoes(id, statusAtual) {
   };
 
   const terminais = ['HOMOLOGADA', 'DESCLASSIFICADA'];
-  const acoes = TRANSICOES[statusAtual] || [];
   const ehTerminal = terminais.includes(statusAtual);
+
+  // Homologar/desclassificar são exclusivos de ADM (ADR-014 §10). O colaborador
+  // enxerga a esteira, mas não as duas decisões terminais.
+  const ehAdm = _me?.role === 'ADM';
+  const ACOES_EXCLUSIVAS_ADM = new Set(['HOMOLOGADA', 'DESCLASSIFICADA']);
+  const acoes = (TRANSICOES[statusAtual] || [])
+    .filter(a => ehAdm || !ACOES_EXCLUSIVAS_ADM.has(a.status_destino));
 
   if (ehTerminal) {
     el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Tramitação encerrada — nenhuma ação disponível.</p>';
+    return;
+  }
+
+  if (!acoes.length) {
+    el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Nenhuma ação disponível para o seu perfil. Homologar e desclassificar são exclusivos de administradores.</p>';
     return;
   }
 
@@ -468,9 +481,85 @@ async function confirmarEdicao() {
 }
 
 /* ── Init ────────────────────────────────────────────── */
+/* ── Edição administrativa da iniciativa (ADM) ─────────── */
+const EDIT_FIELDS = [
+  'nome_colaborador', 'canal_contato', 'email_proponente',
+  'titulo_iniciativa', 'area_proponente', 'local_aplicacao',
+  'problema_pratico', 'solucao_proposta', 'risco_mitigado',
+  'estagio_desenvolvimento', 'macrodimensao', 'macrodimensao_observacao',
+  'perfil_impacto', 'aporte_financeiro', 'valor_aporte', 'retorno_economico',
+  'suporte_necessario', 'diagnostico_observacao', 'comentarios_adicionais',
+];
+
+function abrirEdicaoIniciativa() {
+  if (!_iniciativaData) return;
+  EDIT_FIELDS.forEach((f) => {
+    const el = document.getElementById(`e-${f}`);
+    if (!el) return;
+    const val = _iniciativaData[f];
+    el.value = (val === null || val === undefined) ? '' : val;
+  });
+  document.getElementById('edit-ini-error')?.classList.add('hidden');
+  document.getElementById('modal-edit-iniciativa').classList.remove('hidden');
+}
+
+function closeEditIniciativa() {
+  document.getElementById('modal-edit-iniciativa').classList.add('hidden');
+}
+
+function closeEditIniciativaOnOverlay(e) {
+  if (e.target === document.getElementById('modal-edit-iniciativa')) closeEditIniciativa();
+}
+
+async function salvarEdicaoIniciativa() {
+  const id = getIniciativaId();
+  if (!id) return;
+  const errEl = document.getElementById('edit-ini-error');
+  const btn = document.getElementById('btn-salvar-iniciativa');
+
+  const payload = {};
+  EDIT_FIELDS.forEach((f) => {
+    const el = document.getElementById(`e-${f}`);
+    if (!el) return;
+    if (f === 'retorno_economico') {
+      const n = parseFloat(el.value);
+      if (!Number.isNaN(n)) payload[f] = n;
+      else payload[f] = ''; // vazio → NULL no backend
+    } else {
+      payload[f] = el.value.trim();
+    }
+  });
+
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/api/iniciativas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      closeEditIniciativa();
+      window.CedaeUI?.toast('Iniciativa atualizada.', 'ok');
+      await loadDetalhe();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      const msg = Array.isArray(data.message) ? data.message.join(' ') : (data.message || 'Não foi possível salvar as alterações.');
+      if (errEl) { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+    }
+  } catch {
+    if (errEl) { errEl.textContent = 'Erro de comunicação com o servidor.'; errEl.classList.remove('hidden'); }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const me = await Admin.guard();
   if (!me) return;
   _me = me;
+  // Edição administrativa: só ADM vê o botão de editar (ADR-014).
+  if (me.role === 'ADM') {
+    document.getElementById('btn-editar-iniciativa')?.classList.remove('hidden');
+  }
   loadDetalhe();
 });

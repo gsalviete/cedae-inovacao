@@ -74,4 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('login-form');
   if (form) form.addEventListener('submit', submitLogin);
   document.getElementById('username')?.focus();
+
+  // Retorno da recusa dos Termos de Uso (ADR-014 §12-bis): sessão encerrada.
+  if (new URLSearchParams(window.location.search).get('termos') === 'recusados') {
+    showLoginError('É necessário aceitar os Termos e Condições de Uso para utilizar o sistema.');
+  }
 });

@@ -69,9 +69,19 @@ export class WorkflowService {
       }
 
       const trans = transRows[0];
-      const isAdmin = usuario.role === 'ADM' || usuario.role === 'CONTRIBUTOR';
-      if (!isAdmin) {
+      // Qualquer usuário do painel (ADM ou CONTRIBUTOR) pode tramitar a esteira.
+      const ehUsuarioPainel = usuario.role === 'ADM' || usuario.role === 'CONTRIBUTOR';
+      if (!ehUsuarioPainel) {
         throw new ForbiddenException('Sem permissão para realizar esta transição');
+      }
+
+      // Homologar e desclassificar são atos exclusivos de ADM (ADR-014 §10).
+      // O colaborador (CONTRIBUTOR) faz tudo na esteira, exceto estas duas
+      // decisões terminais. Validação primária no backend — a UI apenas oculta.
+      if (this.STATUS_EXCLUSIVOS_ADM.has(statusDestino) && usuario.role !== 'ADM') {
+        throw new ForbiddenException(
+          'Apenas administradores podem homologar ou desclassificar iniciativas.',
+        );
       }
 
       if (trans.JUSTIFICATIVA_OBRIG === 1 && !justificativa?.trim()) {
@@ -192,6 +202,9 @@ export class WorkflowService {
     };
     return mapa[statusDestino] ?? 'ANALISE';
   }
+
+  // Status terminais cuja transição é restrita a ADM (ADR-014 §10).
+  private readonly STATUS_EXCLUSIVOS_ADM = new Set(['HOMOLOGADA', 'DESCLASSIFICADA']);
 
   // Tipos de evento que o autor pode editar dentro da janela de 2h
   private readonly EVENTOS_EDITAVEIS = new Set([

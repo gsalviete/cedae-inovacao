@@ -78,6 +78,16 @@ function abrirDetalhe(id) {
   goTo(`/admin/iniciativa?id=${id}`);
 }
 
+/* Exporta a base respeitando os filtros vigentes (canal + busca livre).
+   O backend gera o arquivo; aqui apenas montamos a URL e disparamos o download. */
+function exportarIniciativas(format) {
+  const termo = (document.getElementById('filtro-busca')?.value || '').trim();
+  const params = new URLSearchParams({ format });
+  if (_filtroCanal) params.set('canal', _filtroCanal);
+  if (termo) params.set('q', termo);
+  window.location.href = `${API}/api/iniciativas/export?${params.toString()}`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   if (!(await Admin.guard())) return;
   loadIniciativas();

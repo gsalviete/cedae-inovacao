@@ -4,18 +4,21 @@
    A criação resolve login/e-mail no Active Directory. Admin.* de core.
    ══════════════════════════════════════════════════════ */
 
+/* Cache dos usuários carregados — usado pela modal de visualização. */
+let _users = [];
+
 async function loadUsers() {
   try {
     const res = await fetch(`${API}/api/admin/users`);
     if (!res.ok) return;
     const data = await res.json();
+    _users = data;
     const tbody = document.getElementById('tbody-usuarios');
 
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="table-loading">Nenhum usuário administrativo cadastrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="table-loading">Nenhum usuário cadastrado.</td></tr>';
       return;
     }
-    const isAdm = Admin.me?.role === 'ADM';
     tbody.innerHTML = data.map((u) => {
       const roleLabel = u.role === 'ADM'
         ? '<span class="badge badge-status-homologada">Administrador</span>'
@@ -23,36 +26,109 @@ async function loadUsers() {
       const ativoLabel = u.ativo
         ? '<span class="badge badge-status-homologada">Ativo</span>'
         : '<span class="badge badge-status-desclassificada">Inativo</span>';
-      const protegerAdm = u.role === 'ADM' && u.ativo;
-      const acoes = isAdm ? (
-        protegerAdm
-          ? `<button class="btn-danger-sm" disabled
-                     title="Administradores não podem ser desativados.">Desativar</button>`
-          : `<button class="${u.ativo ? 'btn-danger-sm' : 'btn-action-sm'}"
-                     onclick="toggleUser(${u.id}, ${!u.ativo})">${u.ativo ? 'Desativar' : 'Ativar'}</button>`
-      ) : '—';
       return `
-        <tr class="fade-in">
-          <td>${u.login}</td>
+        <tr class="fade-in row-clickable" onclick="verUsuario(${u.id})" title="Ver detalhes">
           <td>${u.nome || '—'}</td>
           <td>${roleLabel}</td>
           <td>${ativoLabel}</td>
           <td>${Admin.fmtDate(u.criado_em)}</td>
-          <td>${acoes}</td>
         </tr>`;
     }).join('');
   } catch { /* silencioso */ }
 }
 
-async function toggleUser(id, ativo) {
+/* ── Visualização de usuário ─────────────────────────────
+   A linha inteira abre esta modal. A gestão (promover / ativar-desativar)
+   fica aqui e só aparece para ADM em usuários que não sejam ele mesmo.
+   Ninguém rebaixa ninguém — apenas promoção (ADR-014 §10). */
+let _vuId = null;
+
+function verUsuario(id) {
+  const u = _users.find((x) => x.id === id);
+  if (!u) return;
+  _vuId = id;
+  Admin.setText('vu-login', u.login);
+  Admin.setText('vu-nome', u.nome || '—');
+  Admin.setText('vu-role', u.role === 'ADM' ? 'Administrador' : 'Colaborador');
+  Admin.setText('vu-ativo', u.ativo ? 'Ativo' : 'Inativo');
+  Admin.setText('vu-desde', Admin.fmtDate(u.criado_em));
+  renderGestaoUsuario(u);
+  document.getElementById('modal-view-user').classList.remove('hidden');
+}
+
+function renderGestaoUsuario(u) {
+  const el = document.getElementById('vu-gestao');
+  if (!el) return;
+  const isAdm = Admin.me?.role === 'ADM';
+  const ehProprio = u.login === Admin.me?.login;
+
+  if (!isAdm) { el.innerHTML = ''; return; }
+  if (ehProprio) {
+    el.innerHTML = '<p class="vu-gestao-hint">Você não pode editar o seu próprio usuário.</p>';
+    return;
+  }
+
+  const botoes = [];
+  // Promoção a administrador (não há rebaixamento).
+  if (u.role !== 'ADM') {
+    botoes.push(`<button class="btn-action-sm" onclick="promoverUsuario(${u.id})">Promover a Administrador</button>`);
+  }
+  // Ativar / desativar.
+  botoes.push(u.ativo
+    ? `<button class="btn-danger-sm" onclick="alterarStatusUsuario(${u.id}, false)">Desativar</button>`
+    : `<button class="btn-action-sm" onclick="alterarStatusUsuario(${u.id}, true)">Ativar</button>`);
+
+  el.innerHTML = `<span class="vu-gestao-label">Gestão</span><div class="vu-gestao-acoes">${botoes.join(' ')}</div>`;
+}
+
+function closeViewUser() {
+  document.getElementById('modal-view-user').classList.add('hidden');
+  _vuId = null;
+}
+
+function closeViewUserOnOverlay(e) {
+  if (e.target === document.getElementById('modal-view-user')) closeViewUser();
+}
+
+/* ── Promoção a administrador — só ADM (sem rebaixamento) ── */
+async function promoverUsuario(id) {
+  try {
+    const res = await fetch(`${API}/api/admin/users/${id}/role`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'ADM' }),
+    });
+    if (res.ok) {
+      closeViewUser();
+      CedaeUI.toast('Usuário promovido a Administrador.', 'ok');
+      loadUsers();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      CedaeUI.toast(data.message || 'Não foi possível promover o usuário.', 'erro');
+    }
+  } catch {
+    CedaeUI.toast('Erro de comunicação com o servidor.', 'erro');
+  }
+}
+
+async function alterarStatusUsuario(id, ativo) {
   try {
     const res = await fetch(`${API}/api/admin/users/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ativo }),
     });
-    if (res.ok) loadUsers();
-  } catch { /* silencioso */ }
+    if (res.ok) {
+      closeViewUser();
+      CedaeUI.toast(ativo ? 'Usuário ativado.' : 'Usuário desativado.', 'ok');
+      loadUsers();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      CedaeUI.toast(data.message || 'Não foi possível atualizar o status.', 'erro');
+    }
+  } catch {
+    CedaeUI.toast('Erro de comunicação com o servidor.', 'erro');
+  }
 }
 
 /* ── Modal Criar Admin ───────────────────────────────── */
@@ -173,9 +249,10 @@ async function submitCreateUser(e) {
     });
     const data = await res.json();
     if (res.ok) {
-      resultEl.className = 'cu-result cu-result-ok';
-      resultEl.textContent = `Usuário '${nome}' adicionado como ${role}.`;
-      resultEl.classList.remove('hidden');
+      // Fecha a modal, atualiza a listagem e dá feedback fora da modal.
+      closeCreateUser();
+      const perfilLabel = role === 'ADM' ? 'Administrador' : 'Colaborador';
+      CedaeUI.toast(`Usuário '${nome}' adicionado como ${perfilLabel}.`, 'ok');
       loadUsers();
     } else {
       resultEl.className = 'cu-result cu-result-err';

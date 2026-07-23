@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
 import { normalizeLogin } from '../auth/normalize-login';
@@ -229,9 +234,52 @@ export class AdminService {
     }
   }
 
-  async toggleAdmin(id: number, ativo: boolean): Promise<void> {
+  /** Busca um usuário administrativo por id (dentro da conexão corrente). */
+  private async getUserById(
+    conn: oracledb.Connection,
+    id: number,
+  ): Promise<{ id: number; login: string; role: string; ativo: boolean } | null> {
+    const result = await conn.execute(
+      'SELECT id, login, role, ativo FROM ADMIN_USERS WHERE id = :1',
+      [id],
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+    const rows = result.rows as any[];
+    if (!rows.length) return null;
+    return {
+      id: rows[0].ID as number,
+      login: rows[0].LOGIN as string,
+      role: rows[0].ROLE as string,
+      ativo: rows[0].ATIVO === 1,
+    };
+  }
+
+  /** Conta administradores (role ADM) ativos — usado para proteger o último. */
+  private async contarAdminsAtivos(conn: oracledb.Connection): Promise<number> {
+    const result = await conn.execute(
+      `SELECT COUNT(*) AS N FROM ADMIN_USERS WHERE role = 'ADM' AND ativo = 1`,
+      [],
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+    return Number((result.rows as any[])[0].N);
+  }
+
+  /**
+   * Ativa/desativa um usuário. Ninguém desativa a si mesmo (ADR-014 §10: o ADM
+   * não edita o próprio usuário) e o último ADM ativo não pode ser desativado
+   * (evita deixar o sistema sem administradores).
+   */
+  async toggleAdmin(id: number, ativo: boolean, actorLogin: string): Promise<void> {
     const conn = await this.db.getConnection();
     try {
+      const alvo = await this.getUserById(conn, id);
+      if (!alvo) throw new NotFoundException(`Usuário #${id} não encontrado.`);
+      if (alvo.login === actorLogin) {
+        throw new ForbiddenException('Você não pode alterar o seu próprio usuário.');
+      }
+      if (!ativo && alvo.role === 'ADM' && (await this.contarAdminsAtivos(conn)) <= 1) {
+        throw new ConflictException('Não é possível desativar o último administrador ativo.');
+      }
       await conn.execute(
         'UPDATE ADMIN_USERS SET ativo = :1 WHERE id = :2',
         [ativo ? 1 : 0, id],
@@ -242,9 +290,31 @@ export class AdminService {
     }
   }
 
-  async atualizarRole(id: number, role: 'ADM' | 'CONTRIBUTOR'): Promise<void> {
+  /**
+   * Altera o perfil. Regra de negócio (ADR-014 §10): só há **promoção**
+   * (CONTRIBUTOR → ADM) — ninguém rebaixa ninguém, nem a si mesmo. Restrito a
+   * ADM no controller.
+   */
+  async atualizarRole(
+    id: number,
+    role: 'ADM' | 'CONTRIBUTOR',
+    actorLogin: string,
+  ): Promise<void> {
     const conn = await this.db.getConnection();
     try {
+      const alvo = await this.getUserById(conn, id);
+      if (!alvo) throw new NotFoundException(`Usuário #${id} não encontrado.`);
+      if (alvo.login === actorLogin) {
+        throw new ForbiddenException('Você não pode alterar o seu próprio perfil.');
+      }
+      // Rebaixamento não é permitido — apenas promoção a administrador.
+      if (role !== 'ADM') {
+        throw new ForbiddenException('Não é permitido rebaixar um usuário; apenas promover.');
+      }
+      if (alvo.role === 'ADM') {
+        // Já é administrador — nada a fazer (idempotente).
+        return;
+      }
       await conn.execute(
         'UPDATE ADMIN_USERS SET role = :1 WHERE id = :2',
         [role, id],

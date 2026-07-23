@@ -21,7 +21,7 @@
   <header class="site-header">
     <div class="header-inner">
       <a class="brand" href="{{BASE_PATH}}/" aria-label="Inovação CEDAE — página inicial">
-        <img src="{{BASE_PATH}}/static/img/logo-cedae-horizontal.png"
+        <img src="{{BASE_PATH}}/static/img/logo-placeholder.png"
              alt="Inovação CEDAE — Conexões que Transformam" class="brand-logo" />
         <span class="brand-divider"></span>
         <span class="brand-context">Assessoria de Inovação<br>CEDAE · Planejamento</span>
@@ -43,7 +43,10 @@
   <section class="hero">
     <div class="hero-water"></div>
     <div class="hero-content">
-      <p class="hero-label">Formulário Via 2</p>
+      <span class="hero-logo" aria-label="Formulário Via 2">
+        <img src="{{BASE_PATH}}/static/img/logo-colorido-horizontal.png"
+             alt="Inovação CEDAE — Conexões que Transformam" />
+      </span>
       <h1 class="hero-title">Esteira de Captação<br>Ativa de Inovação</h1>
       <p class="hero-desc">
         Prezado(a) colaborador(a), este é o canal direto da Assessoria de Inovação para Planejamento.
@@ -213,6 +216,14 @@
               <div>
                 <strong>Escala / Operação Ativa</strong>
                 <p>A melhoria já está implementada e rodando ativamente na rotina da área.</p>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="estagio_desenvolvimento" value="paralisada" />
+              <span class="radio-box"></span>
+              <div>
+                <strong>Paralisada</strong>
+                <p>A iniciativa foi iniciada, mas está interrompida ou travada no momento.</p>
               </div>
             </label>
           </div>
@@ -439,8 +450,44 @@
     <p>Assessoria de Inovação para Planejamento</p>
   </footer>
 
+  <!-- TERMOS E CONDIÇÕES (usuários autenticados sem perfil administrativo) -->
+  <div id="termos-overlay" class="termos-overlay hidden">
+    <div class="termos-modal" role="dialog" aria-modal="true" aria-labelledby="termos-title">
+      <div class="termos-header">
+        <img src="{{BASE_PATH}}/static/img/logo-colorido-horizontal.png"
+             alt="CEDAE Inovação" class="termos-logo" />
+        <h2 id="termos-title">Termos e Condições de Uso</h2>
+      </div>
+      <div class="termos-body">
+        <p>Bem-vindo(a) à Esteira de Captação Ativa de Inovação da CEDAE. Para utilizar
+           esta plataforma, é necessário ler e aceitar os termos abaixo.</p>
+        <h3>1. Finalidade</h3>
+        <p>A plataforma destina-se ao registro e acompanhamento de iniciativas de inovação
+           no âmbito da Companhia Estadual de Águas e Esgotos do Rio de Janeiro (CEDAE).</p>
+        <h3>2. Uso das informações</h3>
+        <p>As informações fornecidas serão utilizadas exclusivamente para fins de análise,
+           gestão e comunicação relacionadas às iniciativas de inovação, respeitando as
+           normas internas da CEDAE e a legislação aplicável, incluindo a Lei Geral de
+           Proteção de Dados (LGPD).</p>
+        <h3>3. Responsabilidade do usuário</h3>
+        <p>O usuário compromete-se a fornecer informações verdadeiras e a utilizar a
+           plataforma de forma ética e em conformidade com as políticas da Companhia.</p>
+        <h3>4. Registro de aceite</h3>
+        <p>Sua decisão de aceitar ou recusar estes termos será registrada, com data, hora e
+           demais dados técnicos, para fins de auditoria.</p>
+        <p>Em caso de dúvidas, entre em contato pelo e-mail
+           <a href="mailto:bi.7@cedae.com.br">bi.7@cedae.com.br</a>.</p>
+      </div>
+      <div class="termos-actions">
+        <button type="button" class="btn-termos-recusar" onclick="recusarTermos()">Recusar</button>
+        <button type="button" class="btn-termos-aceitar" onclick="aceitarTermos()">Aceito os Termos</button>
+      </div>
+    </div>
+  </div>
+
   <script src="{{BASE_PATH}}/static/js/api.js"></script>
   <script src="{{BASE_PATH}}/static/js/ui.js"></script>
+  <script src="{{BASE_PATH}}/static/js/termos.js"></script>
   <script src="{{BASE_PATH}}/static/js/app.js"></script>
   <script src="{{BASE_PATH}}/static/js/wizard.js"></script>
 </body>

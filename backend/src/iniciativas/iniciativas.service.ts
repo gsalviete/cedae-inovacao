@@ -1,8 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
+import { MailService } from '../mail/mail.service';
 import { CreateIniciativaDto } from './dto/create-iniciativa.dto';
 import { CreateManualIniciativaDto } from './dto/create-manual-iniciativa.dto';
+import { UpdateIniciativaDto } from './dto/update-iniciativa.dto';
 
 /** Metadados de origem carimbados pela camada de ingestão (ADR-013 §3.2). */
 interface OrigemIngestao {
@@ -26,17 +28,32 @@ const TIPOS_INSTITUICAO = new Set(['ICT', 'UNIVERSIDADE', 'EMPRESA_PUBLICA', 'PA
 
 @Injectable()
 export class IniciativasService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly mail: MailService,
+  ) {}
 
   /**
    * Via 2 (formulário público). Grava sempre CANAL_CODIGO='VIA_2' e
    * PROPONENTE_TIPO='INTERNO' (ADR-013 §4.1) — sem autoria autenticada.
+   * Dispara o e-mail de confirmação ao proponente (ADR-014 §12), best-effort:
+   * uma falha no envio nunca invalida a submissão.
    */
   async criar(data: CreateIniciativaDto): Promise<{ id: number; codigo_publico: string }> {
-    return this.ingerir(data, {
+    const resultado = await this.ingerir(data, {
       canal_codigo: 'VIA_2',
       proponente_tipo: 'INTERNO',
     });
+
+    void this.mail
+      .sendConfirmacaoVia2({
+        nome: data.nome_colaborador,
+        email: data.email_proponente,
+        protocolo: resultado.codigo_publico,
+      })
+      .catch(() => {});
+
+    return resultado;
   }
 
   /**
@@ -270,6 +287,68 @@ export class IniciativasService {
       const rows = result.rows as any[];
       if (!rows.length) return null;
       return this.normalize(rows[0]);
+    } finally {
+      await conn.close();
+    }
+  }
+
+  /**
+   * Edição administrativa (ADM) de uma iniciativa persistida. Atualiza apenas
+   * os campos de conteúdo enviados (os demais permanecem intactos). Não altera
+   * status, protocolo, canal nem tipo de proponente.
+   */
+  async atualizar(id: number, dto: UpdateIniciativaDto): Promise<void> {
+    // Mapa coluna → valor, na ordem de bind. `undefined` = campo não enviado.
+    const campos: Record<string, unknown> = {
+      NOME_COLABORADOR: dto.nome_colaborador,
+      CANAL_CONTATO: dto.canal_contato,
+      EMAIL_PROPONENTE: dto.email_proponente,
+      TITULO_INICIATIVA: dto.titulo_iniciativa,
+      AREA_PROPONENTE: dto.area_proponente,
+      LOCAL_APLICACAO: dto.local_aplicacao,
+      PROBLEMA_PRATICO: dto.problema_pratico,
+      SOLUCAO_PROPOSTA: dto.solucao_proposta,
+      RISCO_MITIGADO: dto.risco_mitigado,
+      ESTAGIO_DESENVOLVIMENTO: dto.estagio_desenvolvimento,
+      MACRODIMENSAO: dto.macrodimensao,
+      MACRODIMENSAO_OBSERVACAO: dto.macrodimensao_observacao,
+      PERFIL_IMPACTO: dto.perfil_impacto,
+      APORTE_FINANCEIRO: dto.aporte_financeiro,
+      VALOR_APORTE: dto.valor_aporte,
+      RETORNO_ECONOMICO: dto.retorno_economico,
+      SUPORTE_NECESSARIO: dto.suporte_necessario,
+      DIAGNOSTICO_OBSERVACAO: dto.diagnostico_observacao,
+      COMENTARIOS_ADICIONAIS: dto.comentarios_adicionais,
+    };
+
+    const sets: string[] = [];
+    const binds: unknown[] = [];
+    let i = 1;
+    for (const [coluna, valor] of Object.entries(campos)) {
+      if (valor !== undefined) {
+        sets.push(`${coluna} = :${i}`);
+        // string vazia vira NULL (campos opcionais); demais valores preservados.
+        binds.push(valor === '' ? null : valor);
+        i++;
+      }
+    }
+
+    if (!sets.length) {
+      throw new BadRequestException('Nenhum campo para atualizar.');
+    }
+
+    sets.push('ATUALIZADO_EM = SYSDATE');
+    binds.push(id); // WHERE ID = :i
+
+    const sql = `UPDATE INOVACAO_INICIATIVAS SET ${sets.join(', ')} WHERE ID = :${i}`;
+
+    const conn = await this.db.getConnection();
+    try {
+      const result = await conn.execute(sql, binds);
+      if (!result.rowsAffected) {
+        throw new NotFoundException(`Iniciativa #${id} não encontrada`);
+      }
+      await conn.commit();
     } finally {
       await conn.close();
     }

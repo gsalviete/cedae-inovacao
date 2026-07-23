@@ -92,7 +92,8 @@ export class AdminController {
     @Req() req: Request,
   ): Promise<object> {
     this.requireAdm(req);
-    await this.adminService.toggleAdmin(id, body.ativo);
+    const actor = (req as AuthRequest).user;
+    await this.adminService.toggleAdmin(id, body.ativo, actor.login);
     return { message: 'Status atualizado.' };
   }
 
@@ -103,7 +104,8 @@ export class AdminController {
     @Req() req: Request,
   ): Promise<object> {
     this.requireAdm(req);
-    await this.adminService.atualizarRole(id, body.role);
-    return { message: 'Role atualizado.' };
+    const actor = (req as AuthRequest).user;
+    await this.adminService.atualizarRole(id, body.role, actor.login);
+    return { message: 'Perfil atualizado.' };
   }
 }

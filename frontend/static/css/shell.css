@@ -58,7 +58,8 @@
   transition: transform var(--dur-base) var(--ease-spring);
 }
 .sidebar-brand:hover .sidebar-brand-plate { transform: translateY(-1px); }
-.sidebar-brand-plate img { width: 100%; max-width: 172px; height: auto; display: block; }
+/* Logo horizontal: ocupa a largura da placa. */
+.sidebar-brand-plate img { width: 100%; max-width: 180px; height: auto; margin: 0 auto; display: block; }
 /* Marca compacta (gota) — aparece apenas quando a sidebar está recolhida. */
 .sidebar-brand-mark {
   display: none;

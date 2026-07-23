@@ -144,7 +144,7 @@ async function bootstrap(): Promise<void> {
     {
       route: '/admin/usuarios', content: 'usuarios.html',
       meta: { active: 'usuarios', title: 'Usuários administrativos',
-        subtitle: 'Usuários do Active Directory (LDAP) habilitados no painel.',
+        subtitle: 'Usuários habilitados no painel administrativo.',
         breadcrumb: crumb('Painel', 'Usuários'), script: 'page-usuarios.js' },
     },
     {
