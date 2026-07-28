@@ -1,5 +1,6 @@
-import { IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
+import { CLASSIFICACOES, RELEVANCIAS } from '../dominio-iniciativa';
 
 /**
  * Edição de uma iniciativa já persistida, feita por ADM na tela de detalhes
@@ -32,4 +33,9 @@ export class UpdateIniciativaDto {
   @IsOptional() @IsString() suporte_necessario?: string;
   @IsOptional() @IsString() diagnostico_observacao?: string;
   @IsOptional() @IsString() comentarios_adicionais?: string;
+
+  // Relevância estratégica e classificação Ação/Projeto (ADR-015 §2/§3).
+  // Ambas são auditadas individualmente em INOVACAO_LOGS quando mudam.
+  @IsOptional() @IsIn(RELEVANCIAS as unknown as string[]) relevancia_estrategica?: string;
+  @IsOptional() @IsIn(CLASSIFICACOES as unknown as string[]) classificacao_iniciativa?: string;
 }

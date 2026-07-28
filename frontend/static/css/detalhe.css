@@ -17,12 +17,20 @@
   background: linear-gradient(180deg, var(--blue-800), var(--brand-green));
 }
 
+/* Título/protocolo/badges à esquerda, ação à direita. O bloco de texto encolhe
+   (min-width:0) para que títulos longos e rótulos de via extensos quebrem em
+   várias linhas sem empurrar o botão para baixo. */
 .detalhe-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.detalhe-header-main {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .detalhe-titulo {
@@ -33,6 +41,8 @@
   color: var(--gray-900);
   margin: 0 0 4px;
   line-height: 1.2;
+  /* Títulos sem espaços (URLs, códigos) não podem estourar o container. */
+  overflow-wrap: anywhere;
 }
 
 .detalhe-id {
@@ -43,20 +53,28 @@
   letter-spacing: .01em;
 }
 
+/* Badges (via de captação + status) logo abaixo do protocolo: acompanham o
+   texto e quebram livremente, em vez de disputar espaço com o botão. */
 .detalhe-header-badges {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  margin-top: 10px;
+}
+.detalhe-header-badges .badge {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
 }
 
-/* Lado direito do cabeçalho: badges + botão de editar (ADM). */
+/* Lado direito do cabeçalho: ação administrativa. Nunca encolhe. */
 .detalhe-header-side {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 10px;
+  flex: 0 0 auto;
 }
 
 /* ── Grid de campos ────────────────────────────────── */
@@ -133,6 +151,16 @@
 .btn-workflow-err:hover   { background: var(--red-50); }
 .btn-workflow-obs   { background: var(--gray-100); color: var(--gray-600); border: 1px dashed var(--gray-300); }
 .btn-workflow-obs:hover   { background: var(--gray-150); }
+/* Reversão de decisão terminal (ADR-015 §4): tom de atenção, não destrutivo. */
+.btn-workflow-warn  { background: var(--white); color: #92610e; border-color: #f5e2b8; }
+.btn-workflow-warn:hover  { background: var(--amber-50); }
+
+.workflow-aviso {
+  font-size: 12.5px;
+  color: var(--gray-500);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
 
 /* ── Histórico timeline ────────────────────────────── */
 .historico-timeline {
@@ -275,6 +303,15 @@
   color: var(--gray-500);
   font-size: 13px;
   margin: 0;
+}
+
+/* Em telas estreitas o botão desce para baixo do texto e ocupa a linha inteira
+   — em vez de espremer o título contra a borda. */
+@media (max-width: 640px) {
+  .detalhe-header { flex-wrap: wrap; }
+  .detalhe-header-main { flex-basis: 100%; }
+  .detalhe-header-side { align-items: stretch; width: 100%; }
+  .detalhe-header-side .btn-action { justify-content: center; }
 }
 
 @media (max-width: 600px) {

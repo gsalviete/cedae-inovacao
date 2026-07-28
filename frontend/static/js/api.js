@@ -71,10 +71,50 @@ function canalBadge(codigo, full = false) {
   return `<span class="badge ${info.cls}" title="${info.nome}">${full ? info.nome : info.curto}</span>`;
 }
 
+/* `PARCERIA` saiu do cadastro (ADR-015 §6), mas continua no mapa: há registros
+   gravados com esse valor e eles precisam de rótulo na listagem e no detalhe. */
 const TIPO_INSTITUICAO_LABEL = {
   ICT:             'ICT',
   UNIVERSIDADE:    'Universidade',
+  STARTUP:         'Startup',
+  EMPRESA_PRIVADA: 'Empresa Privada',
   EMPRESA_PUBLICA: 'Empresa Pública',
-  PARCERIA:        'Parceria',
+  PARCERIA:        'Parceria (legado)',
   OUTRO:           'Outro',
+};
+
+/* ── Relevância estratégica e classificação (ADR-015) ─────
+   Espelham os domínios do backend (`dominio-iniciativa.ts`). */
+const RELEVANCIA_LABEL = {
+  FINANCEIRO:               'Sim, por retorno financeiro',
+  PLANEJAMENTO_ESTRATEGICO: 'Sim, por estar presente no Planejamento Estratégico',
+  INDETERMINADA:            'Ainda não é possível determinar',
+  SEM_RELEVANCIA:           'Não possui relevância estratégica',
+};
+
+const CLASSIFICACAO_LABEL = {
+  ACAO:    'Ação',
+  PROJETO: 'Projeto',
+};
+
+/* Opções de "Suporte Necessário" — mesma lista do formulário público (Bloco IV),
+   reutilizada pela edição administrativa (ADR-015 §5.2). O valor persistido é a
+   concatenação das chaves marcadas, separadas por "|". */
+const SUPORTE_OPCOES = [
+  { valor: 'instrumentos_juridicos', titulo: 'Modelagem de Instrumentos Técnicos e Jurídicos', desc: 'Estruturar TR ou Acordo de Cooperação Técnica (ACT).' },
+  { valor: 'academia',               titulo: 'Conexão com a Academia / Universidades',          desc: 'Buscar laboratórios, patentes ou pesquisadores.' },
+  { valor: 'mercado_startups',       titulo: 'Conexão com o Mercado / Startups',                desc: 'Pontes com fornecedores tecnológicos ou soluções comerciais.' },
+  { valor: 'sinergia_interna',       titulo: 'Sinergia Interna / Conexão Interdepartamental',   desc: 'Localizar outras gerências que enfrentem a mesma dor.' },
+  { valor: 'monitoramento',          titulo: 'Apenas Monitoramento Corporativo',                desc: 'A área tem autonomia; deseja apenas visibilidade institucional.' },
+  { valor: 'diagnostico',            titulo: 'Apoio Diagnóstico',                               desc: 'Sabe qual é o problema, mas precisa de orientação técnica.' },
+];
+
+/** Rótulo curto de cada opção de suporte, para exibição em listas/detalhe. */
+const SUPORTE_LABEL = {
+  instrumentos_juridicos: 'Instrumentos Técnicos e Jurídicos',
+  academia:               'Conexão com Academia',
+  mercado_startups:       'Conexão com Mercado / Startups',
+  sinergia_interna:       'Sinergia Interdepartamental',
+  monitoramento:          'Monitoramento Corporativo',
+  diagnostico:            'Apoio Diagnóstico',
 };

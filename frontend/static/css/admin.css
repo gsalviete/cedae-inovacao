@@ -245,12 +245,6 @@
 .badge-canal-via_2   { background: var(--blue-50);    color: var(--blue-800);   border-color: var(--blue-100); }
 .badge-canal-via_3   { background: var(--teal-100);   color: var(--teal-600);   border-color: #b9ede6; }
 .badge-canal-externo { background: var(--amber-50);   color: var(--amber-600);  border-color: #f5e2b8; }
-.badge-externo-tag {
-  background: transparent;
-  color: var(--amber-600);
-  border: 1px solid #f0d9a8;
-}
-.badge-externo-tag::before { display: none; }
 
 /* ── Buttons ───────────────────────────────────────── */
 .btn-action {
@@ -363,6 +357,59 @@
 }
 .form-input:focus { outline: none; border-color: var(--blue-600); box-shadow: 0 0 0 3px var(--blue-100); }
 .form-input[readonly] { background: var(--gray-100); color: var(--gray-700); cursor: not-allowed; }
+
+/* Select do painel: mesma seta e o mesmo respiro do `select.field-input`
+   usado nos formulários públicos (ADR-015 §7.3). */
+select.form-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--white);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+  cursor: pointer;
+}
+select.form-input:disabled { background-color: var(--gray-100); cursor: not-allowed; }
+
+/* ── Controle segmentado (Ação x Projeto — ADR-015 §3) ── */
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+}
+.segmented-option {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--gray-600);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .2s, color .2s, box-shadow .2s;
+}
+.segmented-option:hover { color: var(--gray-900); }
+.segmented-option.is-active {
+  background: var(--white);
+  color: var(--blue-800);
+  border-color: var(--blue-100);
+  box-shadow: var(--shadow-xs);
+}
+.segmented-option:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 1px; }
+
+/* Grupo de checkboxes dentro da modal: mesma anatomia dos formulários, com
+   respiro reduzido para caber na coluna de edição. */
+.checkbox-group--compact { gap: 8px; }
+.checkbox-group--compact .checkbox-option { padding: 10px 12px; }
+.checkbox-group--compact .checkbox-option strong { font-size: 13px; }
+.checkbox-group--compact .checkbox-option p { font-size: 12px; }
 
 /* ── LOV de usuários AD (popup estilo APEX) ──────────── */
 .ad-lov-wrapper { position: relative; }

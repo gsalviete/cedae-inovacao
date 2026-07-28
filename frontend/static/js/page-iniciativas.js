@@ -57,14 +57,15 @@ function renderIniciativas() {
   }
 
   const esc = Admin.escapeHtml;
+  // A origem tem uma única identificação visual: o badge do canal. O antigo
+  // selo "Externo" era redundante — proponente externo só existe na Captação
+  // Externa (RN-02), cujo badge já diz "Externa" (ADR-015 §7.2).
   tbody.innerHTML = lista.map((i) => {
-    const externoTag = (i.proponente_tipo === 'EXTERNO')
-      ? '<span class="badge badge-externo-tag" title="Proponente externo">Externo</span>' : '';
     return `
       <tr class="row-clickable fade-in" onclick="abrirDetalhe(${i.id})" title="Ver detalhes">
         <td class="cell-protocol">${i.codigo_publico || '—'}</td>
         <td>${esc(i.titulo_iniciativa) || '—'}</td>
-        <td>${canalBadge(i.canal_codigo || 'VIA_2')} ${externoTag}</td>
+        <td>${canalBadge(i.canal_codigo || 'VIA_2')}</td>
         <td>${esc(i.nome_colaborador) || '—'}</td>
         <td>${esc(i.area_proponente) || '—'}</td>
         <td>${Admin.stageBadge(i.estagio_desenvolvimento)}</td>

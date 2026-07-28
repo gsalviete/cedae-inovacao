@@ -7,19 +7,28 @@ import {
   IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { RELEVANCIAS } from '../dominio-iniciativa';
 
 /**
  * Cadastro manual autenticado (Vias 1, 3 e Captação Externa — ADR-013 §4.2-4.4).
  * Compartilha os campos da iniciativa com a Via 2; acrescenta o canal de origem
  * e os campos de procedência. O e-mail é opcional aqui (nem toda iniciativa
  * cadastrada por um analista tem e-mail do proponente disponível).
- * A validação cruzada de procedência (RN-03/RN-04) é feita no serviço.
+ * A validação cruzada de procedência (RN-03/RN-04/RN-15) é feita no serviço.
  */
 export class CreateManualIniciativaDto {
   // Origem
   @IsString()
   @IsIn(['VIA_1', 'VIA_3', 'MAPEAMENTO_EXTERNO'])
   canal_codigo: string;
+
+  /**
+   * Relevância estratégica (ADR-015 §2). Ignorada na Via 1, que é sempre
+   * carimbada como PLANEJAMENTO_ESTRATEGICO pelo próprio sistema (RN-14).
+   */
+  @IsOptional()
+  @IsIn(RELEVANCIAS as unknown as string[])
+  relevancia_estrategica?: string;
 
   // Procedência — Via 1 (SGE/SGP)
   @IsOptional()
@@ -49,13 +58,16 @@ export class CreateManualIniciativaDto {
   area_reuniao?: string;
 
   // Bloco 0
+  // Obrigatórios em todas as vias EXCETO a Captação Externa, em que a iniciativa
+  // costuma ser identificada antes de existir um contato formal (ADR-015 §6).
+  // A exigência por canal é aplicada no serviço (RN-15).
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  nome_colaborador: string;
+  nome_colaborador?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  canal_contato: string;
+  canal_contato?: string;
 
   @IsOptional()
   @IsEmail()

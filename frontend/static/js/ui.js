@@ -165,6 +165,79 @@
     }, 3200);
   }
 
+  /* ── Máscara monetária BRL (compartilhada) ─────────────
+     Fonte única da experiência de valor em reais: formulário público,
+     cadastro manual e edição administrativa usam exatamente a mesma
+     máscara, o mesmo bloqueio de teclas e o mesmo parse (ADR-015 §5.4).
+     O valor canônico fica em `dataset.cents` (inteiro, em centavos);
+     o texto exibido é apenas apresentação. */
+  const TECLAS_CONTROLE = new Set([
+    'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+    'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End',
+  ]);
+
+  function formatBRL(cents) {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency', currency: 'BRL', minimumFractionDigits: 2,
+    }).format((Number(cents) || 0) / 100);
+  }
+
+  function moneyKeydown(e) {
+    if (TECLAS_CONTROLE.has(e.key)) return;
+    if (e.ctrlKey || e.metaKey) return;
+    if (!/^\d$/.test(e.key)) e.preventDefault();   // bloqueia letras e símbolos
+  }
+
+  function moneyInput(e) {
+    const el = e.target;
+    const digits = el.value.replace(/\D/g, '');
+    el.dataset.cents = digits || '0';
+    el.value = digits ? formatBRL(parseInt(digits, 10)) : '';
+  }
+
+  /** Liga a máscara em um input (idempotente — não duplica listeners). */
+  function attachMoney(el) {
+    if (!el || el.dataset.currencyBound === '1') return;
+    el.dataset.currencyBound = '1';
+    el.setAttribute('inputmode', 'numeric');
+    el.setAttribute('autocomplete', 'off');
+    el.addEventListener('keydown', moneyKeydown);
+    el.addEventListener('input', moneyInput);
+    // Colar texto com letras também precisa ser sanitizado.
+    el.addEventListener('paste', () => setTimeout(() => moneyInput({ target: el }), 0));
+  }
+
+  /** Liga a máscara em todos os `[data-currency]` do escopo informado. */
+  function initMoney(root) {
+    (root || document).querySelectorAll('[data-currency]').forEach(attachMoney);
+  }
+
+  /** Valor em reais (Number) ou null quando vazio. */
+  function moneyValue(el) {
+    if (!el) return null;
+    const cents = parseInt(el.dataset.cents || '0', 10);
+    return cents ? cents / 100 : null;
+  }
+
+  /** Preenche o campo a partir de um valor em reais (Number ou string). */
+  function setMoney(el, valor) {
+    if (!el) return;
+    const num = typeof valor === 'number' ? valor : parseFloat(String(valor ?? '').replace(',', '.'));
+    if (!Number.isFinite(num) || num === 0) {
+      el.value = '';
+      el.dataset.cents = '0';
+      return;
+    }
+    const cents = Math.round(num * 100);
+    el.dataset.cents = String(cents);
+    el.value = formatBRL(cents);
+  }
+
+  window.CedaeMoney = {
+    formatBRL, attach: attachMoney, initAll: initMoney,
+    value: moneyValue, setValue: setMoney,
+  };
+
   // Exposição global (os templates chamam via onclick / os scripts de página usam os helpers)
   window.CedaeUI = { icon, hydrateIcons, animateCount, renderSidebarUser, toast };
   window.renderSidebarUser = renderSidebarUser;

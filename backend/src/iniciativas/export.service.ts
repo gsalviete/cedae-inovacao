@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Workbook } from 'exceljs';
 import * as PDFDocument from 'pdfkit';
+import { CLASSIFICACAO_LABEL, RELEVANCIA_LABEL } from './dominio-iniciativa';
 
 /** Uma linha de iniciativa como devolvida por IniciativasService.listar(). */
 export interface IniciativaExport {
@@ -13,6 +14,8 @@ export interface IniciativaExport {
   canal_codigo?: string | null;
   proponente_tipo?: string | null;
   organizacao_externa?: string | null;
+  relevancia_estrategica?: string | null;
+  classificacao_iniciativa?: string | null;
   criado_em?: string | Date | null;
 }
 
@@ -44,6 +47,8 @@ const COLUNAS: Array<{ header: string; get: (r: IniciativaExport) => string; wid
   { header: 'Área', get: (r) => r.area_proponente ?? '—', width: 24 },
   { header: 'Organização externa', get: (r) => r.organizacao_externa ?? '—', width: 24 },
   { header: 'Estágio', get: (r) => ESTAGIO_LABEL[r.estagio_desenvolvimento ?? ''] ?? '—', width: 14 },
+  { header: 'Relevância estratégica', get: (r) => RELEVANCIA_LABEL[r.relevancia_estrategica ?? ''] ?? '—', width: 34 },
+  { header: 'Classificação', get: (r) => CLASSIFICACAO_LABEL[r.classificacao_iniciativa ?? ''] ?? '—', width: 14 },
   { header: 'Status', get: (r) => STATUS_LABEL[r.status ?? 'SUBMETIDA'] ?? (r.status ?? '—'), width: 16 },
   { header: 'Registrada em', get: (r) => fmtData(r.criado_em), width: 20 },
 ];

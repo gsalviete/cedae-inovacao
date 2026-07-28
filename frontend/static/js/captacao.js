@@ -6,6 +6,9 @@
 let _canal = null;
 let _ultimaIniciativaId = null;
 
+/** Vias em que o proponente é opcional (ADR-015 §6). */
+const PROPONENTE_OPCIONAL = new Set(['MAPEAMENTO_EXTERNO']);
+
 const VIA_META = {
   VIA_1: {
     tag: 'Via 1 · SGE/SGP',
@@ -42,13 +45,51 @@ function selecionarVia(canal) {
   document.getElementById('origem-tag').textContent = meta.tag;
   document.getElementById('origem-title').textContent = meta.origemTitle;
   document.getElementById('bloco-proponente-title').textContent = meta.proponenteTitle;
-  document.getElementById('lbl-nome').innerHTML =
-    `${meta.nomeLabel} <span class="required">*</span>`;
+
+  aplicarObrigatoriedadeProponente(canal, meta);
+  aplicarRelevanciaDaVia(canal);
 
   const form = document.getElementById('captacao-form');
   form.classList.remove('hidden');
   document.getElementById('captacao-success').classList.add('hidden');
   form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── Obrigatoriedade do proponente por via (RN-15) ───── */
+function aplicarObrigatoriedadeProponente(canal, meta) {
+  const opcional = PROPONENTE_OPCIONAL.has(canal);
+  const asterisco = opcional ? '' : ' <span class="required">*</span>';
+
+  document.getElementById('lbl-nome').innerHTML = `${meta.nomeLabel}${asterisco}`;
+  document.getElementById('lbl-contato').innerHTML = `Canal de Contato${asterisco}`;
+  document.getElementById('hint-proponente-opcional').classList.toggle('hidden', !opcional);
+
+  // Mensagens de erro anteriores deixam de fazer sentido ao trocar de via.
+  setErr('err-nome', '');
+  setErr('err-contato', '');
+}
+
+/* ── Relevância estratégica por via (RN-14) ──────────────
+   A Via 1 (SGE/SGP) é sempre "presente no Planejamento Estratégico" e o
+   sistema carimba isso sozinho — o campo aparece travado, apenas informativo.
+   O backend reaplica a regra, independentemente do que o formulário enviar. */
+function aplicarRelevanciaDaVia(canal) {
+  const sel = document.getElementById('relevancia_estrategica');
+  const hint = document.getElementById('hint-relevancia');
+  if (!sel) return;
+
+  if (canal === 'VIA_1') {
+    sel.value = 'PLANEJAMENTO_ESTRATEGICO';
+    sel.disabled = true;
+    hint.textContent =
+      'Definida automaticamente: toda iniciativa registrada a partir do SGE/SGP '
+      + 'consta do Planejamento Estratégico.';
+  } else {
+    sel.disabled = false;
+    if (!sel.value) sel.value = 'INDETERMINADA';
+    hint.textContent =
+      'Avaliação da Assessoria sobre a importância estratégica desta iniciativa.';
+  }
 }
 
 /* ── Campos condicionais ─────────────────────────────── */
@@ -70,29 +111,10 @@ function toggleValorAporte() {
   }
 }
 
-/* ── Máscara de moeda ────────────────────────────────── */
-function formatBRL(cents) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency', currency: 'BRL', minimumFractionDigits: 2,
-  }).format(cents / 100);
-}
-
+/* ── Máscara de moeda ──────────────────────────────────
+   Mesma implementação do formulário público (ui.js / CedaeMoney). */
 function initCurrency() {
-  const valor = document.getElementById('valor_aporte');
-  if (valor) {
-    valor.addEventListener('input', function () {
-      const digits = this.value.replace(/\D/g, '');
-      this.dataset.cents = digits || '0';
-      this.value = digits ? formatBRL(parseInt(digits, 10)) : '';
-    });
-  }
-  const retorno = document.getElementById('retorno_economico');
-  if (retorno) {
-    retorno.addEventListener('input', function () {
-      const digits = this.value.replace(/\D/g, '');
-      this.value = digits ? formatBRL(parseInt(digits, 10)) : '';
-    });
-  }
+  window.CedaeMoney.initAll();
 }
 
 /* ── Validação ───────────────────────────────────────── */
@@ -103,9 +125,14 @@ function setErr(id, msg) {
 
 function validar() {
   let ok = true;
-  const req = [
+  // O proponente só é exigido nas vias em que ele é conhecido no cadastro
+  // (RN-15) — na Captação Externa os dois campos são opcionais.
+  const proponente = PROPONENTE_OPCIONAL.has(_canal) ? [] : [
     ['nome_colaborador', 'err-nome', 'Informe o nome.'],
     ['canal_contato', 'err-contato', 'Informe um canal de contato.'],
+  ];
+  const req = [
+    ...proponente,
     ['titulo_iniciativa', 'err-titulo', 'Informe o título.'],
     ['area_proponente', 'err-area', 'Informe a área.'],
     ['local_aplicacao', 'err-local', 'Informe o local de aplicação.'],
@@ -144,20 +171,14 @@ function validar() {
 /* ── Coleta ──────────────────────────────────────────── */
 function coletar() {
   const g = (id) => (document.getElementById(id).value || '').trim() || null;
-  const centsToNum = (id) => {
-    const el = document.getElementById(id);
-    const cents = parseInt(el.dataset.cents || '0', 10);
-    return cents ? (cents / 100).toString() : null;
-  };
-  const retorno = () => {
-    const digits = (document.getElementById('retorno_economico').value || '').replace(/\D/g, '');
-    return digits ? parseInt(digits, 10) / 100 : null;
-  };
+  const money = (id) => window.CedaeMoney.value(document.getElementById(id));
 
   const payload = {
     canal_codigo: _canal,
-    nome_colaborador: g('nome_colaborador'),
-    canal_contato: g('canal_contato'),
+    // Via 1 é sempre carimbada pelo backend; enviar aqui apenas reflete a UI.
+    relevancia_estrategica: g('relevancia_estrategica'),
+    nome_colaborador: g('nome_colaborador') ?? undefined,
+    canal_contato: g('canal_contato') ?? undefined,
     email_proponente: g('email_proponente') || undefined,
     titulo_iniciativa: g('titulo_iniciativa'),
     area_proponente: g('area_proponente'),
@@ -171,8 +192,8 @@ function coletar() {
       document.getElementById('macrodimensao').value === 'outros' ? g('macrodimensao_observacao') : null,
     perfil_impacto: g('perfil_impacto'),
     aporte_financeiro: g('aporte_financeiro'),
-    valor_aporte: centsToNum('valor_aporte'),
-    retorno_economico: retorno(),
+    valor_aporte: money('valor_aporte')?.toString() ?? null,
+    retorno_economico: money('retorno_economico'),
     comentarios_adicionais: g('comentarios_adicionais'),
   };
 
@@ -240,6 +261,10 @@ async function submitCaptacao(e) {
 
 function novoRegistro() {
   document.getElementById('captacao-form').reset();
+  // reset() limpa o texto, mas não o valor canônico da máscara monetária.
+  ['valor_aporte', 'retorno_economico'].forEach((id) =>
+    window.CedaeMoney.setValue(document.getElementById(id), null));
+  document.getElementById('relevancia_estrategica').disabled = false;
   document.getElementById('macro-obs-wrapper').classList.add('hidden');
   document.getElementById('valor-aporte-wrapper').classList.add('hidden');
   document.getElementById('captacao-success').classList.add('hidden');

@@ -407,6 +407,23 @@ body {
   margin: 0 auto;
 }
 
+/* Chamada para o aviso de privacidade (LGPD). Fica no topo, fora do
+   formulário: a esteira com barra de progresso é só para preenchimento. */
+.hero-aviso {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255,255,255,.66);
+  max-width: 600px;
+  margin: 14px auto 0;
+}
+.hero-aviso a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.hero-aviso a:hover { color: var(--brand-green); }
+
 @keyframes pulse-dot {
   0%   { box-shadow: 0 0 0 0 rgba(141,198,63,.55); }
   70%  { box-shadow: 0 0 0 7px rgba(141,198,63,0); }
@@ -429,6 +446,17 @@ body {
   margin-bottom: 20px;
   box-shadow: var(--shadow-sm);
 }
+
+/* ── Ciência do aviso de privacidade (LGPD) ─────────
+   Último campo antes do envio. Herda o cartão de .checkbox-option; o texto
+   fica em peso normal (é uma frase corrida, não um rótulo) e o link do aviso
+   é inline dentro dela — nada de elementos irmãos, que o design system
+   renderiza em linhas separadas (`.checkbox-option div strong` é block). */
+.field-ciencia { margin-top: 4px; }
+.checkbox-ciencia { align-items: center; }
+.checkbox-ciencia strong { font-weight: 500; line-height: 1.6; margin-bottom: 0; }
+.checkbox-ciencia a { color: var(--blue-800); font-weight: 600; }
+.checkbox-ciencia .required { margin-left: 2px; }
 
 .block-header {
   margin-bottom: 24px;
@@ -512,8 +540,10 @@ select.field-input {
   -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 38px;
+  /* A seta fica alinhada com o padding do texto (14px) em vez de colada na
+     borda; o padding-right reserva espaço para ela (ADR-015 §7.3). */
+  background-position: right 14px center;
+  padding-right: 40px;
   cursor: pointer;
 }
 
@@ -759,6 +789,25 @@ select.field-input {
 
 .modal-body { padding: 24px; }
 
+/* Aviso de privacidade: texto longo, precisa de mais largura que os 400px
+   padrão e de corpo rolável dentro da própria modal. */
+.modal--aviso {
+  width: min(640px, 92vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal--aviso .modal-header { flex: 0 0 auto; }
+.modal--aviso .modal-body { overflow-y: auto; }
+.modal--aviso .modal-body p {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--gray-700);
+  margin: 0 0 12px;
+}
+.modal--aviso .modal-body p:last-child { margin-bottom: 0; }
+.modal--aviso .modal-body a { color: var(--blue-800); font-weight: 600; }
+
 /* ── Footer ────────────────────────────────────────── */
 .site-footer {
   background: var(--blue-950);
@@ -960,8 +1009,24 @@ select.field-input {
   animation: pop-in var(--dur-slow) var(--ease-spring) 140ms both;
 }
 
-.modal { animation: pop-in var(--dur-base) var(--ease-spring) both; }
-.modal-overlay { animation: pop-in var(--dur-fast) var(--ease-out) both; }
+/* A modal é centrada por `transform: translate(-50%, -50%)`. Uma animação que
+   declare `transform` SUBSTITUI essa regra enquanto roda — e, com fill-mode
+   `both`, também depois que termina. Usar o `pop-in` genérico aqui apagava a
+   centralização e jogava a modal para baixo/direita. Por isso ela tem
+   keyframes próprios, que repetem o translate em cada passo. */
+@keyframes modal-pop-in {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(.92); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.modal { animation: modal-pop-in var(--dur-base) var(--ease-spring) both; }
+
+/* O overlay cobre a tela inteira (inset: 0); escalá-lo abriria faixas vazias
+   nas bordas durante a animação. Só a opacidade varia. */
+@keyframes fade-in {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+.modal-overlay { animation: fade-in var(--dur-fast) var(--ease-out) both; }
 
 .modal-close { transition: transform var(--dur-base) var(--ease-spring), color var(--dur-base) var(--ease-out); }
 .modal-close:hover { transform: rotate(90deg); color: var(--gray-900); }

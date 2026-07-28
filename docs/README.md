@@ -25,7 +25,7 @@ Quando houver ambiguidade, consultar a fonte de verdade de maior precedência.
 
 ```
 docs/
-├── adr/                        ← ADRs individuais aprovados (ADR-001 a ADR-012)
+├── adr/                        ← ADRs individuais aprovados (ADR-001 a ADR-015)
 │   ├── ADR-001-schema-additive.md
 │   ├── ADR-002-dominio-valores.md
 │   ├── ADR-002B-status-workflow.md
@@ -38,7 +38,10 @@ docs/
 │   ├── ADR-009-manter-stack-nestjs.md
 │   ├── ADR-010-parametros-sistema.md
 │   ├── ADR-011-proponentes-internos-mvp.md
-│   └── ADR-012-ciclo-vida-mvp.md
+│   ├── ADR-012-ciclo-vida-mvp.md
+│   ├── ADR-013-captacao-multicanal.md
+│   ├── ADR-014-interface-permissoes-exportacao-email-termos.md
+│   └── ADR-015-relevancia-classificacao-reversao-captacao-externa.md
 │
 ├── architecture/               ← Documentos técnicos de arquitetura
 │   ├── final-adrs.md           ← Consolidação de todos os ADRs (índice + conteúdo completo)
@@ -75,7 +78,7 @@ Estes documentos foram produzidos durante a fase de discovery e não são fontes
 ### Para entender as decisões (arquitetura)
 
 1. `docs/architecture/adr-review.md` — revisão crítica com contexto de cada decisão
-2. `docs/adr/ADR-001-*.md` a `ADR-012-*.md` — cada decisão individualmente
+2. `docs/adr/ADR-001-*.md` a `ADR-015-*.md` — cada decisão individualmente
 3. `docs/architecture/final-adrs.md` — visão consolidada de todos os ADRs
 
 ### Para iniciar a implementação

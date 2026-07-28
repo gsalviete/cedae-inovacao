@@ -31,6 +31,11 @@ import { IniciativasService } from './iniciativas.service';
 
 type AuthRequest = Request & { user: RequestUser };
 
+/** INOVACAO_LOGS.DETALHE é VARCHAR2(1000): o texto precisa caber sem estourar. */
+function limitarDetalhe(texto: string): string {
+  return texto.length <= 1000 ? texto : `${texto.slice(0, 997)}...`;
+}
+
 /** Aplica os mesmos filtros da listagem do painel (canal, status, busca livre). */
 function filtrarIniciativas(
   lista: IniciativaExport[],
@@ -68,7 +73,22 @@ export class IniciativasController {
         .registrarLog(
           dto.nome_colaborador,
           'submit_formulario',
-          `Iniciativa ${codigo_publico} (#${id}) - ${dto.titulo_iniciativa}`,
+          limitarDetalhe(
+            `Iniciativa ${codigo_publico} (#${id}) - ${dto.titulo_iniciativa}`,
+          ),
+        )
+        .catch(() => {});
+      // Ciência do aviso de privacidade (LGPD): entrada própria na auditoria,
+      // com usuário, data/hora e o protocolo a que se refere. O DTO já garante
+      // que só chega aqui com a confirmação marcada.
+      this.authService
+        .registrarLog(
+          dto.nome_colaborador,
+          'ciencia_privacidade',
+          limitarDetalhe(
+            `Ciência do aviso de privacidade (LGPD) confirmada na submissão ` +
+            `${codigo_publico} (#${id}) — proponente ${dto.email_proponente}`,
+          ),
         )
         .catch(() => {});
       return { message: 'Iniciativa registrada com sucesso.', id, codigo_publico };
@@ -140,10 +160,21 @@ export class IniciativasController {
     if (user.role !== 'ADM') {
       throw new ForbiddenException('Apenas administradores podem editar iniciativas.');
     }
-    await this.iniciativasService.atualizar(id, dto);
+    const alteracoes = await this.iniciativasService.atualizar(id, dto);
     this.authService
       .registrarLog(user.login, 'editar_iniciativa', `Iniciativa #${id} editada`)
       .catch(() => {});
+    // Relevância estratégica e classificação Ação/Projeto têm entrada própria na
+    // auditoria, com o valor anterior e o novo (ADR-015 §9).
+    for (const alteracao of alteracoes) {
+      this.authService
+        .registrarLog(
+          user.login,
+          'classificar_iniciativa',
+          limitarDetalhe(`Iniciativa #${id} — ${alteracao}`),
+        )
+        .catch(() => {});
+    }
     return { message: 'Iniciativa atualizada.' };
   }
 
@@ -179,7 +210,25 @@ export class IniciativasController {
     @Req() req: Request,
   ): Promise<object> {
     const user = (req as AuthRequest).user;
-    return this.workflowService.transicionar(id, dto.status, dto.justificativa, user);
+    const resultado = await this.workflowService.transicionar(
+      id, dto.status, dto.justificativa, user,
+    );
+    // A esteira normal já é auditada pelo HISTORICO_STATUS (ADR-005). A reversão
+    // de uma decisão terminal é um ato administrativo excepcional e ganha
+    // também a camada de log geral (ADR-008 / ADR-015 §9).
+    if (resultado.reversao) {
+      this.authService
+        .registrarLog(
+          user.login,
+          'reverter_decisao',
+          limitarDetalhe(
+            `Iniciativa #${id} — reversão de ${resultado.status_anterior} para ` +
+            `${resultado.status_novo}. Justificativa: ${dto.justificativa?.trim() ?? ''}`,
+          ),
+        )
+        .catch(() => {});
+    }
+    return resultado;
   }
 
   @Patch(':id/observacao/:obsId')

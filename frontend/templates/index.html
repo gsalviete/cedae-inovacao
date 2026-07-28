@@ -53,6 +53,10 @@
         Se você implementou, está testando ou idealizou uma melhoria, nova metodologia, processo ou tecnologia
         na sua área, registre-a abaixo.
       </p>
+      <p class="hero-aviso">
+        Seus dados serão tratados conforme a LGPD —
+        <a href="#" id="link-aviso-hero">leia o aviso de privacidade</a>.
+      </p>
     </div>
   </section>
 
@@ -339,7 +343,7 @@
           <p class="field-hint">Se aplicável, estime o impacto financeiro positivo anualizado após implementação
             completa.</p>
           <input type="text" id="retorno_economico" name="retorno_economico" class="field-input" inputmode="numeric"
-            autocomplete="off" placeholder="Ex.: R$ 120.000,00" />
+            autocomplete="off" data-currency placeholder="Ex.: R$ 120.000,00" />
         </div>
       </div>
 
@@ -419,6 +423,26 @@
           <textarea id="comentarios_adicionais" name="comentarios_adicionais" class="field-textarea" rows="4"
             placeholder="Opcional — observações livres..."></textarea>
         </div>
+
+        <!-- Ciência inequívoca do aviso de privacidade (LGPD). Fica no fim da
+             última etapa, imediatamente antes do envio. Obrigatório: bloqueia a
+             submissão aqui e é revalidado no backend.
+             O <strong> é `display:block` no design system, então a frase inteira
+             (link e asterisco inclusive) precisa caber dentro dele — qualquer
+             elemento irmão viraria uma linha solta abaixo do texto. -->
+        <div class="field-group field-ciencia">
+          <label class="checkbox-option checkbox-ciencia">
+            <input type="checkbox" id="ciencia_privacidade" name="ciencia_privacidade" />
+            <span class="checkbox-box"></span>
+            <div>
+              <strong>Antes de encaminhar a proposta, confirmo que li o
+                <a href="#" id="link-aviso-privacidade">aviso de privacidade</a>
+                disponível no início do formulário, e tenho ciência da finalidade do uso
+                dos meus dados <span class="required">*</span></strong>
+            </div>
+          </label>
+          <span class="field-error" id="err-ciencia"></span>
+        </div>
       </div>
 
       <div class="form-footer">
@@ -431,6 +455,52 @@
 
     </form>
   </main>
+
+  <!-- AVISO DE PRIVACIDADE (LGPD) — vive só aqui. Fora do formulário de
+       propósito: a esteira com a barra de progresso é para preenchimento, não
+       para texto informativo. Aberto pelo link do topo e pelo checkbox de
+       ciência da última etapa. -->
+  <div id="aviso-overlay" class="modal-overlay hidden" onclick="fecharAvisoPrivacidade()"></div>
+  <div id="aviso-modal" class="modal modal--aviso hidden" role="dialog" aria-modal="true"
+       aria-labelledby="aviso-modal-titulo">
+    <div class="modal-header">
+      <h3 id="aviso-modal-titulo">Aviso de Privacidade</h3>
+      <button type="button" class="modal-close" id="aviso-modal-fechar"
+              onclick="fecharAvisoPrivacidade()" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body" id="aviso-modal-corpo">
+      <p>
+        Informamos que os dados pessoais serão tratados de acordo com a LGPD e serão
+        utilizados, exclusivamente, para as finalidades indicadas em cada campo.
+      </p>
+      <p>
+        As propostas registradas serão registradas para monitoramento individualizado
+        pela Assessoria de Planejamento, e também poderão ser utilizadas, de forma não
+        individualizada, em relatórios internos.
+      </p>
+      <p>
+        A Assessoria de Planejamento também poderá utilizar seus dados de contato para
+        realizar convite para apresentações institucionais, caso seja de interesse do
+        representante da proposta apresentá-la ao corpo de funcionários da CEDAE sobre
+        os resultados obtidos.
+      </p>
+      <p>
+        <strong>Em nenhuma hipótese os dados poderão ser utilizados para fins de
+        avaliações de desempenho e/ou ações que possam prejudicar o representante da
+        proposta ou outro funcionário.</strong>
+      </p>
+      <p>
+        O acesso aos dados será restrito apenas aos funcionários da Assessoria de
+        Planejamento e usuários administradores do sistema.
+      </p>
+      <p>
+        Você tem o direito de solicitar o acesso, a correção, tirar dúvidas sobre o
+        tratamento dos seus dados a qualquer momento, e inclusive solicitar a eliminação
+        dos mesmos, entrando em contato por meio do e-mail:
+        <a href="mailto:encarregado.lgpd@cedae.com">encarregado.lgpd@cedae.com</a>.
+      </p>
+    </div>
+  </div>
 
   <!-- ERROR MODAL -->
   <div id="error-overlay" class="modal-overlay hidden" onclick="toggleErrorModal(false)"></div>
@@ -459,24 +529,27 @@
         <h2 id="termos-title">Termos e Condições de Uso</h2>
       </div>
       <div class="termos-body">
-        <p>Bem-vindo(a) à Esteira de Captação Ativa de Inovação da CEDAE. Para utilizar
-           esta plataforma, é necessário ler e aceitar os termos abaixo.</p>
-        <h3>1. Finalidade</h3>
-        <p>A plataforma destina-se ao registro e acompanhamento de iniciativas de inovação
-           no âmbito da Companhia Estadual de Águas e Esgotos do Rio de Janeiro (CEDAE).</p>
-        <h3>2. Uso das informações</h3>
-        <p>As informações fornecidas serão utilizadas exclusivamente para fins de análise,
-           gestão e comunicação relacionadas às iniciativas de inovação, respeitando as
-           normas internas da CEDAE e a legislação aplicável, incluindo a Lei Geral de
-           Proteção de Dados (LGPD).</p>
-        <h3>3. Responsabilidade do usuário</h3>
-        <p>O usuário compromete-se a fornecer informações verdadeiras e a utilizar a
-           plataforma de forma ética e em conformidade com as políticas da Companhia.</p>
-        <h3>4. Registro de aceite</h3>
-        <p>Sua decisão de aceitar ou recusar estes termos será registrada, com data, hora e
-           demais dados técnicos, para fins de auditoria.</p>
-        <p>Em caso de dúvidas, entre em contato pelo e-mail
-           <a href="mailto:bi.7@cedae.com.br">bi.7@cedae.com.br</a>.</p>
+        <p>Prezado(a) colaborador(a), este é o canal direto da Assessoria de Inovação para
+           Planejamento. Se você implementou, está testando ou idealizou uma melhoria, nova
+           metodologia, processo ou tecnologia na sua área, registre-a abaixo.</p>
+        <p>Informamos que os dados pessoais serão tratados de acordo com a LGPD e serão
+           utilizados, exclusivamente, para as finalidades indicadas em cada campo.</p>
+        <p>As propostas registradas serão registradas para monitoramento individualizado
+           pela Assessoria de Planejamento, e também poderão ser utilizadas, de forma não
+           individualizada, em relatórios internos.</p>
+        <p>A Assessoria de Planejamento também poderá utilizar seus dados de contato para
+           realizar convite para apresentações institucionais, caso seja de interesse do
+           representante da proposta apresentá-la ao corpo de funcionários da CEDAE sobre
+           os resultados obtidos.</p>
+        <p><strong>Em nenhuma hipótese os dados poderão ser utilizados para fins de
+           avaliações de desempenho e/ou ações que possam prejudicar o representante da
+           proposta ou outro funcionário.</strong></p>
+        <p>O acesso aos dados será restrito apenas aos funcionários da Assessoria de
+           Planejamento e usuários administradores do sistema.</p>
+        <p>Você tem o direito de solicitar o acesso, a correção, tirar dúvidas sobre o
+           tratamento dos seus dados a qualquer momento, e inclusive solicitar a eliminação
+           dos mesmos, entrando em contato por meio do e-mail:
+           <a href="mailto:encarregado.lgpd@cedae.com">encarregado.lgpd@cedae.com</a>.</p>
       </div>
       <div class="termos-actions">
         <button type="button" class="btn-termos-recusar" onclick="recusarTermos()">Recusar</button>

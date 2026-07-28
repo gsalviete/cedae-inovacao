@@ -23,6 +23,22 @@ services:
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
       # Só necessário em dev/Docker sem IIS. Em produção o IIS injeta x-remote-user.
       - DEV_REMOTE_USER=${DEV_REMOTE_USER:-}
+
+      # ── E-mail (SMTP) — confirmação automática da Via 2 ───────────────────
+      # A ausência destas era o motivo de o e-mail não sair rodando em Docker.
+      - MAIL_ENABLED=${MAIL_ENABLED:-false}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-25}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_TLS_REJECT_UNAUTHORIZED=${SMTP_TLS_REJECT_UNAUTHORIZED:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-bi.7@cedae.com.br}
+      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-CEDAE Inovação}
+
+      # ── Termos e Condições de Uso ─────────────────────────────────────────
+      # Incrementar faz o aceite ser solicitado novamente.
+      - TERMOS_VERSAO=${TERMOS_VERSAO:-2.0}
     volumes:
       - ./backend/.env:/app/.env
       - ./frontend:/frontend

@@ -29,6 +29,32 @@ export function assuntoConfirmacaoVia2(protocolo: string): string {
   return `Iniciativa registrada — Protocolo ${protocolo} · CEDAE Inovação`;
 }
 
+/**
+ * Alternativa em texto puro do mesmo conteúdo. Enviada junto do HTML como
+ * multipart/alternative: melhora a pontuação anti-spam e atende clientes que
+ * não renderizam HTML (e leitores de tela). Sem escape — não é markup.
+ */
+export function renderConfirmacaoVia2Texto(dados: ConfirmacaoVia2Dados): string {
+  const nome = dados.nome || 'Colaborador(a)';
+  return [
+    `Olá, ${nome},`,
+    '',
+    'Confirmamos o recebimento da sua iniciativa pela Esteira de Captação Ativa',
+    'de Inovação da CEDAE. A Assessoria de Inovação para Planejamento fará a',
+    'análise e entrará em contato caso necessário.',
+    '',
+    `Número do protocolo: ${dados.protocolo}`,
+    'Guarde este código para acompanhar sua iniciativa.',
+    '',
+    `Em caso de dúvidas, entre em contato pelo e-mail ${dados.contato}.`,
+    '',
+    '--',
+    'CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro',
+    'Assessoria de Inovação para Planejamento',
+    'Esta é uma mensagem automática — por favor, não responda diretamente.',
+  ].join('\n');
+}
+
 export function renderConfirmacaoVia2(dados: ConfirmacaoVia2Dados): string {
   const nome = escapeHtml(dados.nome || 'Colaborador(a)');
   const protocolo = escapeHtml(dados.protocolo);

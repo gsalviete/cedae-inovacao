@@ -1,12 +1,12 @@
 <!-- Cabeçalho da iniciativa -->
 <section class="admin-section detalhe-hero">
   <div class="detalhe-header">
-    <div>
+    <div class="detalhe-header-main">
       <h1 class="detalhe-titulo" id="d-titulo">Carregando...</h1>
       <p class="detalhe-id" id="d-id"></p>
+      <div class="detalhe-header-badges" id="d-status-badge"></div>
     </div>
     <div class="detalhe-header-side">
-      <div class="detalhe-header-badges" id="d-status-badge"></div>
       <button id="btn-editar-iniciativa" class="btn-action hidden" onclick="abrirEdicaoIniciativa()">
         <i data-icon="file-text"></i> Editar
       </button>
@@ -128,6 +128,14 @@
     <div class="detalhe-field">
       <span class="detalhe-label">Perfil de Impacto</span>
       <span class="detalhe-value" id="d-perfil_impacto">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Relevância Estratégica</span>
+      <span class="detalhe-value" id="d-relevancia_estrategica">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Ação ou Projeto</span>
+      <span class="detalhe-value" id="d-classificacao_iniciativa">—</span>
     </div>
   </div>
 </section>
@@ -289,7 +297,9 @@
             <option value="outros">Outros / Multidimensionais</option>
           </select>
         </div>
-        <div class="form-group edit-col-full">
+        <!-- Só aparece quando a macrodimensão é "Outros" — mesmo comportamento
+             do formulário público (ADR-015 §5.1). -->
+        <div class="form-group edit-col-full hidden" id="e-macrodimensao_observacao-group">
           <label class="form-label" for="e-macrodimensao_observacao">Descrição da Macrodimensão</label>
           <input type="text" id="e-macrodimensao_observacao" class="form-input" />
         </div>
@@ -302,6 +312,27 @@
           </select>
         </div>
 
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-relevancia_estrategica">Relevância Estratégica</label>
+          <select id="e-relevancia_estrategica" class="form-input">
+            <option value="INDETERMINADA">Ainda não é possível determinar</option>
+            <option value="FINANCEIRO">Sim, por retorno financeiro</option>
+            <option value="PLANEJAMENTO_ESTRATEGICO">Sim, por estar presente no Planejamento Estratégico</option>
+            <option value="SEM_RELEVANCIA">Não possui relevância estratégica</option>
+          </select>
+        </div>
+
+        <!-- Ação x Projeto: administrado exclusivamente por ADM (ADR-015 §3). -->
+        <div class="form-group edit-col-full">
+          <label class="form-label" id="lbl-classificacao">A iniciativa é uma Ação ou um Projeto?</label>
+          <div class="segmented" role="radiogroup" aria-labelledby="lbl-classificacao"
+               id="e-classificacao_iniciativa">
+            <button type="button" class="segmented-option" role="radio" aria-checked="false" data-valor="">Não definido</button>
+            <button type="button" class="segmented-option" role="radio" aria-checked="false" data-valor="ACAO">Ação</button>
+            <button type="button" class="segmented-option" role="radio" aria-checked="false" data-valor="PROJETO">Projeto</button>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label" for="e-aporte_financeiro">Aporte Financeiro?</label>
           <select id="e-aporte_financeiro" class="form-input">
@@ -312,19 +343,22 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="e-valor_aporte">Valor Estimado do Aporte</label>
-          <input type="text" id="e-valor_aporte" class="form-input" placeholder="Ex.: R$ 0,00" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="e-retorno_economico">Retorno Econômico (R$/ano)</label>
-          <input type="number" id="e-retorno_economico" class="form-input" step="0.01" min="0" />
+          <input type="text" id="e-valor_aporte" class="form-input" data-currency placeholder="R$ 0,00" />
         </div>
         <div class="form-group edit-col-full">
-          <label class="form-label" for="e-suporte_necessario">Suporte Necessário</label>
-          <input type="text" id="e-suporte_necessario" class="form-input" />
-          <span class="field-hint" style="font-size:12px;color:var(--gray-500);">Valores separados por “|”.</span>
+          <label class="form-label" for="e-retorno_economico">Retorno Econômico (R$/ano)</label>
+          <input type="text" id="e-retorno_economico" class="form-input" data-currency placeholder="R$ 0,00" />
         </div>
 
+        <!-- Mesmas opções do formulário público (Bloco IV), montadas por JS a
+             partir de SUPORTE_OPCOES (ADR-015 §5.2). -->
         <div class="form-group edit-col-full">
+          <label class="form-label">Suporte Necessário</label>
+          <div class="checkbox-group checkbox-group--compact" id="e-suporte_necessario"></div>
+        </div>
+
+        <!-- Visível apenas com "Apoio Diagnóstico" marcado (ADR-015 §5.3). -->
+        <div class="form-group edit-col-full hidden" id="e-diagnostico_observacao-group">
           <label class="form-label" for="e-diagnostico_observacao">Apoio Diagnóstico Desejado</label>
           <textarea id="e-diagnostico_observacao" class="form-input" rows="2" style="resize:vertical;"></textarea>
         </div>

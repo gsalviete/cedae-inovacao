@@ -8,6 +8,15 @@ import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
 import { RequestUser } from '../common/interfaces/request-user.interface';
 
+/** Resultado de uma tramitação. `reversao` marca o desfazimento de uma
+ *  decisão terminal (homologação/desclassificação) — ADR-015 §4. */
+export interface TransicaoResultado {
+  iniciativa_id: number;
+  status_anterior: string;
+  status_novo: string;
+  reversao: boolean;
+}
+
 @Injectable()
 export class WorkflowService {
   constructor(private readonly db: DatabaseService) {}
@@ -42,7 +51,7 @@ export class WorkflowService {
     statusDestino: string,
     justificativa: string | undefined,
     usuario: RequestUser,
-  ): Promise<object> {
+  ): Promise<TransicaoResultado> {
     const conn = await this.db.getConnection();
     try {
       const iniResult = await conn.execute(
@@ -84,7 +93,19 @@ export class WorkflowService {
         );
       }
 
-      if (trans.JUSTIFICATIVA_OBRIG === 1 && !justificativa?.trim()) {
+      // Desfazer a decisão também é exclusivo de ADM (ADR-015 §4): quem não pode
+      // homologar/desclassificar tampouco pode reverter.
+      const ehReversao = this.STATUS_EXCLUSIVOS_ADM.has(statusAtual);
+      if (ehReversao && usuario.role !== 'ADM') {
+        throw new ForbiddenException(
+          'Apenas administradores podem reverter uma homologação ou desclassificação.',
+        );
+      }
+
+      // Reverter exige justificativa por regra de negócio, não por configuração:
+      // a checagem não depende de o catálogo trazer justificativa_obrig = 1.
+      const exigeJustificativa = trans.JUSTIFICATIVA_OBRIG === 1 || ehReversao;
+      if (exigeJustificativa && !justificativa?.trim()) {
         throw new BadRequestException('Justificativa obrigatória para esta transição');
       }
 
@@ -101,14 +122,19 @@ export class WorkflowService {
           iniciativaId,
           statusAtual,
           statusDestino,
-          this.mapTipoEvento(statusDestino),
+          ehReversao ? 'REVERSAO' : this.mapTipoEvento(statusDestino),
           usuario.login,
           justificativa || null,
         ],
       );
 
       await conn.commit();
-      return { iniciativa_id: iniciativaId, status_anterior: statusAtual, status_novo: statusDestino };
+      return {
+        iniciativa_id: iniciativaId,
+        status_anterior: statusAtual,
+        status_novo: statusDestino,
+        reversao: ehReversao,
+      };
     } finally {
       await conn.close().catch(() => {});
     }
@@ -193,6 +219,7 @@ export class WorkflowService {
     }
   }
 
+  /** Tipo de evento pelo destino. Reversões não passam por aqui: têm tipo próprio. */
   private mapTipoEvento(statusDestino: string): string {
     const mapa: Record<string, string> = {
       SUBMETIDA:       'SUBMISSAO',
@@ -203,7 +230,8 @@ export class WorkflowService {
     return mapa[statusDestino] ?? 'ANALISE';
   }
 
-  // Status terminais cuja transição é restrita a ADM (ADR-014 §10).
+  // Status terminais: entrar neles é restrito a ADM (ADR-014 §10) e sair deles
+  // (reversão) também (ADR-015 §4).
   private readonly STATUS_EXCLUSIVOS_ADM = new Set(['HOMOLOGADA', 'DESCLASSIFICADA']);
 
   // Tipos de evento que o autor pode editar dentro da janela de 2h

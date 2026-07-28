@@ -25,18 +25,11 @@ const STATUS_MAP = {
   DESCLASSIFICADA: ['Desclassificada', 'badge-status-desclassificada'],
 };
 
-const SUPORTE_MAP = {
-  instrumentos_juridicos: 'Instrumentos Técnicos e Jurídicos',
-  academia:               'Conexão com Academia',
-  mercado_startups:       'Conexão com Mercado / Startups',
-  sinergia_interna:       'Sinergia Interdepartamental',
-  monitoramento:          'Monitoramento Corporativo',
-  diagnostico:            'Apoio Diagnóstico',
-};
-
+/* Rótulos de suporte vêm de api.js (SUPORTE_LABEL), compartilhados com o
+   formulário público e com a edição administrativa. */
 function formatSuporte(val) {
   if (!val) return null;
-  return val.split('|').filter(Boolean).map(v => SUPORTE_MAP[v] || v).join(' · ');
+  return val.split('|').filter(Boolean).map(v => SUPORTE_LABEL[v] || v).join(' · ');
 }
 
 function statusBadge(val) {
@@ -52,6 +45,7 @@ const TIPO_EVENTO_LABEL = {
   ANALISE:          'Análise',
   CORRECAO:         'Correção',
   OBSERVACAO:       'Observação',
+  REVERSAO:         'Reversão',
 };
 
 function getIniciativaId() {
@@ -114,6 +108,10 @@ async function loadDetalhe() {
       .getElementById('d-macrodimensao_observacao-field')
       ?.classList.toggle('hidden', !data.macrodimensao_observacao);
     setField('d-perfil_impacto', data.perfil_impacto);
+    setField('d-relevancia_estrategica',
+      RELEVANCIA_LABEL[data.relevancia_estrategica] || data.relevancia_estrategica);
+    setField('d-classificacao_iniciativa',
+      CLASSIFICACAO_LABEL[data.classificacao_iniciativa] || null);
 
     setField('d-aporte_financeiro', data.aporte_financeiro);
     setField('d-valor_aporte', data.valor_aporte);
@@ -155,45 +153,53 @@ function renderOrigem(data) {
 async function loadAcoes(id, statusAtual) {
   const el = document.getElementById('workflow-acoes');
 
+  // A partir de um status terminal a única ação é a reversão da decisão, que
+  // devolve a iniciativa à análise (ADR-015 §4). Nada é apagado: o histórico
+  // ganha um evento de reversão a mais.
   const TRANSICOES = {
     SUBMETIDA:  [{ status_destino: 'EM_ANALISE', label: 'Iniciar Análise', classe: 'btn-workflow-info', justObrig: false }],
     EM_ANALISE: [
       { status_destino: 'HOMOLOGADA',      label: 'Homologar',      classe: 'btn-workflow-ok',  justObrig: false },
       { status_destino: 'DESCLASSIFICADA', label: 'Desclassificar', classe: 'btn-workflow-err', justObrig: true  },
     ],
-    HOMOLOGADA:      [],
-    DESCLASSIFICADA: [],
+    HOMOLOGADA: [
+      { status_destino: 'EM_ANALISE', label: 'Reverter Homologação', classe: 'btn-workflow-warn', justObrig: true, somenteAdm: true },
+    ],
+    DESCLASSIFICADA: [
+      { status_destino: 'EM_ANALISE', label: 'Reverter Desclassificação', classe: 'btn-workflow-warn', justObrig: true, somenteAdm: true },
+    ],
   };
 
   const terminais = ['HOMOLOGADA', 'DESCLASSIFICADA'];
   const ehTerminal = terminais.includes(statusAtual);
 
-  // Homologar/desclassificar são exclusivos de ADM (ADR-014 §10). O colaborador
-  // enxerga a esteira, mas não as duas decisões terminais.
+  // Homologar/desclassificar — e desfazê-los — são exclusivos de ADM
+  // (ADR-014 §10, ADR-015 §4). O colaborador enxerga a esteira, mas não decide.
   const ehAdm = _me?.role === 'ADM';
   const ACOES_EXCLUSIVAS_ADM = new Set(['HOMOLOGADA', 'DESCLASSIFICADA']);
   const acoes = (TRANSICOES[statusAtual] || [])
-    .filter(a => ehAdm || !ACOES_EXCLUSIVAS_ADM.has(a.status_destino));
-
-  if (ehTerminal) {
-    el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Tramitação encerrada — nenhuma ação disponível.</p>';
-    return;
-  }
+    .filter(a => ehAdm || !(a.somenteAdm || ACOES_EXCLUSIVAS_ADM.has(a.status_destino)));
 
   if (!acoes.length) {
-    el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Nenhuma ação disponível para o seu perfil. Homologar e desclassificar são exclusivos de administradores.</p>';
+    el.innerHTML = ehTerminal
+      ? '<p style="color:var(--gray-500);font-size:13px;">Tramitação encerrada. Somente administradores podem reverter esta decisão.</p>'
+      : '<p style="color:var(--gray-500);font-size:13px;">Nenhuma ação disponível para o seu perfil. Homologar e desclassificar são exclusivos de administradores.</p>';
     return;
   }
 
-  el.innerHTML = acoes.map(a => `
+  const aviso = ehTerminal
+    ? '<p class="workflow-aviso">A reversão exige justificativa e fica registrada no histórico — nenhum evento anterior é removido.</p>'
+    : '';
+
+  el.innerHTML = aviso + acoes.map(a => `
     <button class="btn-workflow ${a.classe}"
-            onclick="iniciarTransicao(${id}, '${a.status_destino}', ${a.justObrig})">
+            onclick="iniciarTransicao(${id}, '${a.status_destino}', ${a.justObrig}, '${a.label}')">
       ${a.label}
     </button>
   `).join('');
 }
 
-function iniciarTransicao(id, statusDestino, justObrig) {
+function iniciarTransicao(id, statusDestino, justObrig, titulo) {
   _pendingStatus = { id, statusDestino };
   _justObrig = justObrig;
 
@@ -202,7 +208,8 @@ function iniciarTransicao(id, statusDestino, justObrig) {
     HOMOLOGADA:      'Homologar Iniciativa',
     DESCLASSIFICADA: 'Desclassificar Iniciativa',
   };
-  document.getElementById('modal-just-title').textContent = labels[statusDestino] || statusDestino;
+  document.getElementById('modal-just-title').textContent =
+    titulo || labels[statusDestino] || statusDestino;
   document.getElementById('just-text').value = '';
   document.getElementById('just-error').classList.add('hidden');
   document.getElementById('just-text').placeholder = justObrig
@@ -482,23 +489,105 @@ async function confirmarEdicao() {
 
 /* ── Init ────────────────────────────────────────────── */
 /* ── Edição administrativa da iniciativa (ADM) ─────────── */
+/* Campos texto/select simples: valor lido e escrito diretamente em `e-<campo>`.
+   Os demais (suporte, monetários, classificação) têm tratamento próprio. */
 const EDIT_FIELDS = [
   'nome_colaborador', 'canal_contato', 'email_proponente',
   'titulo_iniciativa', 'area_proponente', 'local_aplicacao',
   'problema_pratico', 'solucao_proposta', 'risco_mitigado',
   'estagio_desenvolvimento', 'macrodimensao', 'macrodimensao_observacao',
-  'perfil_impacto', 'aporte_financeiro', 'valor_aporte', 'retorno_economico',
-  'suporte_necessario', 'diagnostico_observacao', 'comentarios_adicionais',
+  'perfil_impacto', 'aporte_financeiro',
+  'diagnostico_observacao', 'comentarios_adicionais',
+  'relevancia_estrategica',
 ];
+
+const EDIT_MONEY_FIELDS = ['valor_aporte', 'retorno_economico'];
+
+/* ── Suporte Necessário: mesmas opções do formulário público ──
+   (ADR-015 §5.2). Montado uma única vez, na primeira abertura da modal. */
+function montarCheckboxesSuporte() {
+  const host = document.getElementById('e-suporte_necessario');
+  if (!host || host.childElementCount) return;
+  host.innerHTML = SUPORTE_OPCOES.map((o) => `
+    <label class="checkbox-option">
+      <input type="checkbox" name="e-suporte" value="${o.valor}" />
+      <span class="checkbox-box"></span>
+      <div><strong>${o.titulo}</strong><p>${o.desc}</p></div>
+    </label>`).join('');
+  host.addEventListener('change', toggleEditDiagnostico);
+}
+
+function lerSuporteSelecionado() {
+  return [...document.querySelectorAll('input[name="e-suporte"]:checked')]
+    .map((el) => el.value);
+}
+
+function preencherSuporte(valor) {
+  const marcados = new Set(String(valor || '').split('|').filter(Boolean));
+  document.querySelectorAll('input[name="e-suporte"]').forEach((el) => {
+    el.checked = marcados.has(el.value);
+  });
+}
+
+/* ── Campos condicionais (mesmo comportamento do formulário público) ── */
+
+/** Descrição da macrodimensão: só com "Outros / Multidimensionais". */
+function toggleEditMacroObs() {
+  const mostrar = document.getElementById('e-macrodimensao').value === 'outros';
+  document.getElementById('e-macrodimensao_observacao-group')
+    .classList.toggle('hidden', !mostrar);
+  if (!mostrar) document.getElementById('e-macrodimensao_observacao').value = '';
+}
+
+/** Apoio diagnóstico: só com a opção correspondente marcada em Suporte. */
+function toggleEditDiagnostico() {
+  const mostrar = lerSuporteSelecionado().includes('diagnostico');
+  document.getElementById('e-diagnostico_observacao-group')
+    .classList.toggle('hidden', !mostrar);
+  if (!mostrar) document.getElementById('e-diagnostico_observacao').value = '';
+}
+
+/* ── Classificação Ação/Projeto (controle segmentado) ── */
+function selecionarClassificacao(valor) {
+  document.querySelectorAll('#e-classificacao_iniciativa .segmented-option')
+    .forEach((btn) => {
+      const ativo = btn.dataset.valor === (valor || '');
+      btn.classList.toggle('is-active', ativo);
+      btn.setAttribute('aria-checked', ativo ? 'true' : 'false');
+    });
+}
+
+function lerClassificacao() {
+  const ativo = document.querySelector(
+    '#e-classificacao_iniciativa .segmented-option.is-active',
+  );
+  return ativo?.dataset.valor || null;
+}
 
 function abrirEdicaoIniciativa() {
   if (!_iniciativaData) return;
+  montarCheckboxesSuporte();
+
   EDIT_FIELDS.forEach((f) => {
     const el = document.getElementById(`e-${f}`);
     if (!el) return;
     const val = _iniciativaData[f];
     el.value = (val === null || val === undefined) ? '' : val;
   });
+
+  // Monetários: mesma máscara do formulário público (ADR-015 §5.4).
+  window.CedaeMoney.initAll(document.getElementById('modal-edit-iniciativa'));
+  EDIT_MONEY_FIELDS.forEach((f) =>
+    window.CedaeMoney.setValue(document.getElementById(`e-${f}`), _iniciativaData[f]));
+
+  preencherSuporte(_iniciativaData.suporte_necessario);
+  selecionarClassificacao(_iniciativaData.classificacao_iniciativa);
+
+  // Os dois campos condicionais já foram preenchidos acima (EDIT_FIELDS); os
+  // toggles apenas os revelam ou os limpam, conforme o gatilho correspondente.
+  toggleEditMacroObs();
+  toggleEditDiagnostico();
+
   document.getElementById('edit-ini-error')?.classList.add('hidden');
   document.getElementById('modal-edit-iniciativa').classList.remove('hidden');
 }
@@ -520,15 +609,20 @@ async function salvarEdicaoIniciativa() {
   const payload = {};
   EDIT_FIELDS.forEach((f) => {
     const el = document.getElementById(`e-${f}`);
-    if (!el) return;
-    if (f === 'retorno_economico') {
-      const n = parseFloat(el.value);
-      if (!Number.isNaN(n)) payload[f] = n;
-      else payload[f] = ''; // vazio → NULL no backend
-    } else {
-      payload[f] = el.value.trim();
-    }
+    if (el) payload[f] = el.value.trim();
   });
+
+  // Monetários: valor canônico da máscara (Number em reais) ou null.
+  EDIT_MONEY_FIELDS.forEach((f) => {
+    const valor = window.CedaeMoney.value(document.getElementById(`e-${f}`));
+    payload[f] = valor === null ? null : valor;
+  });
+  // VALOR_APORTE é texto no banco; RETORNO_ECONOMICO é numérico.
+  if (payload.valor_aporte !== null) payload.valor_aporte = String(payload.valor_aporte);
+
+  payload.suporte_necessario = lerSuporteSelecionado().join('|');
+  // O DTO valida o domínio; "não definido" precisa ir como null, não como "".
+  payload.classificacao_iniciativa = lerClassificacao();
 
   if (btn) btn.disabled = true;
   try {
@@ -553,6 +647,15 @@ async function salvarEdicaoIniciativa() {
   }
 }
 
+/** Liga os controles da modal de edição que não dependem dos dados carregados. */
+function initEdicaoIniciativa() {
+  document.getElementById('e-macrodimensao')
+    ?.addEventListener('change', toggleEditMacroObs);
+
+  document.querySelectorAll('#e-classificacao_iniciativa .segmented-option')
+    .forEach((btn) => btn.addEventListener('click', () => selecionarClassificacao(btn.dataset.valor)));
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const me = await Admin.guard();
   if (!me) return;
@@ -560,6 +663,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Edição administrativa: só ADM vê o botão de editar (ADR-014).
   if (me.role === 'ADM') {
     document.getElementById('btn-editar-iniciativa')?.classList.remove('hidden');
+    initEdicaoIniciativa();
   }
   loadDetalhe();
 });

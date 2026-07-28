@@ -104,8 +104,9 @@
           <option value="">Selecione…</option>
           <option value="ICT">ICT — Instituição de Ciência e Tecnologia</option>
           <option value="UNIVERSIDADE">Universidade</option>
+          <option value="STARTUP">Startup</option>
+          <option value="EMPRESA_PRIVADA">Empresa Privada</option>
           <option value="EMPRESA_PUBLICA">Empresa Pública</option>
-          <option value="PARCERIA">Parceria</option>
           <option value="OUTRO">Outro</option>
         </select>
         <span class="field-error" id="err-tipo"></span>
@@ -119,6 +120,11 @@
       <span class="block-tag">Bloco 0</span>
       <h2 class="block-title" id="bloco-proponente-title">Identificação do Proponente</h2>
     </div>
+    <p class="field-hint hidden" id="hint-proponente-opcional">
+      Na Captação Externa a iniciativa costuma ser identificada antes de haver um
+      contato formal do responsável — estes dados são opcionais e podem ser
+      completados depois.
+    </p>
     <div class="field-group">
       <label class="field-label" for="nome_colaborador" id="lbl-nome">Nome do Proponente <span class="required">*</span></label>
       <input type="text" id="nome_colaborador" class="field-input" placeholder="Nome completo" />
@@ -126,7 +132,7 @@
     </div>
     <div class="field-two-col">
       <div class="field-group">
-        <label class="field-label" for="canal_contato">Canal de Contato <span class="required">*</span></label>
+        <label class="field-label" for="canal_contato" id="lbl-contato">Canal de Contato <span class="required">*</span></label>
         <input type="text" id="canal_contato" class="field-input" placeholder="Ramal, telefone ou e-mail" />
         <span class="field-error" id="err-contato"></span>
       </div>
@@ -241,7 +247,20 @@
     </div>
     <div class="field-group">
       <label class="field-label" for="retorno_economico">Retorno econômico estimado (R$/ano)</label>
-      <input type="text" id="retorno_economico" class="field-input" inputmode="numeric" placeholder="Ex.: R$ 120.000,00" />
+      <input type="text" id="retorno_economico" class="field-input" inputmode="numeric" data-currency placeholder="Ex.: R$ 120.000,00" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="relevancia_estrategica" id="lbl-relevancia">Relevância estratégica</label>
+      <p class="field-hint" id="hint-relevancia">
+        Avaliação da Assessoria sobre a importância estratégica desta iniciativa.
+      </p>
+      <select id="relevancia_estrategica" class="field-input">
+        <option value="INDETERMINADA">Ainda não é possível determinar</option>
+        <option value="FINANCEIRO">Sim, por retorno financeiro</option>
+        <option value="PLANEJAMENTO_ESTRATEGICO">Sim, por estar presente no Planejamento Estratégico</option>
+        <option value="SEM_RELEVANCIA">Não possui relevância estratégica</option>
+      </select>
     </div>
   </div>
 
