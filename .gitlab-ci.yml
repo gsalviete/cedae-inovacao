@@ -1,2 +1,45 @@
-# .gitlab-ci.yml
-# Pipeline a ser configurado pelo time de DevOps
+stages:
+  - build-app
+  - docker
+
+variables:
+  GIT_SSL_NO_VERIFY: "true"
+
+cache:
+  - key: pnpm-cache
+    paths:
+      - backend/node_modules/
+
+.rules:
+  develop: &develop_rule
+    if: '$CI_COMMIT_BRANCH == "develop"'
+
+  main: &main_rule
+    if: '$CI_COMMIT_BRANCH == "main"'
+
+  prod_mr: &prod_mr_rule
+    if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "develop" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+
+workflow:
+  rules:
+    - *develop_rule
+    - *main_rule
+    - *prod_mr_rule
+    - when: never
+
+include:
+  - project: 'devjava/ci-templates'
+    ref: develop
+    file:
+      - '/build/build-node-pnpm.yml'
+      - '/docker/docker-build-push.yml'
+    rules:
+      - *develop_rule
+
+  - project: 'devjava/ci-templates'
+    ref: develop
+    file:
+      - '/build/build-node-pnpm.yml'
+      - '/docker/docker-build-push-prod.yml'
+    rules:
+      - *main_rule

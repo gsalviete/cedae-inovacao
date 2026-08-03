@@ -1,0 +1,404 @@
+<!-- Cabeçalho da iniciativa -->
+<section class="admin-section detalhe-hero">
+  <div class="detalhe-header">
+    <div class="detalhe-header-main">
+      <h1 class="detalhe-titulo" id="d-titulo">Carregando...</h1>
+      <p class="detalhe-id" id="d-id"></p>
+      <div class="detalhe-header-badges" id="d-status-badge"></div>
+    </div>
+    <div class="detalhe-header-side">
+      <button id="btn-editar-iniciativa" class="btn-action hidden" onclick="abrirEdicaoIniciativa()">
+        <i data-icon="file-text"></i> Editar
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Origem (ADR-013) -->
+<section class="admin-section">
+  <div class="section-head">
+    <span class="section-head-ic"><i data-icon="inbox"></i></span>
+    <div class="section-head-txt"><h2>Origem</h2></div>
+  </div>
+  <div class="detalhe-grid">
+    <div class="detalhe-field">
+      <span class="detalhe-label">Via de Captação</span>
+      <span class="detalhe-value" id="d-canal-badge">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Tipo de Proponente</span>
+      <span class="detalhe-value" id="d-proponente_tipo">—</span>
+    </div>
+    <div class="detalhe-field hidden" id="d-sistema-field">
+      <span class="detalhe-label">Sistema de Origem</span>
+      <span class="detalhe-value" id="d-sistema_origem">—</span>
+    </div>
+    <div class="detalhe-field hidden" id="d-codigo-origem-field">
+      <span class="detalhe-label">Código na Origem</span>
+      <span class="detalhe-value" id="d-codigo_origem">—</span>
+    </div>
+    <div class="detalhe-field hidden" id="d-org-field">
+      <span class="detalhe-label">Instituição de Origem</span>
+      <span class="detalhe-value" id="d-organizacao_externa">—</span>
+    </div>
+    <div class="detalhe-field hidden" id="d-tipo-inst-field">
+      <span class="detalhe-label">Tipo de Instituição</span>
+      <span class="detalhe-value" id="d-tipo_instituicao">—</span>
+    </div>
+    <div class="detalhe-field hidden" id="d-registrado-field">
+      <span class="detalhe-label">Registrado Por</span>
+      <span class="detalhe-value" id="d-registrado_por_login">—</span>
+    </div>
+  </div>
+</section>
+
+<!-- Dados do proponente -->
+<section class="admin-section">
+  <div class="section-head">
+    <span class="section-head-ic"><i data-icon="users"></i></span>
+    <div class="section-head-txt"><h2>Dados do Proponente</h2></div>
+  </div>
+  <div class="detalhe-grid">
+    <div class="detalhe-field">
+      <span class="detalhe-label">Nome</span>
+      <span class="detalhe-value" id="d-nome_colaborador">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Canal de Contato</span>
+      <span class="detalhe-value" id="d-canal_contato">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">E-mail</span>
+      <span class="detalhe-value" id="d-email_proponente">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Área Proponente</span>
+      <span class="detalhe-value" id="d-area_proponente">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Local de Aplicação</span>
+      <span class="detalhe-value" id="d-local_aplicacao">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Data de Submissão</span>
+      <span class="detalhe-value" id="d-criado_em">—</span>
+    </div>
+  </div>
+</section>
+
+<!-- Descrição da iniciativa -->
+<section class="admin-section">
+  <div class="section-head">
+    <span class="section-head-ic"><i data-icon="file-text"></i></span>
+    <div class="section-head-txt"><h2>Descrição da Iniciativa</h2></div>
+  </div>
+  <div class="detalhe-field-full">
+    <span class="detalhe-label">Problema Prático</span>
+    <p class="detalhe-text" id="d-problema_pratico">—</p>
+  </div>
+  <div class="detalhe-field-full">
+    <span class="detalhe-label">Solução Proposta</span>
+    <p class="detalhe-text" id="d-solucao_proposta">—</p>
+  </div>
+  <div class="detalhe-field-full">
+    <span class="detalhe-label">Risco / Benefício Mitigado</span>
+    <p class="detalhe-text" id="d-risco_mitigado">—</p>
+  </div>
+</section>
+
+<!-- Classificação -->
+<section class="admin-section">
+  <div class="section-head">
+    <span class="section-head-ic"><i data-icon="layers"></i></span>
+    <div class="section-head-txt"><h2>Classificação</h2></div>
+  </div>
+  <div class="detalhe-grid">
+    <div class="detalhe-field">
+      <span class="detalhe-label">Estágio de Desenvolvimento</span>
+      <span class="detalhe-value" id="d-estagio_desenvolvimento">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Macrodimensão</span>
+      <span class="detalhe-value" id="d-macrodimensao">—</span>
+    </div>
+    <div class="detalhe-field hidden" id="d-macrodimensao_observacao-field">
+      <span class="detalhe-label">Descrição da Macrodimensão</span>
+      <span class="detalhe-value" id="d-macrodimensao_observacao">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Perfil de Impacto</span>
+      <span class="detalhe-value" id="d-perfil_impacto">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Relevância Estratégica</span>
+      <span class="detalhe-value" id="d-relevancia_estrategica">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Ação ou Projeto</span>
+      <span class="detalhe-value" id="d-classificacao_iniciativa">—</span>
+    </div>
+  </div>
+</section>
+
+<!-- Viabilidade -->
+<section class="admin-section">
+  <div class="section-head">
+    <span class="section-head-ic"><i data-icon="gauge"></i></span>
+    <div class="section-head-txt"><h2>Viabilidade</h2></div>
+  </div>
+  <div class="detalhe-grid">
+    <div class="detalhe-field">
+      <span class="detalhe-label">Aporte Financeiro?</span>
+      <span class="detalhe-value" id="d-aporte_financeiro">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Valor Estimado</span>
+      <span class="detalhe-value" id="d-valor_aporte">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Retorno Econômico</span>
+      <span class="detalhe-value" id="d-retorno_economico">—</span>
+    </div>
+    <div class="detalhe-field">
+      <span class="detalhe-label">Suporte Necessário</span>
+      <span class="detalhe-value" id="d-suporte_necessario">—</span>
+    </div>
+  </div>
+  <div class="detalhe-field-full" style="margin-top:12px;">
+    <span class="detalhe-label">Tipo de Apoio Diagnóstico Desejado</span>
+    <p class="detalhe-text" id="d-diagnostico_observacao">—</p>
+  </div>
+  <div class="detalhe-field-full" style="margin-top:12px;">
+    <span class="detalhe-label">Comentários Adicionais</span>
+    <p class="detalhe-text" id="d-comentarios_adicionais">—</p>
+  </div>
+</section>
+
+<!-- Workflow -->
+<section class="admin-section" id="section-workflow">
+  <div class="section-head">
+    <span class="section-head-ic"><i data-icon="git-branch"></i></span>
+    <div class="section-head-txt"><h2>Tramitação</h2></div>
+  </div>
+  <div id="workflow-acoes">
+    <p style="color:var(--gray-500);font-size:13px;">Nenhuma ação disponível para o status atual.</p>
+  </div>
+</section>
+
+<!-- Histórico -->
+<section class="admin-section">
+  <div class="section-head">
+    <span class="section-head-ic"><i data-icon="activity"></i></span>
+    <div class="section-head-txt"><h2>Histórico de Tramitação</h2></div>
+    <div class="section-head-aside">
+      <button class="btn-action" onclick="abrirModalObservacao(getIniciativaId())"><i data-icon="plus-circle"></i> Nova Observação</button>
+    </div>
+  </div>
+  <div id="historico-timeline" class="historico-timeline" style="margin-top:12px;">
+    <p style="color:var(--gray-500);font-size:13px;">Sem histórico disponível.</p>
+  </div>
+</section>
+
+<!-- Modal observação -->
+<div id="modal-observacao" class="modal-overlay hidden" onclick="closeObsModalOnOverlay(event)">
+  <div class="modal-box">
+    <h3 class="modal-title">Registrar Observação</h3>
+    <div class="form-group">
+      <label class="form-label" for="obs-text">Observação <span class="required">*</span></label>
+      <textarea id="obs-text" class="form-input" rows="4" style="resize:vertical;"
+                placeholder="Descreva sua observação sobre esta iniciativa..."></textarea>
+    </div>
+    <div id="obs-error" class="cu-result cu-result-err hidden"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" onclick="closeObsModal()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="confirmarObservacao()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal justificativa -->
+<div id="modal-justificativa" class="modal-overlay hidden" onclick="closeJustModalOnOverlay(event)">
+  <div class="modal-box">
+    <h3 class="modal-title" id="modal-just-title">Justificativa</h3>
+    <div class="form-group">
+      <!-- O asterisco depende da transição: só algumas exigem justificativa
+           (TRANSICOES_STATUS.justificativa_obrig) — ver iniciarTransicao(). -->
+      <label class="form-label" for="just-text" id="lbl-justificativa">Justificativa</label>
+      <textarea id="just-text" class="form-input" rows="4" style="resize:vertical;" placeholder="Descreva o motivo desta decisão..."></textarea>
+    </div>
+    <div id="just-error" class="cu-result cu-result-err hidden"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" onclick="closeJustModal()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="confirmarTransicao()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edição da Iniciativa (ADM) -->
+<div id="modal-edit-iniciativa" class="modal-overlay hidden" onclick="closeEditIniciativaOnOverlay(event)">
+  <div class="modal-box modal-box--wide">
+    <h3 class="modal-title">Editar iniciativa</h3>
+    <div class="edit-scroll">
+      <div class="edit-grid">
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-titulo_iniciativa">Título <span class="required">*</span></label>
+          <input type="text" id="e-titulo_iniciativa" class="form-input" />
+        </div>
+        <!-- O asterisco do par proponente depende da via: na Captação Externa
+             os dois campos são opcionais (RN-15) — ver abrirEdicaoIniciativa. -->
+        <div class="form-group">
+          <label class="form-label" for="e-nome_colaborador" id="lbl-e-nome">Nome do Proponente</label>
+          <input type="text" id="e-nome_colaborador" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-canal_contato" id="lbl-e-contato">Canal de Contato</label>
+          <input type="text" id="e-canal_contato" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-email_proponente">E-mail</label>
+          <input type="text" id="e-email_proponente" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-area_proponente">Área Proponente <span class="required">*</span></label>
+          <input type="text" id="e-area_proponente" class="form-input" />
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-local_aplicacao">Local de Aplicação <span class="required">*</span></label>
+          <input type="text" id="e-local_aplicacao" class="form-input" />
+        </div>
+
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-problema_pratico">Problema Prático <span class="required">*</span></label>
+          <textarea id="e-problema_pratico" class="form-input" rows="3" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-solucao_proposta">Solução Proposta</label>
+          <textarea id="e-solucao_proposta" class="form-input" rows="3" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-risco_mitigado">Risco / Benefício Mitigado</label>
+          <textarea id="e-risco_mitigado" class="form-input" rows="2" style="resize:vertical;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="e-estagio_desenvolvimento">Estágio de Desenvolvimento</label>
+          <select id="e-estagio_desenvolvimento" class="form-input">
+            <option value="">—</option>
+            <option value="ideacao">Ideação</option>
+            <option value="piloto">Teste / Piloto (MVP)</option>
+            <option value="escala">Escala / Operação Ativa</option>
+            <option value="paralisada">Paralisada</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-macrodimensao">Macrodimensão</label>
+          <select id="e-macrodimensao" class="form-input">
+            <option value="">—</option>
+            <option value="tecnologica">Tecnológica</option>
+            <option value="operacional">Operacional</option>
+            <option value="gerencial">Gerencial / Administrativa</option>
+            <option value="social_ambiental">Social e Ambiental</option>
+            <option value="outros">Outros / Multidimensionais</option>
+          </select>
+        </div>
+        <!-- Só aparece quando a macrodimensão é "Outros" — mesmo comportamento
+             do formulário público (ADR-015 §5.1). -->
+        <div class="form-group edit-col-full hidden" id="e-macrodimensao_observacao-group">
+          <label class="form-label" for="e-macrodimensao_observacao">Descrição da Macrodimensão</label>
+          <input type="text" id="e-macrodimensao_observacao" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-perfil_impacto">Perfil de Impacto</label>
+          <select id="e-perfil_impacto" class="form-input">
+            <option value="">—</option>
+            <option value="incremental">Incremental</option>
+            <option value="radical">Radical / Disruptivo</option>
+          </select>
+        </div>
+
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-relevancia_estrategica">Relevância Estratégica</label>
+          <select id="e-relevancia_estrategica" class="form-input">
+            <option value="INDETERMINADA">Ainda não é possível determinar</option>
+            <option value="FINANCEIRO">Sim, por retorno financeiro</option>
+            <option value="PLANEJAMENTO_ESTRATEGICO">Sim, por estar presente no Planejamento Estratégico</option>
+            <option value="SEM_RELEVANCIA">Não possui relevância estratégica</option>
+          </select>
+        </div>
+
+        <!-- Ação x Projeto: administrado exclusivamente por ADM (ADR-015 §3). -->
+        <div class="form-group edit-col-full">
+          <label class="form-label" id="lbl-classificacao">A iniciativa é uma Ação ou um Projeto?</label>
+          <div class="segmented" role="radiogroup" aria-labelledby="lbl-classificacao"
+               id="e-classificacao_iniciativa">
+            <button type="button" class="segmented-option" role="radio" aria-checked="false" data-valor="">Não definido</button>
+            <button type="button" class="segmented-option" role="radio" aria-checked="false" data-valor="ACAO">Ação</button>
+            <button type="button" class="segmented-option" role="radio" aria-checked="false" data-valor="PROJETO">Projeto</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="e-aporte_financeiro">Aporte Financeiro?</label>
+          <select id="e-aporte_financeiro" class="form-input">
+            <option value="">—</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="e-valor_aporte">Valor Estimado do Aporte</label>
+          <input type="text" id="e-valor_aporte" class="form-input" data-currency placeholder="R$ 0,00" />
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-retorno_economico">Retorno Econômico (R$/ano)</label>
+          <input type="text" id="e-retorno_economico" class="form-input" data-currency placeholder="R$ 0,00" />
+        </div>
+
+        <!-- Mesmas opções do formulário público (Bloco IV), montadas por JS a
+             partir de SUPORTE_OPCOES (ADR-015 §5.2). -->
+        <div class="form-group edit-col-full">
+          <label class="form-label">Suporte Necessário</label>
+          <div class="checkbox-group checkbox-group--compact" id="e-suporte_necessario"></div>
+        </div>
+
+        <!-- Visível apenas com "Apoio Diagnóstico" marcado (ADR-015 §5.3). -->
+        <div class="form-group edit-col-full hidden" id="e-diagnostico_observacao-group">
+          <label class="form-label" for="e-diagnostico_observacao">Apoio Diagnóstico Desejado</label>
+          <textarea id="e-diagnostico_observacao" class="form-input" rows="2" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group edit-col-full">
+          <label class="form-label" for="e-comentarios_adicionais">Comentários Adicionais</label>
+          <textarea id="e-comentarios_adicionais" class="form-input" rows="3" style="resize:vertical;"></textarea>
+        </div>
+      </div>
+    </div>
+    <p class="modal-note">Campos marcados com <span class="required">*</span> são obrigatórios e não podem ficar em branco.</p>
+    <div id="edit-ini-error" class="cu-result cu-result-err hidden"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" onclick="closeEditIniciativa()">Cancelar</button>
+      <button type="button" class="btn-primary" id="btn-salvar-iniciativa" onclick="salvarEdicaoIniciativa()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal edição (observação / evento do histórico) -->
+<div id="modal-edit-evento" class="modal-overlay hidden" onclick="closeEditModalOnOverlay(event)">
+  <div class="modal-box">
+    <h3 class="modal-title">Editar registro</h3>
+    <p style="font-size:12px;color:var(--gray-500);margin:-12px 0 16px;">
+      Edição permitida apenas pelo autor, dentro de 2h após o registro.
+    </p>
+    <div class="form-group">
+      <!-- Observação exige texto; justificativa de evento do histórico pode
+           ficar vazia — o asterisco acompanha o tipo editado. -->
+      <label class="form-label" for="edit-text" id="lbl-edit-texto">Texto</label>
+      <textarea id="edit-text" class="form-input" rows="4" style="resize:vertical;"
+                placeholder="Atualize o conteúdo..."></textarea>
+    </div>
+    <div id="edit-error" class="cu-result cu-result-err hidden"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="confirmarEdicao()">Salvar</button>
+    </div>
+  </div>
+</div>

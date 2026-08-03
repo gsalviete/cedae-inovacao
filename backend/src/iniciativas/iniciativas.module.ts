@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { WorkflowModule } from '../workflow/workflow.module';
+import { CaptacaoController } from './captacao.controller';
+import { ExportService } from './export.service';
 import { IniciativasController } from './iniciativas.controller';
 import { IniciativasService } from './iniciativas.service';
 
 @Module({
   imports: [AuthModule, WorkflowModule],
-  controllers: [IniciativasController],
-  providers: [IniciativasService],
+  controllers: [IniciativasController, CaptacaoController],
+  providers: [IniciativasService, ExportService],
 })
 export class IniciativasModule {}

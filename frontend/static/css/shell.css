@@ -1,0 +1,322 @@
+/* ══════════════════════════════════════════════════════
+   CEDAE Inovação — App Shell (shell.css)
+   Layout administrativo: sidebar + topbar + conteúdo.
+   Linguagem: Linear / Azure Portal — navegação lateral persistente,
+   topbar enxuta, conteúdo respirado. Carregado após admin.css.
+   ══════════════════════════════════════════════════════ */
+
+/* ── Grid raiz ───────────────────────────────────────── */
+.app {
+  --sidebar-w: 264px;
+  --topbar-h: 62px;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+  background: var(--surface-subtle);
+}
+.app.is-collapsed { --sidebar-w: 76px; }
+
+/* ══════════════════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════════════════ */
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(180deg, var(--blue-950) 0%, var(--blue-900) 100%);
+  color: rgba(255,255,255,.72);
+  border-right: 1px solid rgba(255,255,255,.06);
+  z-index: 60;
+  overflow: hidden;
+}
+
+/* Brand no topo da sidebar — logo completa da Inovação (mesma da landing). */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--topbar-h);
+  padding: 12px 16px;
+  flex-shrink: 0;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+/* Placa branca que hospeda a logo colorida com contraste no fundo escuro. */
+.sidebar-brand-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.6);
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.sidebar-brand:hover .sidebar-brand-plate { transform: translateY(-1px); }
+/* Logo horizontal: ocupa a largura da placa. */
+.sidebar-brand-plate img { width: 100%; max-width: 180px; height: auto; margin: 0 auto; display: block; }
+/* Marca compacta (gota) — aparece apenas quando a sidebar está recolhida. */
+.sidebar-brand-mark {
+  display: none;
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  place-items: center;
+  background: linear-gradient(150deg, var(--blue-600), var(--brand-blue));
+  box-shadow: 0 2px 8px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.sidebar-brand-mark svg { width: 19px; height: 19px; color: #fff; }
+
+/* Navegação */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.sidebar-nav::-webkit-scrollbar { width: 0; }
+
+.nav-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.38);
+  padding: 14px 12px 6px;
+  white-space: nowrap;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  color: rgba(255,255,255,.74);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .16s var(--ease-out), color .16s var(--ease-out);
+}
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; stroke-width: 2; opacity: .9; }
+/* display:flex do .nav-item venceria o [hidden] da UA — força a ocultação. */
+.nav-item[hidden] { display: none !important; }
+.nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+.nav-item.is-active {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  border-color: rgba(255,255,255,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+}
+.nav-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 3px; height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand-green);
+}
+.nav-item { position: relative; }
+.nav-item .nav-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--brand-green);
+  color: var(--blue-950);
+  border-radius: var(--radius-full);
+  padding: 1px 8px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Rodapé da sidebar — identidade do usuário */
+.sidebar-foot {
+  flex-shrink: 0;
+  padding: 12px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+}
+.sidebar-user .avatar {
+  width: 34px; height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(150deg, var(--brand-green), var(--green-600));
+  color: var(--blue-950);
+  font-weight: 700;
+  font-size: 13px;
+}
+.sidebar-user-info { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.sidebar-user-info b {
+  font-size: 13px; color: #fff; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-user-info span {
+  font-size: 11px; color: rgba(255,255,255,.5);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Colapso: some textos e a placa da logo, centraliza ícones e mostra a gota */
+.app.is-collapsed .nav-section-label,
+.app.is-collapsed .nav-item span,
+.app.is-collapsed .nav-item .nav-badge,
+.app.is-collapsed .sidebar-user-info { display: none; }
+.app.is-collapsed .sidebar-brand-plate { display: none; }
+.app.is-collapsed .sidebar-brand-mark { display: grid; }
+.app.is-collapsed .sidebar-brand { padding: 12px 0; }
+.app.is-collapsed .nav-item { justify-content: center; padding: 10px; }
+.app.is-collapsed .sidebar-user { justify-content: center; padding: 8px; }
+
+/* ══════════════════════════════════════════════════════
+   ÁREA PRINCIPAL
+   ══════════════════════════════════════════════════════ */
+.app-main { display: flex; flex-direction: column; min-width: 0; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-toggle {
+  display: grid;
+  place-items: center;
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--gray-600);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .16s, color .16s;
+}
+.topbar-toggle:hover { background: var(--gray-100); color: var(--gray-900); }
+.topbar-toggle svg { width: 20px; height: 20px; }
+
+.topbar-heading { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.topbar-heading h1 {
+  font-size: 15px; font-weight: 600; color: var(--gray-900);
+  letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-heading .crumb {
+  font-size: 11.5px; color: var(--text-muted);
+  display: flex; align-items: center; gap: 5px;
+}
+.topbar-heading .crumb svg { width: 12px; height: 12px; }
+
+/* Breadcrumb da topbar (título/subtítulo ficam no cabeçalho da página). */
+.topbar-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-500);
+  text-overflow: ellipsis;
+}
+.topbar-crumb a { color: var(--gray-500); text-decoration: none; transition: color .15s var(--ease-out); }
+.topbar-crumb a:hover { color: var(--blue-800); }
+.topbar-crumb .crumb-sep { color: var(--gray-300); }
+
+.topbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Toolbar de seção (nota à esquerda, ação à direita) */
+.section-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.section-toolbar .section-note { margin: 0; flex: 1; min-width: 220px; }
+
+.app-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 28px 72px;
+}
+
+/* Scrim do drawer mobile */
+.sidebar-scrim {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,15,26,.5);
+  backdrop-filter: blur(2px);
+  z-index: 55;
+}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVO — sidebar vira drawer
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 960px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform var(--dur-base) var(--ease-in-out);
+    box-shadow: var(--shadow-xl);
+  }
+  .app.is-drawer-open .sidebar { transform: translateX(0); }
+  .app.is-drawer-open .sidebar-scrim { display: block; }
+  /* No mobile o colapso não se aplica — o drawer mostra a sidebar completa */
+  .app.is-collapsed { --sidebar-w: 280px; }
+  .app.is-collapsed .nav-item span,
+  .app.is-collapsed .nav-item .nav-badge,
+  .app.is-collapsed .nav-section-label,
+  .app.is-collapsed .sidebar-user-info { display: revert; }
+  .app.is-collapsed .sidebar-brand-plate { display: flex; }
+  .app.is-collapsed .sidebar-brand-mark { display: none; }
+  .app.is-collapsed .sidebar-brand { padding: 12px 16px; }
+  .app.is-collapsed .nav-item { justify-content: flex-start; padding: 9px 12px; }
+  .app.is-collapsed .sidebar-user { justify-content: flex-start; padding: 8px 10px; }
+  .app-content { padding: 22px 16px 64px; }
+  .topbar { padding: 0 16px; }
+}
+
+@media (min-width: 961px) {
+  /* No desktop o botão de drawer some; o toggle colapsa/expande */
+  .topbar-toggle.drawer-only { display: none; }
+}
+@media (max-width: 960px) {
+  .topbar-toggle.collapse-only { display: none; }
+}

@@ -23,3 +23,8 @@ coverage/
 .idea/
 
 *.log
+
+DEPLOY-REVIEW.md
+
+# Previews estáticos de UI (descartáveis, gerados localmente)
+frontend/preview_*.html

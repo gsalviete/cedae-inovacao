@@ -1,62 +1,174 @@
 /* ══════════════════════════════════════════════════════
-   CEDAE Inovação — Stylesheet Principal
-   Tema: Água / Saneamento / Azul institucional
+   CEDAE Inovação — Design System
+   Identidade institucional CEDAE · Azul #0067AC · Verde #8DC63F
+   Linguagem visual: Linear / Stripe / Vercel — sóbria e institucional.
    ══════════════════════════════════════════════════════ */
 
 :root {
-  --blue-900: #042b52;
-  --blue-800: #0B4F8A;
-  --blue-600: #1570b8;
-  --blue-400: #4fa3d8;
-  --blue-100: #ddeef8;
-  --blue-50:  #f0f7fd;
+  /* ── Marca institucional ─────────────────────────────
+     Azul CEDAE  rgb(0 103 172) · Verde CEDAE rgb(141 198 63).
+     Toda a escala de azul é derivada do tom institucional para que a cor
+     predominante da interface seja, de fato, a cor da companhia. */
+  --brand-blue:  #0067AC;   /* azul institucional CEDAE */
+  --brand-green: #8DC63F;   /* verde institucional CEDAE */
 
-  --gray-900: #111827;
-  --gray-700: #374151;
-  --gray-500: #6b7280;
-  --gray-300: #d1d5db;
-  --gray-100: #f3f4f6;
-  --gray-50:  #f9fafb;
+  /* Escala de azul (institucional no -800, que é o primário do sistema) */
+  --blue-950: #04283f;
+  --blue-900: #05365d;
+  --blue-800: #0067AC;   /* primário — cor da marca */
+  --blue-700: #0a5c99;
+  --blue-600: #0f79c0;   /* links / acentos */
+  --blue-400: #4fa0d4;
+  --blue-200: #b3d6ee;
+  --blue-100: #d4e7f5;
+  --blue-50:  #eff6fc;
+
+  /* Escala de verde (destaques positivos / sucesso) */
+  --green-700: #4d7c1a;
+  --green-600: #5f9622;   /* texto/ícone sobre claro (contraste AA) */
+  --green-500: #8DC63F;   /* verde da marca */
+  --green-100: #e6f3d2;
+  --green-50:  #f3f9e8;
+
+  /* ── Neutros (slate — frio, limpo, institucional) ──── */
+  --gray-950: #0a0f1a;
+  --gray-900: #0f172a;
+  --gray-800: #1e293b;
+  --gray-700: #334155;
+  --gray-600: #475569;
+  --gray-500: #64748b;
+  --gray-400: #94a3b8;
+  --gray-300: #cbd5e1;
+  --gray-200: #e2e8f0;
+  --gray-150: #eaeef4;
+  --gray-100: #f1f5f9;
+  --gray-50:  #f8fafc;
+
+  /* ── Cores de estado ─────────────────────────────────
+     Sucesso → verde · Informação → azul · Alerta → âmbar discreto ·
+     Erro → vermelho discreto. */
+  --teal-600: #0f766e;
+  --teal-100: #ccfbf1;
+  --indigo-600: #4f46e5;
+  --indigo-100: #e0e7ff;
+  --amber-600: #b45309;
+  --amber-500: #d97706;
+  --amber-100: #fef3c7;
+  --amber-50:  #fffbeb;
+  --red-600:   #dc2626;
+  --red-100:   #fee2e2;
+  --red-50:    #fef2f2;
 
   --white:    #ffffff;
-  --error:    #b91c1c;
-  --success:  #065f46;
+  --error:    #c22929;   /* vermelho discreto */
+  --success:  var(--green-600);
+  --info:     var(--blue-800);
+  --warning:  var(--amber-600);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  /* Superfícies semânticas */
+  --surface:        #ffffff;
+  --surface-subtle: var(--gray-50);
+  --surface-muted:  var(--gray-100);
+  --border:         var(--gray-200);
+  --border-strong:  var(--gray-300);
+  --text:           var(--gray-900);
+  --text-muted:     var(--gray-500);
+
+  /* ── Raios ───────────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-full: 999px;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
+  /* ── Elevação — sombras em camadas, suaves (estilo Stripe) ── */
+  --shadow-xs: 0 1px 2px rgba(15,23,42,.05);
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.07);
+  --shadow-md: 0 2px 4px rgba(15,23,42,.04), 0 6px 16px rgba(15,23,42,.08);
+  --shadow-lg: 0 4px 8px rgba(15,23,42,.04), 0 16px 40px rgba(15,23,42,.12);
+  --shadow-xl: 0 8px 16px rgba(15,23,42,.06), 0 28px 64px rgba(15,23,42,.16);
+  --ring: 0 0 0 3px rgba(0,103,172,.16);          /* anel de foco azul */
+  --ring-green: 0 0 0 3px rgba(141,198,63,.28);
 
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'DM Serif Display', Georgia, serif;
+  /* ── Tipografia ──────────────────────────────────────
+     Inter em toda a interface. Escala: página 32 · seção 24 · subtítulo 20 ·
+     texto 16 · secundário 14 · legenda 12. Pesos 400/500/600/700. */
+  --font-sans:  'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-sans);
+  --font-serif:   var(--font-sans);   /* alias legado → Inter (sem serifa) */
+  --font-mono:  ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', monospace;
+
+  --fs-display: 32px;
+  --fs-h1: 28px;
+  --fs-h2: 24px;
+  --fs-h3: 20px;
+  --fs-lg: 18px;
+  --fs-base: 16px;
+  --fs-sm: 14px;
+  --fs-xs: 12px;
+
+  /* ── Espaçamento (base 4px) ──────────────────────────── */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+
+  /* ── Motion ──────────────────────────────────────────
+     Uma escala só, usada por todas as microinterações. Curvas separadas por
+     intenção: -out para o que entra (desacelera, parece pousar), -spring para
+     o que responde ao toque (leve overshoot), -in-out para o que se move. */
+  --dur-fast:   120ms;
+  --dur-base:   220ms;
+  --dur-slow:   380ms;
+  --dur-slower: 600ms;
+
+  --ease-out:    cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
   font-family: var(--font-sans);
-  color: var(--gray-900);
-  background: var(--gray-50);
+  font-size: var(--fs-base);
+  font-feature-settings: 'cv02','cv03','cv04','cv11';   /* letras Inter mais legíveis */
+  color: var(--text);
+  background: var(--surface-subtle);
+  line-height: 1.5;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
+
+::selection { background: var(--blue-100); color: var(--blue-900); }
+
+/* Scrollbar discreta e institucional (WebKit) */
+* { scrollbar-width: thin; scrollbar-color: var(--gray-300) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--gray-400); background-clip: content-box; }
 
 /* ── Utilities ─────────────────────────────────────── */
 .hidden { display: none !important; }
-.required { color: var(--blue-600); }
+.required { color: var(--blue-600); font-weight: 600; }
 
 /* ── Header ────────────────────────────────────────── */
 .site-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-300);
-  box-shadow: var(--shadow-sm);
+  background: rgba(255,255,255,.82);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border);
 }
 
 .header-inner {
@@ -73,40 +185,42 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;          /* permite truncar se necessário */
   flex-shrink: 1;
+  text-decoration: none;
 }
 
 .brand-logo {
-  height: 36px;
+  height: 38px;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.brand-text {
-  display: flex;
-  flex-direction: column;
+/* Divisor fino entre a logomarca e o contexto da página. */
+.brand-divider {
+  width: 1px;
+  height: 26px;
+  background: var(--gray-200);
+  flex-shrink: 0;
+}
+
+/* Rótulo de contexto da página ("Painel Administrativo" etc.). */
+.brand-context {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--gray-600);
+  letter-spacing: .01em;
+  line-height: 1.25;
   min-width: 0;
-}
-.brand-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--blue-800);
-  letter-spacing: .04em;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.brand-sub {
-  font-size: 11px;
-  color: var(--gray-500);
-  letter-spacing: .02em;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
+
+.brand-logo { transition: transform var(--dur-base) var(--ease-spring); }
+.brand:hover .brand-logo { transform: scale(1.03); }
 
 .header-actions {
   display: flex;
@@ -116,99 +230,204 @@ body {
 }
 
 .btn-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background: var(--blue-800);
   color: var(--white);
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  padding: 7px 14px;
+  padding: 8px 15px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
+  box-shadow: var(--shadow-xs);
   transition: background .2s;
   white-space: nowrap;
 }
 .btn-admin:hover { background: var(--blue-900); }
 
 .btn-login {
-  background: transparent;
-  border: 1px solid var(--gray-300);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  padding: 7px 14px;
+  padding: 8px 15px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--gray-700);
   cursor: pointer;
-  transition: border-color .2s, color .2s;
+  transition: border-color .2s, color .2s, background .2s;
   white-space: nowrap;
 }
-.btn-login:hover { border-color: var(--blue-600); color: var(--blue-600); }
+.btn-login:hover { border-color: var(--blue-400); color: var(--blue-800); background: var(--blue-50); }
 
-.btn-logout {
-  background: transparent;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
-  padding: 7px 12px;
+/* ── Saudação do usuário ───────────────────────────────
+   "Boa tarde, Gabriel!" — o horário em peso normal, o nome em destaque.
+   Entra deslizando quando /api/me responde (o .hidden sai via JS). */
+.user-greeting {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
   font-size: 13px;
   color: var(--gray-500);
-  cursor: pointer;
   white-space: nowrap;
+  padding-right: 4px;
+  animation: greeting-in var(--dur-slow) var(--ease-out) both;
 }
-.btn-logout:hover { color: var(--error); border-color: var(--error); }
+
+.user-greeting-name {
+  font-weight: 600;
+  color: var(--blue-800);
+}
+
+/* O nome recebe um brilho sutil que atravessa uma vez, ao aparecer. */
+.user-greeting-name {
+  background-image: linear-gradient(
+    100deg,
+    var(--blue-800) 40%,
+    var(--blue-400) 50%,
+    var(--blue-800) 60%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: greeting-shine 1.8s var(--ease-in-out) .35s 1 both;
+}
 
 /* ── Hero ──────────────────────────────────────────── */
 .hero {
   position: relative;
-  background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 60%, var(--blue-600) 100%);
+  background: linear-gradient(135deg, var(--blue-950) 0%, var(--blue-900) 42%, var(--blue-800) 100%);
   overflow: hidden;
-  padding: 64px 20px 60px;
+  padding: 72px 20px 64px;
 }
 
 .hero-water {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(ellipse 80% 50% at 110% 110%, rgba(79,163,216,.25) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at -10% 80%, rgba(255,255,255,.06) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 50% at 108% 115%, rgba(141,198,63,.16) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 55% at -8% 78%, rgba(79,160,212,.30) 0%, transparent 55%),
+    radial-gradient(circle at 50% -20%, rgba(255,255,255,.10) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+/* Grade fina sobre o hero — textura tecnológica discreta. */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 90% at 50% 0%, #000 0%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 90% at 50% 0%, #000 0%, transparent 75%);
   pointer-events: none;
 }
 
 .hero-content {
   position: relative;
+  z-index: 1;
   max-width: 680px;
   margin: 0 auto;
   text-align: center;
 }
 
 .hero-label {
-  display: inline-block;
-  background: rgba(255,255,255,.12);
-  color: rgba(255,255,255,.85);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.16);
+  color: rgba(255,255,255,.90);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
-  padding: 4px 12px;
-  border-radius: 20px;
-  margin-bottom: 16px;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  margin-bottom: 18px;
+  backdrop-filter: blur(4px);
+}
+/* Ponto verde institucional pulsando — sinal de canal ativo. */
+.hero-label::before {
+  content: '';
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--brand-green);
+  box-shadow: 0 0 0 0 rgba(141,198,63,.6);
+  animation: pulse-dot 2.4s var(--ease-in-out) infinite;
+}
+
+/* Logo institucional no hero (substitui o antigo badge de texto). Fica sobre
+   uma placa branca para garantir contraste da logo colorida no fundo escuro. */
+.hero-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 22px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+}
+.hero-logo img {
+  height: 76px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+@media (max-width: 640px) {
+  .hero-logo img { height: 54px; }
 }
 
 .hero-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -.02em;
   /* clamp garante leitura em telas de 320px até desktop */
-  font-size: clamp(22px, 6vw, 44px);
+  font-size: clamp(26px, 6vw, 44px);
   color: var(--white);
-  line-height: 1.2;
+  line-height: 1.12;
   margin-bottom: 20px;
   word-break: break-word;
   hyphens: auto;
 }
 
 .hero-desc {
-  font-size: clamp(13px, 3.5vw, 15px);
+  font-size: clamp(14px, 3.5vw, 16px);
   line-height: 1.7;
-  color: rgba(255,255,255,.78);
+  color: rgba(255,255,255,.80);
   max-width: 600px;
   margin: 0 auto;
+}
+
+/* Chamada para o aviso de privacidade (LGPD). Fica no topo, fora do
+   formulário: a esteira com barra de progresso é só para preenchimento. */
+.hero-aviso {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255,255,255,.66);
+  max-width: 600px;
+  margin: 14px auto 0;
+}
+.hero-aviso a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.hero-aviso a:hover { color: var(--brand-green); }
+
+@keyframes pulse-dot {
+  0%   { box-shadow: 0 0 0 0 rgba(141,198,63,.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(141,198,63,0); }
+  100% { box-shadow: 0 0 0 0 rgba(141,198,63,0); }
 }
 
 /* ── Form Wrapper ──────────────────────────────────── */
@@ -220,36 +439,51 @@ body {
 
 /* ── Form Block ────────────────────────────────────── */
 .form-block {
-  background: var(--white);
-  border: 1px solid var(--gray-300);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 28px 24px;
+  padding: 28px 26px;
   margin-bottom: 20px;
   box-shadow: var(--shadow-sm);
 }
 
+/* ── Ciência do aviso de privacidade (LGPD) ─────────
+   Último campo antes do envio. Herda o cartão de .checkbox-option; o texto
+   fica em peso normal (é uma frase corrida, não um rótulo) e o link do aviso
+   é inline dentro dela — nada de elementos irmãos, que o design system
+   renderiza em linhas separadas (`.checkbox-option div strong` é block). */
+.field-ciencia { margin-top: 4px; }
+.checkbox-ciencia { align-items: center; }
+.checkbox-ciencia strong { font-weight: 500; line-height: 1.6; margin-bottom: 0; }
+.checkbox-ciencia a { color: var(--blue-800); font-weight: 600; }
+.checkbox-ciencia .required { margin-left: 2px; }
+
 .block-header {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--border);
 }
 
 .block-tag {
-  display: inline-block;
-  background: var(--blue-100);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-50);
   color: var(--blue-800);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
-  padding: 3px 10px;
-  border-radius: 20px;
-  margin-bottom: 8px;
+  padding: 4px 11px;
+  border-radius: var(--radius-full);
+  margin-bottom: 10px;
+  border: 1px solid var(--blue-100);
 }
 
 .block-title {
-  font-size: 18px;
+  font-size: var(--fs-h3);
   font-weight: 600;
+  letter-spacing: -.01em;
   color: var(--gray-900);
 }
 
@@ -280,10 +514,10 @@ body {
 .field-input,
 .field-textarea {
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--gray-300);
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-family: var(--font-sans);
   color: var(--gray-900);
   background: var(--white);
@@ -292,12 +526,25 @@ body {
 }
 
 .field-input::placeholder,
-.field-textarea::placeholder { color: var(--gray-300); }
+.field-textarea::placeholder { color: var(--gray-400); }
 
 .field-input:focus,
 .field-textarea:focus {
   border-color: var(--blue-600);
-  box-shadow: 0 0 0 3px rgba(21,112,184,.12);
+  box-shadow: var(--ring);
+}
+
+/* select nativo herda o mesmo visual de input */
+select.field-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  /* A seta fica alinhada com o padding do texto (14px) em vez de colada na
+     borda; o padding-right reserva espaço para ela (ADR-015 §7.3). */
+  background-position: right 14px center;
+  padding-right: 40px;
+  cursor: pointer;
 }
 
 .field-textarea { resize: vertical; min-height: 100px; }
@@ -436,20 +683,26 @@ body {
 .form-footer-note { font-size: 12.5px; color: var(--gray-500); }
 
 .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: var(--blue-800);
   color: var(--white);
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  padding: 12px 28px;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 12px 26px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: .01em;
   cursor: pointer;
-  transition: background .2s, transform .1s;
+  box-shadow: var(--shadow-xs), inset 0 1px 0 rgba(255,255,255,.14);
+  transition: background .2s, transform .1s, box-shadow .2s;
 }
 .btn-primary:hover { background: var(--blue-900); }
 .btn-primary:active { transform: scale(.98); }
 
-.btn-submit { min-width: 200px; }
+.btn-submit { min-width: 210px; }
 
 /* ── Success Card ──────────────────────────────────── */
 .success-card {
@@ -464,6 +717,36 @@ body {
 .success-icon { margin-bottom: 20px; }
 .success-card h2 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
 .success-card p { color: var(--gray-500); margin-bottom: 28px; font-size: 14px; }
+
+/* Protocolo (INOV-AAAA-NNN) exibido ao proponente após a submissão. */
+.success-protocol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin: 0 auto 28px;
+  max-width: 360px;
+  animation: pop-in var(--dur-slow) var(--ease-spring) 200ms both;
+}
+.success-protocol-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--blue-800);
+}
+.success-protocol-code {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--blue-900);
+  letter-spacing: .02em;
+}
+.success-protocol-hint { font-size: 12px; color: var(--gray-500); }
 
 /* ── Modal ─────────────────────────────────────────── */
 .modal-overlay {
@@ -506,14 +789,273 @@ body {
 
 .modal-body { padding: 24px; }
 
+/* Aviso de privacidade: texto longo, precisa de mais largura que os 400px
+   padrão e de corpo rolável dentro da própria modal. */
+.modal--aviso {
+  width: min(640px, 92vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal--aviso .modal-header { flex: 0 0 auto; }
+.modal--aviso .modal-body { overflow-y: auto; }
+.modal--aviso .modal-body p {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--gray-700);
+  margin: 0 0 12px;
+}
+.modal--aviso .modal-body p:last-child { margin-bottom: 0; }
+.modal--aviso .modal-body a { color: var(--blue-800); font-weight: 600; }
+
 /* ── Footer ────────────────────────────────────────── */
 .site-footer {
-  background: var(--blue-900);
-  color: rgba(255,255,255,.55);
+  background: var(--blue-950);
+  color: rgba(255,255,255,.58);
   text-align: center;
-  padding: 28px 24px;
+  padding: 30px 24px;
   font-size: 12.5px;
   line-height: 1.8;
+  border-top: 3px solid var(--brand-green);
+}
+.site-footer p:first-child { color: rgba(255,255,255,.82); font-weight: 500; }
+
+/* ══════════════════════════════════════════════════════
+   MOTION — microinterações
+   Regra geral: nada anima layout (width/height/top/left). Só transform e
+   opacity, que o compositor resolve na GPU sem reflow. Tudo aqui é
+   desligado em bloco por prefers-reduced-motion, no fim do arquivo.
+   ══════════════════════════════════════════════════════ */
+
+@keyframes greeting-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes greeting-shine {
+  from { background-position: 180% 0; }
+  to   { background-position: -80% 0; }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes reveal-down {
+  from { opacity: 0; transform: translateY(-6px) scaleY(.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes check-pop {
+  0%   { transform: scale(0) rotate(45deg); }
+  60%  { transform: scale(1.25) rotate(45deg); }
+  100% { transform: scale(1) rotate(45deg); }
+}
+
+@keyframes dot-pop {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-3px); }
+  40%, 60% { transform: translateX(3px); }
+}
+
+/* ── Entrada da página ─────────────────────────────────
+   O hero entra primeiro; os blocos do formulário sobem em cascata. O
+   nth-child escalona o delay — 5 blocos, 70ms de intervalo. */
+.hero-content > * {
+  animation: rise-in var(--dur-slower) var(--ease-out) both;
+}
+.hero-label,
+.hero-logo  { animation-delay: 40ms; }
+.hero-title { animation-delay: 110ms; }
+.hero-desc  { animation-delay: 190ms; }
+
+.form-block {
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
+  /* transform também é animado no hover; declarar aqui evita conflito */
+  transition: box-shadow var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+}
+.form-block:nth-child(1) { animation-delay: 60ms; }
+.form-block:nth-child(2) { animation-delay: 130ms; }
+.form-block:nth-child(3) { animation-delay: 200ms; }
+.form-block:nth-child(4) { animation-delay: 270ms; }
+.form-block:nth-child(5) { animation-delay: 340ms; }
+
+.form-block:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--blue-100);
+}
+
+/* ── Campos condicionais ───────────────────────────────
+   Usado por valor-aporte, apoio diagnóstico e macrodimensão "outros".
+   Desliza pra baixo ao ser revelado pelo JS (que só remove .hidden). */
+.field-reveal {
+  animation: reveal-down var(--dur-base) var(--ease-out) both;
+}
+
+/* ── Inputs ────────────────────────────────────────────
+   O foco levanta o campo 1px e acende o anel — o movimento confirma o alvo. */
+.field-input,
+.field-textarea {
+  transition: border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.field-input:hover:not(:focus),
+.field-textarea:hover:not(:focus) { border-color: var(--blue-400); }
+
+.field-input:focus,
+.field-textarea:focus { transform: translateY(-1px); }
+
+/* Erro de validação: o texto entra com um tremor curto, uma vez só. */
+.field-error:not(:empty) {
+  animation: shake var(--dur-slower) var(--ease-in-out) both;
+}
+
+/* ── Cards de opção (radio / checkbox) ─────────────────
+   Hover levanta; clique afunda; marcar dispara o pop do indicador. */
+.radio-option,
+.checkbox-option {
+  transition: border-color var(--dur-base) var(--ease-out),
+              background var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+
+.radio-option:hover,
+.checkbox-option:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.radio-option:active,
+.checkbox-option:active { transform: translateY(0) scale(.99); }
+
+.radio-option:has(input:checked),
+.checkbox-option:has(input:checked) {
+  border-color: var(--blue-600);
+  background: var(--blue-50);
+}
+
+/* Foco por teclado precisa ser visível — o input real é opacity:0. */
+.radio-option:focus-within,
+.checkbox-option:focus-within {
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(21,112,184,.12);
+}
+
+.radio-box,
+.checkbox-box {
+  transition: border-color var(--dur-base) var(--ease-out),
+              background var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-spring);
+}
+.radio-option:hover .radio-box,
+.checkbox-option:hover .checkbox-box { transform: scale(1.1); }
+
+.radio-option input:checked ~ .radio-box::after {
+  animation: dot-pop var(--dur-base) var(--ease-spring) both;
+}
+.checkbox-option input:checked ~ .checkbox-box::after {
+  animation: check-pop var(--dur-base) var(--ease-spring) both;
+}
+
+/* ── Botões ────────────────────────────────────────────
+   Hover levanta e adensa a sombra; o clique afunda. */
+.btn-primary,
+.btn-admin,
+.btn-login {
+  transition: background var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-admin:hover,
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active:not(:disabled),
+.btn-admin:active,
+.btn-login:active {
+  transform: translateY(0) scale(.98);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:disabled { opacity: .65; cursor: not-allowed; }
+
+/* ── Sucesso e modal ───────────────────────────────────
+   O card de sucesso surge com escala; o ícone dá um pop mais tardio. */
+.success-card { animation: pop-in var(--dur-slow) var(--ease-out) both; }
+.success-icon {
+  animation: pop-in var(--dur-slow) var(--ease-spring) 140ms both;
+}
+
+/* A modal é centrada por `transform: translate(-50%, -50%)`. Uma animação que
+   declare `transform` SUBSTITUI essa regra enquanto roda — e, com fill-mode
+   `both`, também depois que termina. Usar o `pop-in` genérico aqui apagava a
+   centralização e jogava a modal para baixo/direita. Por isso ela tem
+   keyframes próprios, que repetem o translate em cada passo. */
+@keyframes modal-pop-in {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(.92); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.modal { animation: modal-pop-in var(--dur-base) var(--ease-spring) both; }
+
+/* O overlay cobre a tela inteira (inset: 0); escalá-lo abriria faixas vazias
+   nas bordas durante a animação. Só a opacidade varia. */
+@keyframes fade-in {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+.modal-overlay { animation: fade-in var(--dur-fast) var(--ease-out) both; }
+
+.modal-close { transition: transform var(--dur-base) var(--ease-spring), color var(--dur-base) var(--ease-out); }
+.modal-close:hover { transform: rotate(90deg); color: var(--gray-900); }
+
+/* ── Acessibilidade ────────────────────────────────────
+   Quem pediu menos movimento recebe a interface inteira sem animação — os
+   estados (cor, sombra, foco) continuam, só o movimento sai. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .brand:hover .brand-logo,
+  .radio-option:hover,
+  .checkbox-option:hover,
+  .btn-primary:hover:not(:disabled),
+  .btn-admin:hover,
+  .btn-login:hover,
+  .field-input:focus,
+  .field-textarea:focus {
+    transform: none;
+  }
+  /* O gradiente do brilho fica ilegível sem a animação que o atravessa. */
+  .user-greeting-name {
+    background-image: none;
+    -webkit-text-fill-color: var(--blue-800);
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -523,14 +1065,15 @@ body {
 
 /* ── 320 – 374px (telefones muito pequenos) ────────── */
 @media (max-width: 374px) {
-  /* Header: logo menor, texto pode ser ocultado */
-  .brand-logo { height: 28px; }
-  .brand-name { font-size: 12px; }
-  .brand-sub  { display: none; }
+  /* Header: logo menor, contexto oculto */
+  .brand-logo { height: 26px; }
+  .brand-context, .brand-divider { display: none; }
+
+  /* Saudação sai: nesta largura ela competiria com o botão de admin. */
+  .user-greeting { display: none; }
 
   .btn-admin,
-  .btn-login,
-  .btn-logout { padding: 6px 10px; font-size: 12px; }
+  .btn-login { padding: 6px 10px; font-size: 12px; }
 
   /* Hero: padding reduzido, título menor */
   .hero { padding: 40px 16px 40px; }
@@ -562,7 +1105,10 @@ body {
 
 /* ── 375 – 413px (iPhone padrão e similares) ───────── */
 @media (min-width: 375px) and (max-width: 413px) {
-  .brand-logo { height: 32px; }
+  .brand-logo { height: 30px; }
+  .brand-context, .brand-divider { display: none; }
+  /* Só o nome, sem o "Boa tarde," — não cabe ao lado do botão. */
+  .user-greeting-time { display: none; }
 
   .hero { padding: 48px 18px 44px; }
   .hero-title { font-size: clamp(22px, 6.5vw, 30px); }
@@ -644,8 +1190,7 @@ body {
 /* ── 1024px+ (desktop) ─────────────────────────────── */
 @media (min-width: 1024px) {
   .header-inner { padding: 14px 24px; }
-  .brand-logo   { height: 40px; }
-  .brand-name   { font-size: 15px; }
+  .brand-logo   { height: 44px; }
 
   .hero { padding: 80px 24px 72px; }
 
@@ -662,3 +1207,66 @@ body {
     min-width: 0;
   }
 }
+
+/* ── Termos e Condições de Uso ─────────────────────────── */
+.termos-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(11, 43, 69, .55);
+  backdrop-filter: blur(3px);
+}
+.termos-overlay.hidden { display: none; }
+.termos-modal {
+  background: #fff;
+  width: 640px;
+  max-width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .3);
+}
+.termos-header {
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--gray-200);
+  text-align: center;
+}
+.termos-logo { height: 40px; width: auto; margin-bottom: 12px; }
+.termos-header h2 { margin: 0; font-size: 20px; color: var(--brand-blue); }
+.termos-body {
+  padding: 20px 28px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--gray-700);
+}
+.termos-body h3 { margin: 18px 0 6px; font-size: 15px; color: var(--gray-900); }
+.termos-body p { margin: 0 0 10px; }
+.termos-body a { color: var(--brand-blue); font-weight: 600; }
+.termos-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 28px;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+}
+.btn-termos-recusar,
+.btn-termos-aceitar {
+  padding: 10px 22px;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn-termos-recusar { background: #fff; color: var(--gray-600); border-color: var(--gray-300); }
+.btn-termos-recusar:hover { background: var(--gray-100); }
+.btn-termos-aceitar { background: var(--brand-blue); color: #fff; }
+.btn-termos-aceitar:hover { filter: brightness(1.05); }

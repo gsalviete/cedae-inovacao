@@ -3,27 +3,66 @@
    Autenticação: Kerberos/IIS via x-remote-user (sem senha)
    ══════════════════════════════════════════════════════ */
 
-const API = '';
 const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 
-/* ── Header: identifica usuário via /api/me ──────────── */
+/* ── Header: identifica usuário via /api/me ──────────────
+   O formulário é PÚBLICO: usuário anônimo (401) usa a página normalmente,
+   apenas sem saudação/painel. Se houver sessão (login AD), mostra a saudação
+   e o botão de admin (quando aplicável). Não há logout: a identidade vem do
+   AD e o usuário não se desloga da aplicação. */
 async function initHeader() {
+  const btnLogin = document.getElementById('btn-login-header');
   try {
     const res = await fetch(`${API}/api/me`);
-    if (!res.ok) return;
+    if (!res.ok) {
+      // anônimo — segue usando o formulário; oferece caminho para login (admins)
+      if (btnLogin) btnLogin.classList.remove('hidden');
+      return;
+    }
     const me = await res.json();
 
-    const greeting = document.getElementById('user-greeting');
-    if (greeting) {
-      greeting.textContent = me.nome || me.login;
-      greeting.classList.remove('hidden');
-    }
+    renderGreeting(me);
 
     const btnAdmin = document.getElementById('btn-admin');
     if (btnAdmin && me.admin) {
       btnAdmin.classList.remove('hidden');
     }
-  } catch { /* silencioso — sem IIS em dev, header pode estar ausente */ }
+
+    // Usuário autenticado SEM perfil administrativo: exige aceite dos Termos
+    // de Uso no primeiro acesso (ADR-014 §12-bis).
+    if (me.login && !me.admin && typeof verificarTermos === 'function') {
+      verificarTermos();
+    }
+  } catch {
+    // falha de rede não deve travar o formulário; ainda oferece login
+    if (btnLogin) btnLogin.classList.remove('hidden');
+  }
+}
+
+/* ── Modal do Aviso de Privacidade (LGPD) ─────────────────
+   O aviso mora só na modal: o formulário em etapas é área de preenchimento,
+   não de texto informativo. Aberto pelo link do topo e pelo checkbox de
+   ciência da última etapa, sem tirar o proponente de onde ele está. */
+let _avisoOrigemFoco = null;
+
+function abrirAvisoPrivacidade() {
+  const modal = document.getElementById('aviso-modal');
+  if (!modal) return;
+
+  _avisoOrigemFoco = document.activeElement;
+  document.getElementById('aviso-overlay').classList.remove('hidden');
+  document.getElementById('aviso-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('aviso-modal-fechar')?.focus();
+}
+
+function fecharAvisoPrivacidade() {
+  document.getElementById('aviso-overlay')?.classList.add('hidden');
+  document.getElementById('aviso-modal')?.classList.add('hidden');
+  document.body.style.overflow = '';
+  // Devolve o foco a quem abriu (o link dentro do checkbox de ciência).
+  if (_avisoOrigemFoco && document.contains(_avisoOrigemFoco)) _avisoOrigemFoco.focus();
+  _avisoOrigemFoco = null;
 }
 
 /* ── Modal de Erro ───────────────────────────────────── */
@@ -36,64 +75,15 @@ function toggleErrorModal(open, msg) {
 }
 
 /* ── Máscara de moeda BRL ──────────────────────────────── */
-
-function formatBRL(cents) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-  }).format(cents / 100);
-}
-
-function currencyInputHandler(e) {
-  const el = e.target;
-  const digits = el.value.replace(/\D/g, '');
-  el.dataset.cents = digits || '0';
-  el.value = digits ? formatBRL(parseInt(digits, 10)) : '';
-}
-
-function currencyKeydownHandler(e) {
-  const allowed = [
-    'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-    'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-    'Home', 'End',
-  ];
-  if (allowed.includes(e.key)) return;
-  if (e.ctrlKey || e.metaKey) return;
-  if (!/^\d$/.test(e.key)) e.preventDefault();
-}
-
+/* A implementação vive em ui.js (window.CedaeMoney): mesma máscara, mesmo
+   bloqueio de teclas e mesmo parse usados pelo cadastro manual e pela edição
+   administrativa (ADR-015 §5.4). Aqui ficam só os atalhos usados pelo form. */
 function parseBRL(el) {
-  const cents = parseInt(el.dataset.cents || '0', 10);
-  return cents ? cents / 100 : null;
+  return window.CedaeMoney.value(el);
 }
 
 function initCurrencyMasks() {
-  document.querySelectorAll('[data-currency]').forEach((el) => {
-    el.addEventListener('keydown', currencyKeydownHandler);
-    el.addEventListener('input',   currencyInputHandler);
-  });
-
-  const retornoEl = document.getElementById('retorno_economico');
-  if (retornoEl) {
-    retornoEl.addEventListener('input', function () {
-      const digits = this.value.replace(/\D/g, '');
-      const num = parseInt(digits || '0', 10);
-      this.value = new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2
-      }).format(num / 100);
-    });
-
-    retornoEl.addEventListener('focus', function () {
-      if (this.value === 'R$ 0,00' || this.value === 'R$ 0,00') this.value = '';
-    });
-
-    retornoEl.addEventListener('blur', function () {
-      if (!this.value) this.value = '';
-    });
-  }
+  window.CedaeMoney.initAll();
 }
 
 /* ── Mostrar/ocultar campo de valor de aporte ──────────── */
@@ -136,6 +126,19 @@ function toggleDiagnosticoObservacao() {
   }
 }
 
+/* ── Mostrar/ocultar descrição da Macrodimensão ─────────
+   Aparece só em "Outros / Multidimensionais", mesmo padrão do Apoio Diagnóstico. */
+function toggleMacrodimensaoObservacao() {
+  const outros = document.getElementById('radio_macro_outros');
+  const wrapper = document.getElementById('macrodimensao-observacao-wrapper');
+  if (!outros || !wrapper) return;
+  const show = outros.checked;
+  wrapper.classList.toggle('hidden', !show);
+  if (!show) {
+    document.getElementById('macrodimensao_observacao').value = '';
+  }
+}
+
 /* ── Validação do formulário ─────────────────────────── */
 function validateForm(payload) {
   let valid = true;
@@ -148,7 +151,6 @@ function validateForm(payload) {
     ['area_proponente',  'err-area',     'Informe a área proponente.'],
     ['local_aplicacao',  'err-local',    'Informe o local de aplicação.'],
     ['problema_pratico', 'err-problema', 'Descreva o problema prático.'],
-    ['solucao_proposta', 'err-solucao',  'Descreva a solução proposta.'],
   ];
 
   required.forEach(([field, errId, msg]) => {
@@ -181,6 +183,20 @@ function validateForm(payload) {
     errSup.textContent = '';
   }
 
+  // Ciência do aviso de privacidade (LGPD): sem ela não há envio. O backend
+  // repete a exigência — esta validação é só para o usuário não perder o envio.
+  const ciencia    = document.getElementById('ciencia_privacidade');
+  const errCiencia = document.getElementById('err-ciencia');
+  if (ciencia && errCiencia) {
+    if (!ciencia.checked) {
+      errCiencia.textContent =
+        'É necessário confirmar a ciência do aviso de privacidade para enviar a proposta.';
+      valid = false;
+    } else {
+      errCiencia.textContent = '';
+    }
+  }
+
   return valid;
 }
 
@@ -191,6 +207,7 @@ function collectFormData() {
   const checks = [...document.querySelectorAll('input[name="suporte"]:checked')]
     .map(el => el.value).join('|');
   const diagSelecionado = checks.split('|').includes('diagnostico');
+  const macroOutros = r('macrodimensao') === 'outros';
 
   return {
     nome_colaborador:        g('nome_colaborador'),
@@ -200,21 +217,20 @@ function collectFormData() {
     area_proponente:         g('area_proponente'),
     local_aplicacao:         g('local_aplicacao'),
     problema_pratico:        g('problema_pratico'),
-    solucao_proposta:        g('solucao_proposta'),
+    solucao_proposta:        g('solucao_proposta') || null,
     risco_mitigado:          g('risco_mitigado') || null,
     estagio_desenvolvimento: r('estagio_desenvolvimento'),
     macrodimensao:           r('macrodimensao'),
+    macrodimensao_observacao: macroOutros ? (g('macrodimensao_observacao') || null) : null,
     perfil_impacto:          r('perfil_impacto'),
     aporte_financeiro:       r('aporte_financeiro'),
     valor_aporte:      parseBRL(document.getElementById('valor_aporte'))?.toString() || null,
-    retorno_economico: parseFloat(
-      (document.getElementById('retorno_economico').value || '')
-        .replace(/[R$\s .]/g, '')
-        .replace(',', '.')
-    ) || null,
+    retorno_economico: parseBRL(document.getElementById('retorno_economico')),
     suporte_necessario:      checks || null,
     diagnostico_observacao:  diagSelecionado ? (g('diagnostico_observacao') || null) : null,
     comentarios_adicionais:  g('comentarios_adicionais') || null,
+    // Ciência do aviso de privacidade (LGPD) — registrada na auditoria.
+    ciencia_privacidade: !!document.getElementById('ciencia_privacidade')?.checked,
   };
 }
 
@@ -255,6 +271,16 @@ async function submitForm(e) {
       return;
     }
 
+    // Exibe o protocolo gerado (INOV-AAAA-NNN) na tela de sucesso.
+    let codigo = null;
+    try { codigo = (await res.json())?.codigo_publico ?? null; } catch { /* sem corpo */ }
+    const protoWrap = document.getElementById('success-protocol');
+    const protoCode = document.getElementById('success-protocol-code');
+    if (protoWrap && protoCode && codigo) {
+      protoCode.textContent = codigo;
+      protoWrap.classList.remove('hidden');
+    }
+
     document.getElementById('inovacao-form').classList.add('hidden');
     document.getElementById('form-success').classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -271,8 +297,15 @@ function resetForm() {
   document.getElementById('inovacao-form').reset();
   document.getElementById('inovacao-form').classList.remove('hidden');
   document.getElementById('form-success').classList.add('hidden');
+  document.getElementById('success-protocol')?.classList.add('hidden');
   document.getElementById('valor-aporte-wrapper').classList.add('hidden');
   document.getElementById('diagnostico-observacao-wrapper').classList.add('hidden');
+  document.getElementById('macrodimensao-observacao-wrapper').classList.add('hidden');
+  // form.reset() já desmarca a ciência; o erro precisa sumir junto.
+  const errCiencia = document.getElementById('err-ciencia');
+  if (errCiencia) errCiencia.textContent = '';
+  // Volta o wizard para a primeira etapa (quando presente).
+  window.CedaeWizard?.reset();
 }
 
 /* ── Init ──────────────────────────────────────────── */
@@ -284,6 +317,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const chkDiag = document.getElementById('chk_diagnostico');
   if (chkDiag) chkDiag.addEventListener('change', toggleDiagnosticoObservacao);
+
+  // Marcar a ciência limpa o erro na hora, sem esperar novo envio.
+  const chkCiencia = document.getElementById('ciencia_privacidade');
+  if (chkCiencia) {
+    chkCiencia.addEventListener('change', () => {
+      if (chkCiencia.checked) document.getElementById('err-ciencia').textContent = '';
+    });
+  }
+
+  // Links que abrem o aviso: o do topo da página e o embutido na frase do
+  // checkbox de ciência. Este último vive dentro do <label>, então o clique
+  // precisa ser contido — sem isso, ler o aviso marcaria a caixa sozinho.
+  ['link-aviso-hero', 'link-aviso-privacidade'].forEach((id) => {
+    const link = document.getElementById(id);
+    if (!link) return;
+    link.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      abrirAvisoPrivacidade();
+    });
+  });
+
+  // Esc fecha a modal do aviso (o modal de Termos tem fluxo próprio e não é
+  // dispensável por Esc — ali a decisão é obrigatória).
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    if (!document.getElementById('aviso-modal')?.classList.contains('hidden')) {
+      fecharAvisoPrivacidade();
+    }
+  });
+
+  // Qualquer troca no grupo dispara o toggle — inclusive sair de "outros"
+  // para outra opção, que precisa esconder e limpar o campo.
+  document.querySelectorAll('input[name="macrodimensao"]').forEach((el) => {
+    el.addEventListener('change', toggleMacrodimensaoObservacao);
+  });
 
   const canalEl = document.getElementById('canal_contato');
   if (canalEl) canalEl.addEventListener('input', canalContatoInputHandler);

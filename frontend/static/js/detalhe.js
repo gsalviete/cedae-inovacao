@@ -3,13 +3,13 @@
    Autenticação: Kerberos/IIS via /api/me (sem JWT)
    ══════════════════════════════════════════════════════ */
 
-const API = '';
 const JANELA_EDICAO_MS = 2 * 60 * 60 * 1000;
-const TIPOS_EDITAVEIS = new Set(['TRIAGEM', 'APROVACAO', 'REPROVACAO', 'OBSERVACAO']);
+const TIPOS_EDITAVEIS = new Set(['TRIAGEM', 'HOMOLOGACAO', 'DESCLASSIFICACAO', 'OBSERVACAO']);
 let _pendingStatus = null;
 let _justObrig = false;
 let _me = null;
 let _editTarget = null;
+let _iniciativaData = null;
 
 function fmtDate(val) {
   if (!val) return '—';
@@ -21,22 +21,15 @@ const STATUS_MAP = {
   SUBMETIDA:      ['Submetida',      'badge-status-submetida'],
   EM_ANALISE:     ['Em Análise',     'badge-status-em_analise'],
   EM_OBSERVACAO:  ['Em Observação',  'badge-status-em_observacao'],
-  APROVADA:       ['Aprovada',       'badge-status-aprovada'],
-  REPROVADA:      ['Reprovada',      'badge-status-reprovada'],
+  HOMOLOGADA:      ['Homologada',      'badge-status-homologada'],
+  DESCLASSIFICADA: ['Desclassificada', 'badge-status-desclassificada'],
 };
 
-const SUPORTE_MAP = {
-  instrumentos_juridicos: 'Instrumentos Técnicos e Jurídicos',
-  academia:               'Conexão com Academia',
-  mercado_startups:       'Conexão com Mercado / Startups',
-  sinergia_interna:       'Sinergia Interdepartamental',
-  monitoramento:          'Monitoramento Corporativo',
-  diagnostico:            'Apoio Diagnóstico',
-};
-
+/* Rótulos de suporte vêm de api.js (SUPORTE_LABEL), compartilhados com o
+   formulário público e com a edição administrativa. */
 function formatSuporte(val) {
   if (!val) return null;
-  return val.split('|').filter(Boolean).map(v => SUPORTE_MAP[v] || v).join(' · ');
+  return val.split('|').filter(Boolean).map(v => SUPORTE_LABEL[v] || v).join(' · ');
 }
 
 function statusBadge(val) {
@@ -45,13 +38,14 @@ function statusBadge(val) {
 }
 
 const TIPO_EVENTO_LABEL = {
-  SUBMISSAO:  'Submissão',
-  TRIAGEM:    'Triagem',
-  APROVACAO:  'Aprovação',
-  REPROVACAO: 'Reprovação',
-  ANALISE:    'Análise',
-  CORRECAO:   'Correção',
-  OBSERVACAO: 'Observação',
+  SUBMISSAO:        'Submissão',
+  TRIAGEM:          'Triagem',
+  HOMOLOGACAO:      'Homologação',
+  DESCLASSIFICACAO: 'Desclassificação',
+  ANALISE:          'Análise',
+  CORRECAO:         'Correção',
+  OBSERVACAO:       'Observação',
+  REVERSAO:         'Reversão',
 };
 
 function getIniciativaId() {
@@ -64,31 +58,13 @@ function setField(id, val) {
   if (el) el.textContent = val || '—';
 }
 
-function logout() {
-  window.location.href = '/';
-}
-
-/* ── Guard via /api/me ───────────────────────────────── */
-async function checkAdmin() {
-  try {
-    const res = await fetch(`${API}/api/me`);
-    if (!res.ok) { redirectHome(); return false; }
-    const me = await res.json();
-    if (!me.admin) { redirectHome(); return false; }
-    _me = me;
-    return true;
-  } catch {
-    redirectHome();
-    return false;
-  }
-}
-
-function redirectHome() {
-  const content = document.getElementById('detalhe-content');
-  const guard   = document.getElementById('admin-guard');
-  if (content) content.classList.add('hidden');
-  if (guard)   guard.classList.remove('hidden');
-  setTimeout(() => window.location.href = '/', 2000);
+/* Marca (ou desmarca) um label como obrigatório. Usado nos campos cuja
+   exigência depende do contexto — via de captação, transição, tipo de
+   registro —, mantendo o mesmo asterisco dos formulários públicos. */
+function marcarObrigatorio(labelId, texto, obrigatorio) {
+  const el = document.getElementById(labelId);
+  if (!el) return;
+  el.innerHTML = obrigatorio ? `${texto} <span class="required">*</span>` : texto;
 }
 
 /* ── Carrega dados da iniciativa ─────────────────────── */
@@ -102,7 +78,7 @@ async function loadDetalhe() {
   try {
     const res = await fetch(`${API}/api/iniciativas/${id}`);
     if (res.status === 401 || res.status === 403) {
-      window.location.href = '/';
+      goTo('/');
       return;
     }
     if (!res.ok) {
@@ -110,10 +86,16 @@ async function loadDetalhe() {
       return;
     }
     const data = await res.json();
+    _iniciativaData = data;
 
     document.getElementById('d-titulo').textContent = data.titulo_iniciativa || 'Sem título';
-    document.getElementById('d-id').textContent = `#${data.id}`;
-    document.getElementById('d-status-badge').innerHTML = statusBadge(data.status || 'SUBMETIDA');
+    document.getElementById('d-id').textContent = data.codigo_publico
+      ? `${data.codigo_publico} · #${data.id}`
+      : `#${data.id}`;
+    document.getElementById('d-status-badge').innerHTML =
+      `${canalBadge(data.canal_codigo || 'VIA_2', true)} ${statusBadge(data.status || 'SUBMETIDA')}`;
+
+    renderOrigem(data);
 
     setField('d-nome_colaborador', data.nome_colaborador);
     setField('d-canal_contato', data.canal_contato);
@@ -128,7 +110,17 @@ async function loadDetalhe() {
 
     setField('d-estagio_desenvolvimento', data.estagio_desenvolvimento);
     setField('d-macrodimensao', data.macrodimensao);
+    // Só existe quando a macrodimensão é "outros" — sem isso o campo apareceria
+    // vazio para todas as demais iniciativas.
+    setField('d-macrodimensao_observacao', data.macrodimensao_observacao);
+    document
+      .getElementById('d-macrodimensao_observacao-field')
+      ?.classList.toggle('hidden', !data.macrodimensao_observacao);
     setField('d-perfil_impacto', data.perfil_impacto);
+    setField('d-relevancia_estrategica',
+      RELEVANCIA_LABEL[data.relevancia_estrategica] || data.relevancia_estrategica);
+    setField('d-classificacao_iniciativa',
+      CLASSIFICACAO_LABEL[data.classificacao_iniciativa] || null);
 
     setField('d-aporte_financeiro', data.aporte_financeiro);
     setField('d-valor_aporte', data.valor_aporte);
@@ -144,52 +136,95 @@ async function loadDetalhe() {
   }
 }
 
+/* ── Bloco de origem (ADR-013) ───────────────────────── */
+function renderOrigem(data) {
+  const canal = data.canal_codigo || 'VIA_2';
+  document.getElementById('d-canal-badge').innerHTML = canalBadge(canal, false);
+
+  const tipo = data.proponente_tipo || 'INTERNO';
+  setField('d-proponente_tipo', tipo === 'EXTERNO' ? 'Externo' : 'Interno');
+
+  const show = (fieldId, valueId, value) => {
+    const has = value !== null && value !== undefined && value !== '';
+    document.getElementById(fieldId)?.classList.toggle('hidden', !has);
+    if (has) setField(valueId, value);
+  };
+
+  show('d-sistema-field', 'd-sistema_origem', data.sistema_origem);
+  show('d-codigo-origem-field', 'd-codigo_origem', data.codigo_origem);
+  show('d-org-field', 'd-organizacao_externa', data.organizacao_externa);
+  show('d-tipo-inst-field', 'd-tipo_instituicao',
+    data.tipo_instituicao ? (TIPO_INSTITUICAO_LABEL[data.tipo_instituicao] || data.tipo_instituicao) : null);
+  show('d-registrado-field', 'd-registrado_por_login', data.registrado_por_login);
+}
+
 /* ── Ações de tramitação ─────────────────────────────── */
 async function loadAcoes(id, statusAtual) {
   const el = document.getElementById('workflow-acoes');
 
+  // A partir de um status terminal a única ação é a reversão da decisão, que
+  // devolve a iniciativa à análise (ADR-015 §4). Nada é apagado: o histórico
+  // ganha um evento de reversão a mais.
   const TRANSICOES = {
     SUBMETIDA:  [{ status_destino: 'EM_ANALISE', label: 'Iniciar Análise', classe: 'btn-workflow-info', justObrig: false }],
     EM_ANALISE: [
-      { status_destino: 'APROVADA',  label: 'Aprovar',  classe: 'btn-workflow-ok',  justObrig: false },
-      { status_destino: 'REPROVADA', label: 'Reprovar', classe: 'btn-workflow-err', justObrig: true  },
+      { status_destino: 'HOMOLOGADA',      label: 'Homologar',      classe: 'btn-workflow-ok',  justObrig: false },
+      { status_destino: 'DESCLASSIFICADA', label: 'Desclassificar', classe: 'btn-workflow-err', justObrig: true  },
     ],
-    APROVADA:  [],
-    REPROVADA: [],
+    HOMOLOGADA: [
+      { status_destino: 'EM_ANALISE', label: 'Reverter Homologação', classe: 'btn-workflow-warn', justObrig: true, somenteAdm: true },
+    ],
+    DESCLASSIFICADA: [
+      { status_destino: 'EM_ANALISE', label: 'Reverter Desclassificação', classe: 'btn-workflow-warn', justObrig: true, somenteAdm: true },
+    ],
   };
 
-  const terminais = ['APROVADA', 'REPROVADA'];
-  const acoes = TRANSICOES[statusAtual] || [];
+  const terminais = ['HOMOLOGADA', 'DESCLASSIFICADA'];
   const ehTerminal = terminais.includes(statusAtual);
 
-  if (ehTerminal) {
-    el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Tramitação encerrada — nenhuma ação disponível.</p>';
+  // Homologar/desclassificar — e desfazê-los — são exclusivos de ADM
+  // (ADR-014 §10, ADR-015 §4). O colaborador enxerga a esteira, mas não decide.
+  const ehAdm = _me?.role === 'ADM';
+  const ACOES_EXCLUSIVAS_ADM = new Set(['HOMOLOGADA', 'DESCLASSIFICADA']);
+  const acoes = (TRANSICOES[statusAtual] || [])
+    .filter(a => ehAdm || !(a.somenteAdm || ACOES_EXCLUSIVAS_ADM.has(a.status_destino)));
+
+  if (!acoes.length) {
+    el.innerHTML = ehTerminal
+      ? '<p style="color:var(--gray-500);font-size:13px;">Tramitação encerrada. Somente administradores podem reverter esta decisão.</p>'
+      : '<p style="color:var(--gray-500);font-size:13px;">Nenhuma ação disponível para o seu perfil. Homologar e desclassificar são exclusivos de administradores.</p>';
     return;
   }
 
-  el.innerHTML = acoes.map(a => `
+  const aviso = ehTerminal
+    ? '<p class="workflow-aviso">A reversão exige justificativa e fica registrada no histórico — nenhum evento anterior é removido.</p>'
+    : '';
+
+  el.innerHTML = aviso + acoes.map(a => `
     <button class="btn-workflow ${a.classe}"
-            onclick="iniciarTransicao(${id}, '${a.status_destino}', ${a.justObrig})">
+            onclick="iniciarTransicao(${id}, '${a.status_destino}', ${a.justObrig}, '${a.label}')">
       ${a.label}
     </button>
   `).join('');
 }
 
-function iniciarTransicao(id, statusDestino, justObrig) {
+function iniciarTransicao(id, statusDestino, justObrig, titulo) {
   _pendingStatus = { id, statusDestino };
   _justObrig = justObrig;
 
   const labels = {
-    EM_ANALISE: 'Iniciar Análise',
-    APROVADA:   'Aprovar Iniciativa',
-    REPROVADA:  'Reprovar Iniciativa',
+    EM_ANALISE:      'Iniciar Análise',
+    HOMOLOGADA:      'Homologar Iniciativa',
+    DESCLASSIFICADA: 'Desclassificar Iniciativa',
   };
-  document.getElementById('modal-just-title').textContent = labels[statusDestino] || statusDestino;
+  document.getElementById('modal-just-title').textContent =
+    titulo || labels[statusDestino] || statusDestino;
   document.getElementById('just-text').value = '';
   document.getElementById('just-error').classList.add('hidden');
   document.getElementById('just-text').placeholder = justObrig
     ? 'Justificativa obrigatória...'
     : 'Justificativa (opcional)...';
+  marcarObrigatorio('lbl-justificativa', 'Justificativa', justObrig);
 
   document.getElementById('modal-justificativa').classList.remove('hidden');
 }
@@ -409,6 +444,11 @@ function iniciarEdicao(kind, iniciativaId, recordId) {
     : '';
 
   _editTarget = { kind, iniciativaId, recordId };
+  marcarObrigatorio(
+    'lbl-edit-texto',
+    kind === 'obs' ? 'Observação' : 'Justificativa',
+    kind === 'obs',
+  );
   document.getElementById('edit-text').value = textoAtual;
   document.getElementById('edit-error').classList.add('hidden');
   document.getElementById('modal-edit-evento').classList.remove('hidden');
@@ -463,7 +503,221 @@ async function confirmarEdicao() {
 }
 
 /* ── Init ────────────────────────────────────────────── */
+/* ── Edição administrativa da iniciativa (ADM) ─────────── */
+/* Campos texto/select simples: valor lido e escrito diretamente em `e-<campo>`.
+   Os demais (suporte, monetários, classificação) têm tratamento próprio. */
+const EDIT_FIELDS = [
+  'nome_colaborador', 'canal_contato', 'email_proponente',
+  'titulo_iniciativa', 'area_proponente', 'local_aplicacao',
+  'problema_pratico', 'solucao_proposta', 'risco_mitigado',
+  'estagio_desenvolvimento', 'macrodimensao', 'macrodimensao_observacao',
+  'perfil_impacto', 'aporte_financeiro',
+  'diagnostico_observacao', 'comentarios_adicionais',
+  'relevancia_estrategica',
+];
+
+const EDIT_MONEY_FIELDS = ['valor_aporte', 'retorno_economico'];
+
+/* Campos que não podem ser esvaziados na edição: são NOT NULL no banco
+   (INOVACAO_INICIATIVAS) — apagar o conteúdo faria o UPDATE falhar. O backend
+   valida o mesmo conjunto; aqui é só para avisar antes do envio. */
+const EDIT_REQUIRED = {
+  titulo_iniciativa: 'o título da iniciativa',
+  area_proponente: 'a área proponente',
+  local_aplicacao: 'o local de aplicação',
+  problema_pratico: 'o problema prático',
+};
+
+/* RN-15: o proponente é obrigatório em todas as vias, menos na Captação Externa. */
+const EDIT_REQUIRED_PROPONENTE = {
+  nome_colaborador: 'o nome do proponente',
+  canal_contato: 'o canal de contato',
+};
+
+function camposObrigatoriosEdicao() {
+  return _iniciativaData?.canal_codigo === 'MAPEAMENTO_EXTERNO'
+    ? EDIT_REQUIRED
+    : { ...EDIT_REQUIRED, ...EDIT_REQUIRED_PROPONENTE };
+}
+
+/* ── Suporte Necessário: mesmas opções do formulário público ──
+   (ADR-015 §5.2). Montado uma única vez, na primeira abertura da modal. */
+function montarCheckboxesSuporte() {
+  const host = document.getElementById('e-suporte_necessario');
+  if (!host || host.childElementCount) return;
+  host.innerHTML = SUPORTE_OPCOES.map((o) => `
+    <label class="checkbox-option">
+      <input type="checkbox" name="e-suporte" value="${o.valor}" />
+      <span class="checkbox-box"></span>
+      <div><strong>${o.titulo}</strong><p>${o.desc}</p></div>
+    </label>`).join('');
+  host.addEventListener('change', toggleEditDiagnostico);
+}
+
+function lerSuporteSelecionado() {
+  return [...document.querySelectorAll('input[name="e-suporte"]:checked')]
+    .map((el) => el.value);
+}
+
+function preencherSuporte(valor) {
+  const marcados = new Set(String(valor || '').split('|').filter(Boolean));
+  document.querySelectorAll('input[name="e-suporte"]').forEach((el) => {
+    el.checked = marcados.has(el.value);
+  });
+}
+
+/* ── Campos condicionais (mesmo comportamento do formulário público) ── */
+
+/** Descrição da macrodimensão: só com "Outros / Multidimensionais". */
+function toggleEditMacroObs() {
+  const mostrar = document.getElementById('e-macrodimensao').value === 'outros';
+  document.getElementById('e-macrodimensao_observacao-group')
+    .classList.toggle('hidden', !mostrar);
+  if (!mostrar) document.getElementById('e-macrodimensao_observacao').value = '';
+}
+
+/** Apoio diagnóstico: só com a opção correspondente marcada em Suporte. */
+function toggleEditDiagnostico() {
+  const mostrar = lerSuporteSelecionado().includes('diagnostico');
+  document.getElementById('e-diagnostico_observacao-group')
+    .classList.toggle('hidden', !mostrar);
+  if (!mostrar) document.getElementById('e-diagnostico_observacao').value = '';
+}
+
+/* ── Classificação Ação/Projeto (controle segmentado) ── */
+function selecionarClassificacao(valor) {
+  document.querySelectorAll('#e-classificacao_iniciativa .segmented-option')
+    .forEach((btn) => {
+      const ativo = btn.dataset.valor === (valor || '');
+      btn.classList.toggle('is-active', ativo);
+      btn.setAttribute('aria-checked', ativo ? 'true' : 'false');
+    });
+}
+
+function lerClassificacao() {
+  const ativo = document.querySelector(
+    '#e-classificacao_iniciativa .segmented-option.is-active',
+  );
+  return ativo?.dataset.valor || null;
+}
+
+function abrirEdicaoIniciativa() {
+  if (!_iniciativaData) return;
+  montarCheckboxesSuporte();
+
+  EDIT_FIELDS.forEach((f) => {
+    const el = document.getElementById(`e-${f}`);
+    if (!el) return;
+    const val = _iniciativaData[f];
+    el.value = (val === null || val === undefined) ? '' : val;
+  });
+
+  // Monetários: mesma máscara do formulário público (ADR-015 §5.4).
+  window.CedaeMoney.initAll(document.getElementById('modal-edit-iniciativa'));
+  EDIT_MONEY_FIELDS.forEach((f) =>
+    window.CedaeMoney.setValue(document.getElementById(`e-${f}`), _iniciativaData[f]));
+
+  preencherSuporte(_iniciativaData.suporte_necessario);
+  selecionarClassificacao(_iniciativaData.classificacao_iniciativa);
+
+  // Asterisco do par proponente conforme a via (RN-15).
+  const exigeProponente = !!camposObrigatoriosEdicao().nome_colaborador;
+  marcarObrigatorio('lbl-e-nome', 'Nome do Proponente', exigeProponente);
+  marcarObrigatorio('lbl-e-contato', 'Canal de Contato', exigeProponente);
+
+  // Os dois campos condicionais já foram preenchidos acima (EDIT_FIELDS); os
+  // toggles apenas os revelam ou os limpam, conforme o gatilho correspondente.
+  toggleEditMacroObs();
+  toggleEditDiagnostico();
+
+  document.getElementById('edit-ini-error')?.classList.add('hidden');
+  document.getElementById('modal-edit-iniciativa').classList.remove('hidden');
+}
+
+function closeEditIniciativa() {
+  document.getElementById('modal-edit-iniciativa').classList.add('hidden');
+}
+
+function closeEditIniciativaOnOverlay(e) {
+  if (e.target === document.getElementById('modal-edit-iniciativa')) closeEditIniciativa();
+}
+
+async function salvarEdicaoIniciativa() {
+  const id = getIniciativaId();
+  if (!id) return;
+  const errEl = document.getElementById('edit-ini-error');
+  const btn = document.getElementById('btn-salvar-iniciativa');
+
+  const payload = {};
+  EDIT_FIELDS.forEach((f) => {
+    const el = document.getElementById(`e-${f}`);
+    if (el) payload[f] = el.value.trim();
+  });
+
+  // Campos obrigatórios esvaziados: avisa aqui, sem ida ao servidor.
+  for (const [campo, rotulo] of Object.entries(camposObrigatoriosEdicao())) {
+    if (payload[campo] !== undefined && !payload[campo]) {
+      if (errEl) {
+        errEl.textContent = `Não é possível deixar ${rotulo} em branco.`;
+        errEl.classList.remove('hidden');
+      }
+      document.getElementById(`e-${campo}`)?.focus();
+      return;
+    }
+  }
+
+  // Monetários: valor canônico da máscara (Number em reais) ou null.
+  EDIT_MONEY_FIELDS.forEach((f) => {
+    const valor = window.CedaeMoney.value(document.getElementById(`e-${f}`));
+    payload[f] = valor === null ? null : valor;
+  });
+  // VALOR_APORTE é texto no banco; RETORNO_ECONOMICO é numérico.
+  if (payload.valor_aporte !== null) payload.valor_aporte = String(payload.valor_aporte);
+
+  payload.suporte_necessario = lerSuporteSelecionado().join('|');
+  // O DTO valida o domínio; "não definido" precisa ir como null, não como "".
+  payload.classificacao_iniciativa = lerClassificacao();
+
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/api/iniciativas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      closeEditIniciativa();
+      window.CedaeUI?.toast('Iniciativa atualizada.', 'ok');
+      await loadDetalhe();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      const msg = Array.isArray(data.message) ? data.message.join(' ') : (data.message || 'Não foi possível salvar as alterações.');
+      if (errEl) { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+    }
+  } catch {
+    if (errEl) { errEl.textContent = 'Erro de comunicação com o servidor.'; errEl.classList.remove('hidden'); }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/** Liga os controles da modal de edição que não dependem dos dados carregados. */
+function initEdicaoIniciativa() {
+  document.getElementById('e-macrodimensao')
+    ?.addEventListener('change', toggleEditMacroObs);
+
+  document.querySelectorAll('#e-classificacao_iniciativa .segmented-option')
+    .forEach((btn) => btn.addEventListener('click', () => selecionarClassificacao(btn.dataset.valor)));
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!(await checkAdmin())) return;
+  const me = await Admin.guard();
+  if (!me) return;
+  _me = me;
+  // Edição administrativa: só ADM vê o botão de editar (ADR-014).
+  if (me.role === 'ADM') {
+    document.getElementById('btn-editar-iniciativa')?.classList.remove('hidden');
+    initEdicaoIniciativa();
+  }
   loadDetalhe();
 });

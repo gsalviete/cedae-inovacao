@@ -48,11 +48,11 @@ END;
 
 -- ────────────────────────────────────────────────────────────
 -- BLOCO 2 — Seeds de ADMIN_USERS
--- Ajuste os valores de login/nome conforme os usuários reais do domínio.
+-- login deve seguir o formato <usuario>@cedae.com.br (mesmo valor normalizado pelo backend).
 -- ────────────────────────────────────────────────────────────
 INSERT INTO ADMIN_USERS (login, nome, role)
-  SELECT 'gsalviete', 'Gabriel Salviete', 'ADM' FROM DUAL
-  WHERE NOT EXISTS (SELECT 1 FROM ADMIN_USERS WHERE login = 'gsalviete');
+  SELECT 'gsalviete@cedae.com.br', 'Gabriel Salviete', 'ADM' FROM DUAL
+  WHERE NOT EXISTS (SELECT 1 FROM ADMIN_USERS WHERE login = 'gsalviete@cedae.com.br');
 
 
 -- ────────────────────────────────────────────────────────────

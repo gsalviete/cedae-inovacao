@@ -6,7 +6,7 @@ RUN corepack enable \
 
 WORKDIR /app
 
-COPY .npmrc package.json pnpm-lock.yaml ./
+COPY backend/.npmrc backend/package.json backend/pnpm-lock.yaml ./
 
 # CI=true: pnpm não pede confirmação interativa em caso de purge
 ENV CI=true
@@ -17,9 +17,9 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # pnpm rebuild mantém o estado interno do pnpm consistente
 # (npm rebuild causava inconsistência → pnpm queria purgar node_modules)
-RUN pnpm rebuild bcrypt oracledb @nestjs/core
+RUN pnpm rebuild oracledb @nestjs/core
 
-COPY . .
+COPY backend/. .
 
 RUN pnpm run build
 
@@ -28,10 +28,14 @@ FROM node:22-slim AS runner
 
 WORKDIR /app
 
-COPY package.json ./
+COPY backend/package.json ./
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+
+# main.ts serve o frontend a partir de ../../frontend relativo a dist/ (ou seja, /frontend) —
+# empacotado na imagem para a pipeline não depender do volume usado no docker-compose local.
+COPY frontend /frontend
 
 EXPOSE 8095
 

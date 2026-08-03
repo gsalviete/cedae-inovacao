@@ -8,6 +8,15 @@ import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
 import { RequestUser } from '../common/interfaces/request-user.interface';
 
+/** Resultado de uma tramitação. `reversao` marca o desfazimento de uma
+ *  decisão terminal (homologação/desclassificação) — ADR-015 §4. */
+export interface TransicaoResultado {
+  iniciativa_id: number;
+  status_anterior: string;
+  status_novo: string;
+  reversao: boolean;
+}
+
 @Injectable()
 export class WorkflowService {
   constructor(private readonly db: DatabaseService) {}
@@ -42,7 +51,7 @@ export class WorkflowService {
     statusDestino: string,
     justificativa: string | undefined,
     usuario: RequestUser,
-  ): Promise<object> {
+  ): Promise<TransicaoResultado> {
     const conn = await this.db.getConnection();
     try {
       const iniResult = await conn.execute(
@@ -69,12 +78,34 @@ export class WorkflowService {
       }
 
       const trans = transRows[0];
-      const isAdmin = usuario.role === 'ADM' || usuario.role === 'CONTRIBUTOR';
-      if (!isAdmin) {
+      // Qualquer usuário do painel (ADM ou CONTRIBUTOR) pode tramitar a esteira.
+      const ehUsuarioPainel = usuario.role === 'ADM' || usuario.role === 'CONTRIBUTOR';
+      if (!ehUsuarioPainel) {
         throw new ForbiddenException('Sem permissão para realizar esta transição');
       }
 
-      if (trans.JUSTIFICATIVA_OBRIG === 1 && !justificativa?.trim()) {
+      // Homologar e desclassificar são atos exclusivos de ADM (ADR-014 §10).
+      // O colaborador (CONTRIBUTOR) faz tudo na esteira, exceto estas duas
+      // decisões terminais. Validação primária no backend — a UI apenas oculta.
+      if (this.STATUS_EXCLUSIVOS_ADM.has(statusDestino) && usuario.role !== 'ADM') {
+        throw new ForbiddenException(
+          'Apenas administradores podem homologar ou desclassificar iniciativas.',
+        );
+      }
+
+      // Desfazer a decisão também é exclusivo de ADM (ADR-015 §4): quem não pode
+      // homologar/desclassificar tampouco pode reverter.
+      const ehReversao = this.STATUS_EXCLUSIVOS_ADM.has(statusAtual);
+      if (ehReversao && usuario.role !== 'ADM') {
+        throw new ForbiddenException(
+          'Apenas administradores podem reverter uma homologação ou desclassificação.',
+        );
+      }
+
+      // Reverter exige justificativa por regra de negócio, não por configuração:
+      // a checagem não depende de o catálogo trazer justificativa_obrig = 1.
+      const exigeJustificativa = trans.JUSTIFICATIVA_OBRIG === 1 || ehReversao;
+      if (exigeJustificativa && !justificativa?.trim()) {
         throw new BadRequestException('Justificativa obrigatória para esta transição');
       }
 
@@ -91,14 +122,19 @@ export class WorkflowService {
           iniciativaId,
           statusAtual,
           statusDestino,
-          this.mapTipoEvento(statusDestino),
+          ehReversao ? 'REVERSAO' : this.mapTipoEvento(statusDestino),
           usuario.login,
           justificativa || null,
         ],
       );
 
       await conn.commit();
-      return { iniciativa_id: iniciativaId, status_anterior: statusAtual, status_novo: statusDestino };
+      return {
+        iniciativa_id: iniciativaId,
+        status_anterior: statusAtual,
+        status_novo: statusDestino,
+        reversao: ehReversao,
+      };
     } finally {
       await conn.close().catch(() => {});
     }
@@ -183,18 +219,27 @@ export class WorkflowService {
     }
   }
 
+  /** Tipo de evento pelo destino. Reversões não passam por aqui: têm tipo próprio. */
   private mapTipoEvento(statusDestino: string): string {
     const mapa: Record<string, string> = {
-      SUBMETIDA:  'SUBMISSAO',
-      EM_ANALISE: 'TRIAGEM',
-      APROVADA:   'APROVACAO',
-      REPROVADA:  'REPROVACAO',
+      SUBMETIDA:       'SUBMISSAO',
+      EM_ANALISE:      'TRIAGEM',
+      HOMOLOGADA:      'HOMOLOGACAO',
+      DESCLASSIFICADA: 'DESCLASSIFICACAO',
     };
     return mapa[statusDestino] ?? 'ANALISE';
   }
 
+  // Status terminais: entrar neles é restrito a ADM (ADR-014 §10) e sair deles
+  // (reversão) também (ADR-015 §4).
+  private readonly STATUS_EXCLUSIVOS_ADM = new Set(['HOMOLOGADA', 'DESCLASSIFICADA']);
+
   // Tipos de evento que o autor pode editar dentro da janela de 2h
-  private readonly EVENTOS_EDITAVEIS = new Set(['TRIAGEM', 'APROVACAO', 'REPROVACAO']);
+  private readonly EVENTOS_EDITAVEIS = new Set([
+    'TRIAGEM',
+    'HOMOLOGACAO',
+    'DESCLASSIFICACAO',
+  ]);
   private readonly JANELA_EDICAO_MS = 2 * 60 * 60 * 1000;
 
   private dentroDaJanela(criadoEm: Date | string): boolean {
@@ -280,9 +325,9 @@ export class WorkflowService {
           'Janela de edição expirada (2h após o registro).',
         );
       }
-      if (ev.TIPO_EVENTO === 'REPROVACAO' && !justificativa?.trim()) {
+      if (ev.TIPO_EVENTO === 'DESCLASSIFICACAO' && !justificativa?.trim()) {
         throw new BadRequestException(
-          'Justificativa obrigatória para reprovação.',
+          'Justificativa obrigatória para desclassificação.',
         );
       }
 

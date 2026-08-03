@@ -9,13 +9,15 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AdminGuard } from '../auth/admin.guard';
 import { RequestUser } from '../common/interfaces/request-user.interface';
-import { AdminService, CreateAdminUserDto } from './admin.service';
+import { AdminService } from './admin.service';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 
 type AuthRequest = Request & { user: RequestUser };
 
@@ -51,6 +53,27 @@ export class AdminController {
     return this.adminService.listarAdmins();
   }
 
+  @Get('ad-users')
+  async buscarUsuariosAD(
+    @Query('q') q: string | undefined,
+    @Req() req: Request,
+  ): Promise<object[]> {
+    this.requireAdm(req);
+    const termo = (q ?? '').trim();
+    if (termo.length < 2) return [];
+    return this.adminService.buscarUsuariosAD(termo);
+  }
+
+  @Get('ad-users/resolve')
+  async resolverUsuarioAD(
+    @Query('nome') nome: string | undefined,
+    @Req() req: Request,
+  ): Promise<object> {
+    this.requireAdm(req);
+    const resolved = await this.adminService.resolverUsuarioAD((nome ?? '').trim());
+    return resolved ?? { email: null, login: null };
+  }
+
   @Post('users')
   @HttpCode(HttpStatus.CREATED)
   async criarAdmin(
@@ -69,7 +92,8 @@ export class AdminController {
     @Req() req: Request,
   ): Promise<object> {
     this.requireAdm(req);
-    await this.adminService.toggleAdmin(id, body.ativo);
+    const actor = (req as AuthRequest).user;
+    await this.adminService.toggleAdmin(id, body.ativo, actor.login);
     return { message: 'Status atualizado.' };
   }
 
@@ -80,7 +104,8 @@ export class AdminController {
     @Req() req: Request,
   ): Promise<object> {
     this.requireAdm(req);
-    await this.adminService.atualizarRole(id, body.role);
-    return { message: 'Role atualizado.' };
+    const actor = (req as AuthRequest).user;
+    await this.adminService.atualizarRole(id, body.role, actor.login);
+    return { message: 'Perfil atualizado.' };
   }
 }

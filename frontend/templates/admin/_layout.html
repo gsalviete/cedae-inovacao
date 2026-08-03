@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{PAGE_TITLE}} — CEDAE Inovação</title>
+  <script>window.__BASE_PATH__ = "{{BASE_PATH}}";</script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C16 2 6 13.5 6 21a10 10 0 0 0 20 0C26 13.5 16 2 16 2Z' fill='%230067AC'/%3E%3Cpath d='M12 20a4 4 0 0 0 4 4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/style.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/admin.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/shell.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/dashboard.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/captacao.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/static/css/detalhe.css">
+</head>
+<body class="admin-body">
+
+  <div class="app">
+
+    <!-- ══════════ SIDEBAR ══════════ -->
+    <aside class="sidebar" aria-label="Navegação principal">
+      <a class="sidebar-brand" href="{{BASE_PATH}}/admin/dashboard" aria-label="Inovação CEDAE — Dashboard">
+        <span class="sidebar-brand-plate">
+          <img src="{{BASE_PATH}}/static/img/logo-colorido-horizontal.png" alt="Inovação CEDAE — Conexões que Transformam" />
+        </span>
+        <span class="sidebar-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2S5 9.5 5 14a7 7 0 0 0 14 0c0-4.5-7-12-7-12Z"/><path d="M9 15a3 3 0 0 0 3 3"/></svg>
+        </span>
+      </a>
+
+      <nav class="sidebar-nav" data-active="{{NAV_ACTIVE}}">
+        <span class="nav-section-label">Painel</span>
+        <a class="nav-item" data-nav="dashboard"   href="{{BASE_PATH}}/admin/dashboard"><i data-icon="layout-dashboard"></i><span>Dashboard</span></a>
+        <a class="nav-item" data-nav="iniciativas" href="{{BASE_PATH}}/admin/iniciativas"><i data-icon="list"></i><span>Iniciativas</span></a>
+        <a class="nav-item" data-nav="registrar"   href="{{BASE_PATH}}/admin/registrar"><i data-icon="plus-circle"></i><span>Registrar</span></a>
+
+        <span class="nav-section-label">Gestão</span>
+        <a class="nav-item" data-nav="usuarios" href="{{BASE_PATH}}/admin/usuarios"><i data-icon="users"></i><span>Usuários</span></a>
+        <a class="nav-item" data-nav="canais" data-role="ADM" href="{{BASE_PATH}}/admin/canais"><i data-icon="sliders"></i><span>Canais</span></a>
+        <a class="nav-item" data-nav="logs" href="{{BASE_PATH}}/admin/logs"><i data-icon="scroll-text"></i><span>Log de Sistema</span></a>
+
+        <span class="nav-section-label">Externo</span>
+        <a class="nav-item" href="{{BASE_PATH}}/"><i data-icon="external-link"></i><span>Formulário Público</span></a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="sidebar-user">
+          <span class="avatar" id="side-avatar">·</span>
+          <span class="sidebar-user-info">
+            <b id="side-user-name">—</b>
+            <span id="side-user-role">Painel Administrativo</span>
+          </span>
+        </div>
+      </div>
+    </aside>
+    <div class="sidebar-scrim"></div>
+
+    <!-- ══════════ ÁREA PRINCIPAL ══════════ -->
+    <div class="app-main">
+
+      <header class="topbar">
+        <button class="topbar-toggle drawer-only" onclick="toggleNav()" aria-label="Abrir menu"><i data-icon="menu"></i></button>
+        <button class="topbar-toggle collapse-only" onclick="toggleNav()" aria-label="Recolher menu"><i data-icon="panel-left"></i></button>
+        <nav class="topbar-crumb" aria-label="Trilha de navegação">{{BREADCRUMB}}</nav>
+        <div class="topbar-actions" aria-hidden="true"><!-- reservado para ações futuras --></div>
+      </header>
+
+      <main class="app-content">
+
+        <div id="admin-guard" class="guard-screen hidden">
+          <p>Acesso restrito. Redirecionando...</p>
+        </div>
+
+        <div id="admin-content">
+          <div class="page-head">
+            <div class="page-head-title">
+              <h1>{{PAGE_TITLE}}</h1>
+              <p>{{PAGE_SUBTITLE}}</p>
+            </div>
+          </div>
+
+          {{CONTENT}}
+        </div>
+      </main>
+
+      <footer class="site-footer">
+        <p>CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro</p>
+        <p>Assessoria de Inovação para Planejamento</p>
+      </footer>
+
+    </div>
+  </div>
+
+  <script src="{{BASE_PATH}}/static/js/api.js"></script>
+  <script src="{{BASE_PATH}}/static/js/ui.js"></script>
+  <script src="{{BASE_PATH}}/static/js/admin-core.js"></script>
+  <script src="{{BASE_PATH}}/static/js/{{PAGE_SCRIPT}}"></script>
+</body>
+</html>
