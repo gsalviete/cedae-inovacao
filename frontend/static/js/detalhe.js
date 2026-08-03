@@ -139,7 +139,7 @@ async function loadDetalhe() {
 /* ── Bloco de origem (ADR-013) ───────────────────────── */
 function renderOrigem(data) {
   const canal = data.canal_codigo || 'VIA_2';
-  document.getElementById('d-canal-badge').innerHTML = canalBadge(canal, true);
+  document.getElementById('d-canal-badge').innerHTML = canalBadge(canal, false);
 
   const tipo = data.proponente_tipo || 'INTERNO';
   setField('d-proponente_tipo', tipo === 'EXTERNO' ? 'Externo' : 'Interno');
