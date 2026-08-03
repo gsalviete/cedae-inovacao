@@ -3,6 +3,19 @@
 **Data:** 2026-06-24  
 **Fase atual:** Pré-implementação — todos os artefatos de planejamento concluídos
 
+> **Nota (2026-07-29):** este índice reflete a fase de planejamento. O sistema já
+> está implementado (ADR-001 a ADR-015). Para entender **o produto hoje**, comece
+> pelos dois documentos abaixo.
+
+---
+
+## Comece por aqui
+
+| Documento | Para quê |
+|---|---|
+| [`visao-geral-do-produto.md`](visao-geral-do-produto.md) | O que o sistema faz, qual dor mitiga, as quatro vias de captação, ciclo de vida, papéis e indicadores. **Documento de negócio — não exige conhecimento técnico** |
+| [`dicionario-de-dados.md`](dicionario-de-dados.md) | Modelo de dados campo a campo: tabelas, colunas, domínios de valor, regras e pontos de atenção para relatórios |
+
 ---
 
 ## Fontes de Verdade

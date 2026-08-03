@@ -58,6 +58,15 @@ function setField(id, val) {
   if (el) el.textContent = val || '—';
 }
 
+/* Marca (ou desmarca) um label como obrigatório. Usado nos campos cuja
+   exigência depende do contexto — via de captação, transição, tipo de
+   registro —, mantendo o mesmo asterisco dos formulários públicos. */
+function marcarObrigatorio(labelId, texto, obrigatorio) {
+  const el = document.getElementById(labelId);
+  if (!el) return;
+  el.innerHTML = obrigatorio ? `${texto} <span class="required">*</span>` : texto;
+}
+
 /* ── Carrega dados da iniciativa ─────────────────────── */
 async function loadDetalhe() {
   const id = getIniciativaId();
@@ -215,6 +224,7 @@ function iniciarTransicao(id, statusDestino, justObrig, titulo) {
   document.getElementById('just-text').placeholder = justObrig
     ? 'Justificativa obrigatória...'
     : 'Justificativa (opcional)...';
+  marcarObrigatorio('lbl-justificativa', 'Justificativa', justObrig);
 
   document.getElementById('modal-justificativa').classList.remove('hidden');
 }
@@ -434,6 +444,11 @@ function iniciarEdicao(kind, iniciativaId, recordId) {
     : '';
 
   _editTarget = { kind, iniciativaId, recordId };
+  marcarObrigatorio(
+    'lbl-edit-texto',
+    kind === 'obs' ? 'Observação' : 'Justificativa',
+    kind === 'obs',
+  );
   document.getElementById('edit-text').value = textoAtual;
   document.getElementById('edit-error').classList.add('hidden');
   document.getElementById('modal-edit-evento').classList.remove('hidden');
@@ -502,6 +517,28 @@ const EDIT_FIELDS = [
 ];
 
 const EDIT_MONEY_FIELDS = ['valor_aporte', 'retorno_economico'];
+
+/* Campos que não podem ser esvaziados na edição: são NOT NULL no banco
+   (INOVACAO_INICIATIVAS) — apagar o conteúdo faria o UPDATE falhar. O backend
+   valida o mesmo conjunto; aqui é só para avisar antes do envio. */
+const EDIT_REQUIRED = {
+  titulo_iniciativa: 'o título da iniciativa',
+  area_proponente: 'a área proponente',
+  local_aplicacao: 'o local de aplicação',
+  problema_pratico: 'o problema prático',
+};
+
+/* RN-15: o proponente é obrigatório em todas as vias, menos na Captação Externa. */
+const EDIT_REQUIRED_PROPONENTE = {
+  nome_colaborador: 'o nome do proponente',
+  canal_contato: 'o canal de contato',
+};
+
+function camposObrigatoriosEdicao() {
+  return _iniciativaData?.canal_codigo === 'MAPEAMENTO_EXTERNO'
+    ? EDIT_REQUIRED
+    : { ...EDIT_REQUIRED, ...EDIT_REQUIRED_PROPONENTE };
+}
 
 /* ── Suporte Necessário: mesmas opções do formulário público ──
    (ADR-015 §5.2). Montado uma única vez, na primeira abertura da modal. */
@@ -583,6 +620,11 @@ function abrirEdicaoIniciativa() {
   preencherSuporte(_iniciativaData.suporte_necessario);
   selecionarClassificacao(_iniciativaData.classificacao_iniciativa);
 
+  // Asterisco do par proponente conforme a via (RN-15).
+  const exigeProponente = !!camposObrigatoriosEdicao().nome_colaborador;
+  marcarObrigatorio('lbl-e-nome', 'Nome do Proponente', exigeProponente);
+  marcarObrigatorio('lbl-e-contato', 'Canal de Contato', exigeProponente);
+
   // Os dois campos condicionais já foram preenchidos acima (EDIT_FIELDS); os
   // toggles apenas os revelam ou os limpam, conforme o gatilho correspondente.
   toggleEditMacroObs();
@@ -611,6 +653,18 @@ async function salvarEdicaoIniciativa() {
     const el = document.getElementById(`e-${f}`);
     if (el) payload[f] = el.value.trim();
   });
+
+  // Campos obrigatórios esvaziados: avisa aqui, sem ida ao servidor.
+  for (const [campo, rotulo] of Object.entries(camposObrigatoriosEdicao())) {
+    if (payload[campo] !== undefined && !payload[campo]) {
+      if (errEl) {
+        errEl.textContent = `Não é possível deixar ${rotulo} em branco.`;
+        errEl.classList.remove('hidden');
+      }
+      document.getElementById(`e-${campo}`)?.focus();
+      return;
+    }
+  }
 
   // Monetários: valor canônico da máscara (Number em reais) ou null.
   EDIT_MONEY_FIELDS.forEach((f) => {

@@ -32,6 +32,28 @@ type IniciativaCampos = Omit<CreateManualIniciativaDto,
   'canal_codigo' | 'sistema_origem' | 'codigo_origem' | 'organizacao_externa' |
   'tipo_instituicao' | 'data_reuniao' | 'area_reuniao' | 'relevancia_estrategica'>;
 
+/**
+ * Colunas que continuam NOT NULL em INOVACAO_INICIATIVAS (V27 liberou
+ * SOLUCAO_PROPOSTA; V31, o par proponente). Como o Oracle trata string vazia
+ * como NULL, esvaziar qualquer uma delas na edição estouraria ORA-01407 e
+ * viraria um 500 opaco — a exigência é validada aqui, com mensagem legível.
+ */
+const CAMPOS_OBRIGATORIOS: Record<string, string> = {
+  titulo_iniciativa: 'o título da iniciativa',
+  area_proponente: 'a área proponente',
+  local_aplicacao: 'o local de aplicação',
+  problema_pratico: 'o problema prático',
+};
+
+/**
+ * RN-15: proponente é obrigatório em todas as vias, exceto na Captação Externa
+ * — mesma regra da ingestão (`criarManual`), aplicada também na edição.
+ */
+const CAMPOS_PROPONENTE: Record<string, string> = {
+  nome_colaborador: 'o nome do proponente',
+  canal_contato: 'o canal de contato',
+};
+
 const CANAIS_MANUAIS = new Set(['VIA_1', 'VIA_3', 'MAPEAMENTO_EXTERNO']);
 const SISTEMAS_ORIGEM = new Set(['SGE', 'SGP']);
 const TIPOS_INSTITUICAO = new Set<string>(TIPOS_INSTITUICAO_VALIDOS);
@@ -349,6 +371,55 @@ export class IniciativasService {
    * individualmente em INOVACAO_LOGS (ADR-008 / ADR-015 §9).
    */
   async atualizar(id: number, dto: UpdateIniciativaDto): Promise<string[]> {
+    const conn = await this.db.getConnection();
+    try {
+      // O "antes" é lido na mesma conexão da escrita: dá o canal (para a regra
+      // de proponente) e os valores auditados exatamente como estão ao gravar.
+      const atual = await this.carregarEstadoAtual(conn, id);
+      if (!atual) {
+        throw new NotFoundException(`Iniciativa #${id} não encontrada`);
+      }
+
+      this.validarCamposObrigatorios(dto, atual.CANAL_CODIGO);
+
+      const { sql, binds } = this.montarUpdate(id, dto);
+      const alteracoes = this.diffCamposAuditados(atual, dto);
+
+      const result = await conn.execute(sql, binds);
+      if (!result.rowsAffected) {
+        throw new NotFoundException(`Iniciativa #${id} não encontrada`);
+      }
+      await conn.commit();
+      return alteracoes;
+    } finally {
+      await conn.close();
+    }
+  }
+
+  /**
+   * Impede que a edição esvazie campos que o banco exige (ORA-01407) ou que a
+   * regra de negócio exige (RN-15). Só os campos efetivamente enviados são
+   * verificados — o PATCH continua parcial.
+   */
+  private validarCamposObrigatorios(dto: UpdateIniciativaDto, canal: string | null): void {
+    const exigidos = canal === 'MAPEAMENTO_EXTERNO'
+      ? CAMPOS_OBRIGATORIOS
+      : { ...CAMPOS_OBRIGATORIOS, ...CAMPOS_PROPONENTE };
+
+    for (const [campo, rotulo] of Object.entries(exigidos)) {
+      const valor = (dto as Record<string, unknown>)[campo];
+      if (valor === undefined) continue;
+      if (typeof valor !== 'string' || !valor.trim()) {
+        throw new BadRequestException(`Não é possível deixar ${rotulo} em branco.`);
+      }
+    }
+  }
+
+  /** Monta o UPDATE parcial: só os campos enviados entram no SET. */
+  private montarUpdate(
+    id: number,
+    dto: UpdateIniciativaDto,
+  ): { sql: string; binds: unknown[] } {
     // Mapa coluna → valor, na ordem de bind. `undefined` = campo não enviado.
     const campos: Record<string, unknown> = {
       NOME_COLABORADOR: dto.nome_colaborador,
@@ -380,8 +451,10 @@ export class IniciativasService {
     for (const [coluna, valor] of Object.entries(campos)) {
       if (valor !== undefined) {
         sets.push(`${coluna} = :${i}`);
-        // string vazia vira NULL (campos opcionais); demais valores preservados.
-        binds.push(valor === '' ? null : valor);
+        // Texto sem conteúdo vira NULL (campos opcionais); os obrigatórios já
+        // foram barrados antes. Demais valores seguem como vieram.
+        const normalizado = typeof valor === 'string' ? valor.trim() : valor;
+        binds.push(normalizado === '' ? null : normalizado);
         i++;
       }
     }
@@ -393,23 +466,25 @@ export class IniciativasService {
     sets.push('ATUALIZADO_EM = SYSDATE');
     binds.push(id); // WHERE ID = :i
 
-    const sql = `UPDATE INOVACAO_INICIATIVAS SET ${sets.join(', ')} WHERE ID = :${i}`;
+    return {
+      sql: `UPDATE INOVACAO_INICIATIVAS SET ${sets.join(', ')} WHERE ID = :${i}`,
+      binds,
+    };
+  }
 
-    const conn = await this.db.getConnection();
-    try {
-      // Lê o "antes" dos campos auditados na mesma conexão da escrita, para que
-      // o log reflita exatamente a transição efetivada.
-      const alteracoes = await this.diffCamposAuditados(conn, id, dto);
-
-      const result = await conn.execute(sql, binds);
-      if (!result.rowsAffected) {
-        throw new NotFoundException(`Iniciativa #${id} não encontrada`);
-      }
-      await conn.commit();
-      return alteracoes;
-    } finally {
-      await conn.close();
-    }
+  /** Estado persistido necessário à validação e à auditoria da edição. */
+  private async carregarEstadoAtual(
+    conn: oracledb.Connection,
+    id: number,
+  ): Promise<Record<string, string | null> | null> {
+    const result = await conn.execute(
+      `SELECT CANAL_CODIGO, RELEVANCIA_ESTRATEGICA, CLASSIFICACAO_INICIATIVA
+         FROM INOVACAO_INICIATIVAS WHERE ID = :1`,
+      [id],
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+    const rows = result.rows as Record<string, string | null>[];
+    return rows.length ? rows[0] : null;
   }
 
   /**
@@ -417,11 +492,10 @@ export class IniciativasService {
    * mudanças reais ("Relevância estratégica: X → Y"). Campos não enviados ou
    * sem alteração efetiva não geram entrada de auditoria.
    */
-  private async diffCamposAuditados(
-    conn: oracledb.Connection,
-    id: number,
+  private diffCamposAuditados(
+    atual: Record<string, string | null>,
     dto: UpdateIniciativaDto,
-  ): Promise<string[]> {
+  ): string[] {
     const auditados: Array<{
       coluna: string;
       rotulo: string;
@@ -444,15 +518,6 @@ export class IniciativasService {
 
     const pendentes = auditados.filter((c) => c.novo !== undefined);
     if (!pendentes.length) return [];
-
-    const result = await conn.execute(
-      `SELECT RELEVANCIA_ESTRATEGICA, CLASSIFICACAO_INICIATIVA
-         FROM INOVACAO_INICIATIVAS WHERE ID = :1`,
-      [id],
-      { outFormat: oracledb.OUT_FORMAT_OBJECT },
-    );
-    const atual = (result.rows as any[])[0];
-    if (!atual) return [];
 
     const rotular = (labels: Record<string, string>, valor: unknown): string => {
       const v = (valor ?? '') === '' ? null : String(valor);
