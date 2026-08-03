@@ -157,9 +157,7 @@ export class IniciativasController {
     @Req() req: Request,
   ): Promise<object> {
     const user = (req as AuthRequest).user;
-    if (user.role !== 'ADM') {
-      throw new ForbiddenException('Apenas administradores podem editar iniciativas.');
-    }
+    
     const alteracoes = await this.iniciativasService.atualizar(id, dto);
     this.authService
       .registrarLog(user.login, 'editar_iniciativa', `Iniciativa #${id} editada`)
