@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
 import { MailService } from '../mail/mail.service';
@@ -61,6 +61,8 @@ const RELEVANCIAS_VALIDAS = new Set<string>(RELEVANCIAS);
 
 @Injectable()
 export class IniciativasService {
+  private readonly logger = new Logger(IniciativasService.name);
+
   constructor(
     private readonly db: DatabaseService,
     private readonly mail: MailService,
@@ -88,7 +90,9 @@ export class IniciativasService {
         email: data.email_proponente,
         protocolo: resultado.codigo_publico,
       })
-      .catch(() => {});
+      .catch((e) => {
+        this.logger.error(`Falha inesperada ao tentar enviar o e-mail de confirmação: ${e?.message ?? e}`);
+      });
 
     return resultado;
   }

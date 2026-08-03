@@ -146,8 +146,8 @@ export class IniciativasController {
   }
 
   /**
-   * Edição administrativa dos dados da iniciativa (ADR-014). Exclusivo de ADM —
-   * o colaborador visualiza, mas não altera o conteúdo. Auditado em INOVACAO_LOGS.
+   * Edição administrativa dos dados da iniciativa (ADR-014). Agora disponível para
+   * administradores (ADM) e colaboradores (CONTRIBUTOR). Auditado em INOVACAO_LOGS.
    */
   @Patch(':id')
   @UseGuards(AdminGuard)

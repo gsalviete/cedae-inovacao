@@ -40,7 +40,7 @@ services:
       # Incrementar faz o aceite ser solicitado novamente.
       - TERMOS_VERSAO=${TERMOS_VERSAO:-2.0}
     volumes:
-      - ./backend/.env:/app/.env
+      - ./.env:/app/.env
       - ./frontend:/frontend
     networks:
       - cedae_net
