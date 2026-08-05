@@ -12,12 +12,16 @@
  * dotenv nunca sobrescreve o que já está definido.
  */
 import { config } from 'dotenv';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
+// `resolve` + Set porque os dois candidatos apontam para o mesmo arquivo quando
+// o processo já roda da raiz — sem isso o .env aparece duplicado no log.
 const candidatos = [
-  join(process.cwd(), '.env'),
-  // dist/ → raiz do repositório (dev local, rodando de backend/).
-  join(__dirname, '..', '..', '.env'),
+  ...new Set([
+    resolve(process.cwd(), '.env'),
+    // dist/ → raiz do repositório (dev local, rodando de backend/).
+    resolve(join(__dirname, '..', '..', '.env')),
+  ]),
 ];
 
 const carregados = candidatos.filter((p) => !config({ path: p }).error);

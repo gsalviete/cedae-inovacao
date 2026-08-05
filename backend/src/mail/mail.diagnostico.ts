@@ -19,14 +19,35 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  console.log('── Configuração vista pelo app ──');
-  for (const chave of [
+  const CHAVES = [
     'MAIL_ENABLED', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE',
-    'SMTP_TLS_REJECT_UNAUTHORIZED', 'SMTP_USER', 'MAIL_FROM', 'MAIL_FROM_NAME',
-  ]) {
-    console.log(`  ${chave.padEnd(28)}= ${process.env[chave] ?? '(indefinida)'}`);
+    'SMTP_TLS_REJECT_UNAUTHORIZED', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM', 'MAIL_FROM_NAME',
+  ];
+
+  console.log('── Configuração lida pelo app (INOVACAO_*) ──');
+  for (const chave of CHAVES) {
+    const valor = process.env[`INOVACAO_${chave}`];
+    console.log(
+      `  INOVACAO_${chave.padEnd(30)}= ` +
+        (chave === 'SMTP_PASS' ? (valor ? '(definida)' : '(vazia)') : (valor ?? '(indefinida)')),
+    );
   }
-  console.log(`  ${'SMTP_PASS'.padEnd(28)}= ${process.env.SMTP_PASS ? '(definida)' : '(vazia)'}`);
+
+  // Tudo que parece de e-mail e o app NÃO lê: as do cron de deploy da infra
+  // (MAIL_FROM=deploy@, SMTP_SERVER=…) e qualquer tentativa de configurar o app
+  // sem o prefixo. Listar as duas coisas juntas é o que torna o engano óbvio.
+  const ignoradas = Object.keys(process.env)
+    .filter((k) => /^(MAIL|SMTP)_/.test(k))
+    .sort();
+  if (ignoradas.length) {
+    console.log('\n── Presentes no ambiente, IGNORADAS pelo app ──');
+    for (const k of ignoradas) {
+      // `undefined` e não truthiness: INOVACAO_SMTP_USER='' é configuração
+      // legítima (relay sem auth), não prefixo esquecido.
+      const faltouPrefixo = CHAVES.includes(k) && process.env[`INOVACAO_${k}`] === undefined;
+      console.log(`  ${k.padEnd(32)}${faltouPrefixo ? '  <-- faltou o prefixo INOVACAO_' : ''}`);
+    }
+  }
 
   console.log('\n── Envio de teste ──');
   const enviado = await new MailService().sendConfirmacaoVia2({
