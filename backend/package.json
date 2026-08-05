@@ -9,6 +9,7 @@
     "build": "nest build",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
+    "mail:test": "nest build && node dist/mail/mail.diagnostico",
     "start:debug": "nest start --debug --watch"
   },
   "dependencies": {
