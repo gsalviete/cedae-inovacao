@@ -34,7 +34,7 @@ const CAMINHO_LOGO = join(
 export class MailService {
   private readonly logger = new Logger(MailService.name);
 
-  private readonly host = ler('SMTP_HOST') ?? '';
+  private readonly host = ler('SMTP_SERVER') ?? '';
   private readonly port = Number(ler('SMTP_PORT') ?? '25');
   private readonly ligado = envioLigado();
   /** E-mail institucional: remetente e também o contato exibido no corpo. */
@@ -68,7 +68,7 @@ export class MailService {
       return null;
     }
     if (!this.host) {
-      this.logger.error('SMTP_ENABLED=true mas SMTP_HOST está vazio — nenhum e-mail sairá.');
+      this.logger.error('SMTP_ENABLED=true mas SMTP_SERVER está vazio — nenhum e-mail sairá.');
       return null;
     }
 

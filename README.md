@@ -64,7 +64,7 @@ A conexão é sempre Easy Connect (`HOST:PORT/SERVICE`) — não há
 `ORACLE_CONNECT_STRING` nem `tnsnames.ora` dentro do container. O failover entre
 nós do RAC vem do próprio SCAN.
 
-Demais variáveis (`PORT`, `PROJECT_PATH`, `SMTP_*`, `INOVACAO_MAIL_FROM*`,
+Demais variáveis (`APP_PORT`, `PROJECT_PATH`, `SMTP_*`, `INOVACAO_MAIL_FROM*`,
 `TERMOS_VERSAO`, rate limit) estão documentadas uma a uma no
 [`.env.example`](.env.example).
 
