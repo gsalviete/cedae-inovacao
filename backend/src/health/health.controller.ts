@@ -1,6 +1,7 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { hostname } from 'os';
+import { ligado as envioLigado, renomeadasPendentes } from '../mail/mail.config';
 
 /** Uma variável obrigatória e o motivo de ela ser obrigatória. */
 interface Exigencia {
@@ -52,9 +53,8 @@ export class HealthController {
       .map((e) => e.nome);
 
     // 503 faz o balanceador tirar do pool uma instância que sobe, responde
-    // HTTP e mesmo assim não consegue atender — exatamente o cenário que
-    // passou despercebido: sem SESSION_SECRET o container serve todo o HTML
-    // com 200 enquanto rejeita qualquer sessão emitida por outra instância.
+    // HTTP e mesmo assim não consegue atender — o container sem configuração
+    // de banco serve todo o HTML com 200 e falha em qualquer consulta.
     if (faltando.length > 0) {
       res.status(HttpStatus.SERVICE_UNAVAILABLE);
     }
@@ -76,49 +76,52 @@ export class HealthController {
    */
   private alertas(): string[] {
     const alertas: string[] = [];
-    if (!this.temSegredoFixo() && this.efemeroPermitido()) {
+
+    // Configuração de e-mail no formato antigo: o app não a lê, então o envio
+    // da Via 2 está desligado sem que nada mais denuncie isso.
+    const renomeadas = renomeadasPendentes();
+    if (renomeadas.length) {
       alertas.push(
-        'Rodando com segredo de sessão efêmero (ALLOW_EPHEMERAL_SESSION_SECRET). ' +
-          'Válido apenas para UMA instância: com duas ou mais, as sessões não sobrevivem ao balanceamento.',
+        `Variáveis de e-mail no formato antigo, ignoradas — renomeie: ${renomeadas.join(', ')}.`,
       );
     }
+
+    if (envioLigado() && !(process.env.SMTP_HOST ?? '').trim()) {
+      alertas.push('SMTP_ENABLED=true sem SMTP_HOST — nenhum e-mail sairá.');
+    }
+
+    // A identidade vem do `x-remote-user` injetado pelo IIS. Com esta variável
+    // em produção, uma requisição que chegue SEM o header — falando direto com
+    // o container, sem passar pelo proxy — é atendida como um usuário fixo, e a
+    // auditoria sai no nome dele. O valor não é exposto: a resposta é pública.
+    if (
+      (process.env.NODE_ENV ?? '').trim() === 'production' &&
+      (process.env.DEV_REMOTE_USER ?? '').trim()
+    ) {
+      alertas.push(
+        'DEV_REMOTE_USER definido com NODE_ENV=production — requisições sem x-remote-user ' +
+          'são atendidas como um usuário fixo.',
+      );
+    }
+
     return alertas;
-  }
-
-  private temSegredoFixo(): boolean {
-    return (process.env.SESSION_SECRET ?? '').trim().length > 0;
-  }
-
-  private efemeroPermitido(): boolean {
-    return (process.env.ALLOW_EPHEMERAL_SESSION_SECRET ?? '').trim().toLowerCase() === 'true';
   }
 
   /**
    * Configuração sem a qual a instância não tem como atender de verdade.
    *
    * `PROJECT_PATH` fica de fora de propósito: vazio é um valor legítimo
-   * (serve na raiz). O destino do Oracle aceita as duas formas suportadas
-   * por `DatabaseService.resolverConnectString()`.
+   * (serve na raiz). `ORACLE_PORT` também: 1521 é um padrão seguro. O destino
+   * do Oracle é sempre HOST/PORT/SERVICE — ver `DatabaseService`.
    */
   private exigencias(): Exigencia[] {
     const definida = (nome: string): boolean => (process.env[nome] ?? '').trim().length > 0;
 
     return [
-      // Sem segredo fixo e igual em todas as instâncias, nenhuma sessão
-      // sobrevive ao balanceamento. Ver AuthModule.resolveSessionSecret().
-      // O escape hatch satisfaz a exigência aqui e vira alerta — quem o ligou
-      // aceitou rodar em instância única.
-      {
-        nome: 'SESSION_SECRET',
-        presente: this.temSegredoFixo() || this.efemeroPermitido(),
-      },
       { nome: 'ORACLE_USER', presente: definida('ORACLE_USER') },
       { nome: 'ORACLE_PASSWORD', presente: definida('ORACLE_PASSWORD') },
-      {
-        nome: 'ORACLE_CONNECT_STRING (ou ORACLE_HOST + ORACLE_SERVICE)',
-        presente:
-          definida('ORACLE_CONNECT_STRING') || (definida('ORACLE_HOST') && definida('ORACLE_SERVICE')),
-      },
+      { nome: 'ORACLE_HOST', presente: definida('ORACLE_HOST') },
+      { nome: 'ORACLE_SERVICE', presente: definida('ORACLE_SERVICE') },
     ];
   }
 }

@@ -8,6 +8,12 @@ import {
   renderConfirmacaoVia2,
   renderConfirmacaoVia2Texto,
 } from './templates/confirmacao-via2.template';
+import {
+  ler,
+  ligado as envioLigado,
+  renomeadasPendentes,
+  remetenteDoServidorIgnorado,
+} from './mail.config';
 
 /**
  * Serviço de envio de e-mails (ADR-014 §12).
@@ -24,77 +30,61 @@ const CAMINHO_LOGO = join(
   __dirname, '..', '..', '..', 'frontend', 'static', 'img', 'logo-colorido-horizontal.png',
 );
 
-/**
- * Lê configuração de e-mail — exclusivamente sob o prefixo `INOVACAO_`.
- *
- * Os servidores compartilham o namespace `MAIL_*`/`SMTP_*` com o cron de
- * notificação de deploy da infra (`MAIL_FROM=deploy@cedae.com.br`,
- * `SMTP_SERVER=smtp.cedae.corp`), e o app herdava esses valores em silêncio:
- * `SMTP_HOST` ficava indefinida e nenhum e-mail saía. Ler só o prefixo torna a
- * configuração do app impossível de colidir e idêntica em qualquer host — não
- * há um segundo nome válido cujo efeito dependa do que o servidor já tinha.
- *
- * O strip de aspas existe porque o valor pode chegar com as aspas dentro dele
- * (visto em homologação: `MAIL_FROM_NAME="CEDAE Inovação"`), o que produziria
- * um header From inválido.
- */
-function config(nome: string): string | undefined {
-  return process.env[`INOVACAO_${nome}`]?.trim().replace(/^"(.*)"$/s, '$1').trim() || undefined;
-}
-
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
 
-  private readonly host = config('SMTP_HOST') ?? '';
-  private readonly port = Number(config('SMTP_PORT') ?? '25');
-  private readonly ligado = (config('MAIL_ENABLED') ?? 'false').toLowerCase() === 'true';
+  private readonly host = ler('SMTP_HOST') ?? '';
+  private readonly port = Number(ler('SMTP_PORT') ?? '25');
+  private readonly ligado = envioLigado();
   /** E-mail institucional: remetente e também o contato exibido no corpo. */
-  private readonly contato = config('MAIL_FROM') ?? 'bi.7@cedae.com.br';
-  private readonly remetente = `"${config('MAIL_FROM_NAME') ?? 'CEDAE Inovação'}" <${this.contato}>`;
+  private readonly contato = ler('INOVACAO_MAIL_FROM') ?? 'bi.7@cedae.com.br';
+  private readonly remetente = `"${ler('INOVACAO_MAIL_FROM_NAME') ?? 'CEDAE Inovação'}" <${this.contato}>`;
 
   private readonly transporter: Transporter | null = this.criarTransporte();
 
   private criarTransporte(): Transporter | null {
-    // Erro clássico ao subir o stack: configurar sem o prefixo. Como o app não
-    // lê mais os nomes nus, o sintoma seria idêntico a "não configurei nada" —
-    // então apontamos o dedo para o nome certo.
-    const semPrefixo = ['MAIL_ENABLED', 'SMTP_HOST', 'MAIL_FROM'].filter(
-      (k) => process.env[k] && process.env[`INOVACAO_${k}`] === undefined,
-    );
-    if (semPrefixo.length) {
+    // Deploy com a configuração anterior (tudo sob INOVACAO_): o app não lê
+    // mais esses nomes, então o sintoma seria "e-mail parou sem motivo".
+    const renomeadas = renomeadasPendentes();
+    if (renomeadas.length) {
+      this.logger.error(
+        `Variáveis de e-mail no formato ANTIGO, ignoradas — renomeie: ${renomeadas.join(', ')}.`,
+      );
+    }
+
+    // Estas são do servidor (cron de deploy da infra) e continuam ignoradas;
+    // avisar só importa quando o app não tem a sua própria.
+    const doServidor = remetenteDoServidorIgnorado();
+    if (doServidor.length) {
       this.logger.warn(
-        `Ignorando variáveis sem o prefixo INOVACAO_ (${semPrefixo.join(', ')}) — ` +
-          'pertencem ao ambiente do servidor, não ao app. ' +
-          `Use ${semPrefixo.map((k) => `INOVACAO_${k}`).join(', ')}.`,
+        `Remetente do ambiente do servidor ignorado (${doServidor.join(', ')}) — ` +
+          'pertence ao host, não ao app.',
       );
     }
 
     if (!this.ligado) {
-      this.logger.warn('Envio de e-mail DESLIGADO (INOVACAO_MAIL_ENABLED != true).');
+      this.logger.warn('Envio de e-mail DESLIGADO (SMTP_ENABLED != true).');
       return null;
     }
     if (!this.host) {
-      this.logger.error(
-        'INOVACAO_MAIL_ENABLED=true mas INOVACAO_SMTP_HOST está vazio — nenhum e-mail sairá.',
-      );
+      this.logger.error('SMTP_ENABLED=true mas SMTP_HOST está vazio — nenhum e-mail sairá.');
       return null;
     }
 
     const transporter = nodemailer.createTransport({
       host: this.host,
       port: this.port,
-      secure: (config('SMTP_SECURE') ?? 'false').toLowerCase() === 'true',
+      secure: (ler('SMTP_SECURE') ?? 'false').toLowerCase() === 'true',
       // O relay usa certificado de CA própria e a rede já é interna, então o
       // STARTTLS oportunista não exige cadeia confiável. Ligue a validação com
       // SMTP_TLS_REJECT_UNAUTHORIZED=true quando houver CA publicável.
       tls: {
-        rejectUnauthorized:
-          (config('SMTP_TLS_REJECT_UNAUTHORIZED') ?? 'false').toLowerCase() === 'true',
+        rejectUnauthorized: (ler('SMTP_TLS_REJECT_UNAUTHORIZED') ?? 'false').toLowerCase() === 'true',
       },
-      auth: config('SMTP_USER')
-        ? { user: config('SMTP_USER'), pass: config('SMTP_PASS') }
-        : undefined,
+      // Sem `auth`: o relay interno libera por whitelist de IP e não aceita
+      // credencial. Se um dia exigir autenticação, é aqui que ela entra.
+
       // Sem estes limites, um relay inalcançável (firewall que engole o SYN)
       // segura a conexão por minutos antes de falhar.
       connectionTimeout: 10_000,
@@ -103,7 +93,7 @@ export class MailService {
     });
 
     // O remetente efetivo vai para o log porque é o valor mais fácil de herdar
-    // por engano do ambiente do host (ver `config` acima).
+    // por engano do ambiente do host (ver mail.config.ts).
     this.logger.log(`Remetente configurado: ${this.remetente}`);
 
     // Diagnóstico de boot: separa "firewall/DNS" de "relay recusou", sem

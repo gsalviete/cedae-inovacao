@@ -5,7 +5,7 @@ import { TermosService } from './termos.service';
 
 /**
  * Módulo dos Termos e Condições de Uso (ADR-014 §12-bis).
- * Reutiliza SessionService/AuthService do AuthModule para identidade e auditoria.
+ * Reutiliza IdentidadeService/AuthService do AuthModule para identidade e auditoria.
  */
 @Module({
   imports: [AuthModule],

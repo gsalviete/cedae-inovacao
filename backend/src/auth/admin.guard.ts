@@ -7,18 +7,18 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
-import { SessionService } from './session.service';
+import { IdentidadeService } from './identidade.service';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
   constructor(
     private readonly authService: AuthService,
-    private readonly session: SessionService,
+    private readonly identidade: IdentidadeService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const login = this.session.readLogin(request);
+    const login = this.identidade.readLogin(request);
 
     if (!login) {
       throw new UnauthorizedException('Usuário não autenticado.');

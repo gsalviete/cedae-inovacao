@@ -1,24 +1,31 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as oracledb from 'oracledb';
 
+/** Variáveis sem as quais não há conexão possível. */
+const OBRIGATORIAS = ['ORACLE_USER', 'ORACLE_PASSWORD', 'ORACLE_HOST', 'ORACLE_SERVICE'] as const;
+
 @Injectable()
 export class DatabaseService implements OnModuleInit {
   private readonly logger = new Logger(DatabaseService.name);
 
-  /** Diretório com tnsnames.ora/sqlnet.ora, quando a conexão usa alias. */
-  private get configDir(): string | undefined {
-    return process.env.ORACLE_TNS_ADMIN || process.env.TNS_ADMIN || undefined;
-  }
-
   onModuleInit() {
     try {
-      // Thick mode: só funciona onde há Oracle Client instalado. Quando há
-      // tnsnames.ora, o cliente precisa saber onde ele está.
-      oracledb.initOracleClient(
-        this.configDir ? { configDir: this.configDir } : {},
-      );
+      // Thick mode: só funciona onde há Oracle Client instalado. Sem ele o
+      // driver segue em thin mode, que atende Easy Connect normalmente.
+      oracledb.initOracleClient();
     } catch {
       // thin mode — sem Oracle Client, ignorar
+    }
+
+    const faltando = this.faltando();
+    if (faltando.length) {
+      // Não derruba o boot de propósito: o container sobe, serve o HTML e o
+      // /api/health responde 503 com o nome do que falta (ver HealthController).
+      this.logger.error(
+        `Conexão Oracle NÃO configurada — faltando: ${faltando.join(', ')}. ` +
+          'Nenhuma consulta vai funcionar até essas variáveis existirem.',
+      );
+      return;
     }
     this.logger.log(`Conexão Oracle: ${this.descreverAlvo()}`);
   }
@@ -26,48 +33,45 @@ export class DatabaseService implements OnModuleInit {
   /**
    * Retorna uma conexão Oracle.
    *
-   * O destino vem de ORACLE_CONNECT_STRING quando definida, e aí aceita
-   * qualquer forma que o Oracle entenda:
+   * Destino sempre em Easy Connect, montado de ORACLE_HOST/PORT/SERVICE:
    *
-   *   - Easy Connect ......... bl202.cedae.corp:1521/ORCLPDB1
-   *   - descritor completo ... (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=…)…)
-   *   - alias do tnsnames .... PROD_CEDAE   (exige ORACLE_TNS_ADMIN)
+   *   bl202.cedae.corp:1521/cedaetst.cedae.corp        (testes)
+   *   ora-prod-scan.cedae.corp:1521/cedae              (produção)
    *
-   * Sem ela, cai no trio ORACLE_HOST/PORT/SERVICE (o banco de testes).
+   * Em produção o host é o SCAN do RAC (resolve para 10.10.0.182/183/184) e o
+   * listener redireciona para o nó vivo — o mesmo failover que o descritor TNS
+   * completo dava, sem depender de tnsnames.ora dentro do container.
    */
   async getConnection(): Promise<oracledb.Connection> {
-    const user = process.env.ORACLE_USER;
-    const password = process.env.ORACLE_PASSWORD;
+    const faltando = this.faltando();
+    if (faltando.length) {
+      // Falhar aqui, com o nome da variável, em vez de tentar um destino
+      // inventado: o fallback antigo (localhost:1521/XEPDB1) transformava
+      // "esqueci de configurar" num erro de rede sem relação com a causa.
+      throw new Error(`Conexão Oracle não configurada — faltando: ${faltando.join(', ')}.`);
+    }
 
     return oracledb.getConnection({
-      user,
-      password,
-      connectString: this.resolverConnectString(),
-      // Ignorado quando o connectString não é um alias; em thin mode é o único
-      // jeito de achar o tnsnames.ora.
-      ...(this.configDir ? { configDir: this.configDir } : {}),
+      user: process.env.ORACLE_USER,
+      password: process.env.ORACLE_PASSWORD,
+      connectString: this.connectString(),
     });
   }
 
-  private resolverConnectString(): string {
-    const explicita = process.env.ORACLE_CONNECT_STRING?.trim();
-    if (explicita) return explicita;
-
-    const host = process.env.ORACLE_HOST || 'localhost';
-    const port = process.env.ORACLE_PORT || '1521';
-    const service = process.env.ORACLE_SERVICE || 'XEPDB1';
+  private connectString(): string {
+    const host = (process.env.ORACLE_HOST ?? '').trim();
+    const port = (process.env.ORACLE_PORT ?? '').trim() || '1521';
+    const service = (process.env.ORACLE_SERVICE ?? '').trim();
 
     return `${host}:${port}/${service}`;
   }
 
+  private faltando(): string[] {
+    return OBRIGATORIAS.filter((nome) => !(process.env[nome] ?? '').trim());
+  }
+
   /** Texto para log — nunca inclui senha. */
   private descreverAlvo(): string {
-    const alvo = this.resolverConnectString();
-    const origem = process.env.ORACLE_CONNECT_STRING?.trim()
-      ? 'ORACLE_CONNECT_STRING'
-      : 'ORACLE_HOST/PORT/SERVICE';
-    const tns = this.configDir ? ` (TNS_ADMIN=${this.configDir})` : '';
-
-    return `${process.env.ORACLE_USER ?? '?'}@${alvo} [${origem}]${tns}`;
+    return `${process.env.ORACLE_USER ?? '?'}@${this.connectString()}`;
   }
 }

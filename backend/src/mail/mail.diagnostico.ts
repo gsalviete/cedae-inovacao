@@ -11,6 +11,7 @@
  */
 import '../env';
 import { MailService } from './mail.service';
+import { CHAVES_EMAIL, renomeadasPendentes, remetenteDoServidorIgnorado } from './mail.config';
 
 async function main(): Promise<void> {
   const destinatario = process.argv[2];
@@ -19,33 +20,29 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  const CHAVES = [
-    'MAIL_ENABLED', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE',
-    'SMTP_TLS_REJECT_UNAUTHORIZED', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM', 'MAIL_FROM_NAME',
-  ];
+  console.log('── Configuração lida pelo app ──');
+  for (const chave of CHAVES_EMAIL) {
+    console.log(`  ${chave.padEnd(38)}= ${process.env[chave] ?? '(indefinida)'}`);
+  }
 
-  console.log('── Configuração lida pelo app (INOVACAO_*) ──');
-  for (const chave of CHAVES) {
-    const valor = process.env[`INOVACAO_${chave}`];
-    console.log(
-      `  INOVACAO_${chave.padEnd(30)}= ` +
-        (chave === 'SMTP_PASS' ? (valor ? '(definida)' : '(vazia)') : (valor ?? '(indefinida)')),
-    );
+  // Configuração antiga ainda no ambiente: é a causa mais provável de "o
+  // e-mail parou depois do deploy".
+  const renomeadas = renomeadasPendentes();
+  if (renomeadas.length) {
+    console.log('\n── Formato ANTIGO, ignorado pelo app — renomeie ──');
+    for (const r of renomeadas) console.log(`  ${r}`);
   }
 
   // Tudo que parece de e-mail e o app NÃO lê: as do cron de deploy da infra
-  // (MAIL_FROM=deploy@, SMTP_SERVER=…) e qualquer tentativa de configurar o app
-  // sem o prefixo. Listar as duas coisas juntas é o que torna o engano óbvio.
+  // (MAIL_FROM=deploy@, SMTP_SERVER=…). Listar junto torna o engano óbvio.
   const ignoradas = Object.keys(process.env)
-    .filter((k) => /^(MAIL|SMTP)_/.test(k))
+    .filter((k) => /^(MAIL|SMTP|INOVACAO_(MAIL|SMTP))_/.test(k) && !CHAVES_EMAIL.includes(k))
     .sort();
   if (ignoradas.length) {
     console.log('\n── Presentes no ambiente, IGNORADAS pelo app ──');
+    const doServidor = new Set(remetenteDoServidorIgnorado().map((s) => s.split(' ')[0]));
     for (const k of ignoradas) {
-      // `undefined` e não truthiness: INOVACAO_SMTP_USER='' é configuração
-      // legítima (relay sem auth), não prefixo esquecido.
-      const faltouPrefixo = CHAVES.includes(k) && process.env[`INOVACAO_${k}`] === undefined;
-      console.log(`  ${k.padEnd(32)}${faltouPrefixo ? '  <-- faltou o prefixo INOVACAO_' : ''}`);
+      console.log(`  ${k.padEnd(38)}${doServidor.has(k) ? '  <-- do servidor; use INOVACAO_' + k : ''}`);
     }
   }
 
