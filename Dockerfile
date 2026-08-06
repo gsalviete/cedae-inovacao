@@ -28,6 +28,12 @@ FROM node:22-slim AS runner
 
 WORKDIR /app
 
+# Define qual arquivo de ambiente o app carrega: com NODE_ENV=production ele lê
+# `.env` e NUNCA `.env.dev` (ver backend/src/env.ts). Todo container — inclusive
+# o do desenvolvedor — cai nesse caminho; para rodar com o arquivo de dev, use
+# ENV_FILE=/app/.env.dev explicitamente.
+ENV NODE_ENV=production
+
 COPY backend/package.json ./
 
 COPY --from=builder /app/node_modules ./node_modules

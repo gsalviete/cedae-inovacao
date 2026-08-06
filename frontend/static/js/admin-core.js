@@ -78,12 +78,14 @@
     setTimeout(() => goTo('/'), 2000);
   }
 
-  /* Guard único: valida sessão e perfil de admin via /api/me.
-     Retorna o objeto `me` quando autorizado, ou null (após redirecionar). */
+  /* Guard único: valida identidade e perfil de admin via /api/me.
+     Retorna o objeto `me` quando autorizado, ou null (após redirecionar).
+     Não há tela de login: 401 significa requisição sem x-remote-user (fora do
+     IIS), o que aqui tem o mesmo desfecho de "sem permissão" — volta ao
+     formulário público. */
   async function guard() {
     try {
       const res = await fetch(`${API}/api/me`);
-      if (res.status === 401) { redirectToLogin(); return null; }
       if (!res.ok) { redirectHome(); return null; }
       const me = await res.json();
       if (!me.admin) { redirectHome(); return null; }

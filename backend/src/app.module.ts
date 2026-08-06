@@ -7,6 +7,7 @@ import { WorkflowModule } from './workflow/workflow.module';
 import { CanaisModule } from './canais/canais.module';
 import { MailModule } from './mail/mail.module';
 import { TermosModule } from './termos/termos.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { TermosModule } from './termos/termos.module';
       ttl: parseInt(process.env.RATE_LIMIT_TTL || '60') * 1000,
       limit: parseInt(process.env.RATE_LIMIT_MAX || '100'),
     }]),
+    HealthModule,
     DatabaseModule,
     MailModule,
     WorkflowModule,

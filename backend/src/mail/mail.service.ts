@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import * as nodemailer from 'nodemailer';
@@ -8,114 +8,170 @@ import {
   renderConfirmacaoVia2,
   renderConfirmacaoVia2Texto,
 } from './templates/confirmacao-via2.template';
+import {
+  ler,
+  ligado as envioLigado,
+  renomeadasPendentes,
+  remetenteDoServidorIgnorado,
+} from './mail.config';
 
 /**
  * Serviço de envio de e-mails (ADR-014 §12).
  *
- * Transporte SMTP via nodemailer, configurado por variáveis de ambiente. Todo
- * envio é best-effort: qualquer falha é registrada em log e engolida, para
- * nunca interromper a operação principal (ex.: a submissão da Via 2).
+ * Relay interno da CEDAE: porta 25, sem autenticação, liberado por whitelist de
+ * IP. O envio é best-effort — nenhuma falha interrompe a operação principal
+ * (ex.: a submissão da Via 2) — mas todo caminho que *não* envia registra o
+ * motivo em log. Silêncio aqui já custou caro: um retorno `false` mudo tornava
+ * indistinguíveis "desligado", "sem destinatário" e "relay recusou".
  */
+
+/** Logo anexada por CID. dist/mail → raiz do projeto → frontend/static/img. */
+const CAMINHO_LOGO = join(
+  __dirname, '..', '..', '..', 'frontend', 'static', 'img', 'logo-colorido-horizontal.png',
+);
+
 @Injectable()
-export class MailService implements OnModuleInit {
+export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: Transporter | null = null;
 
-  /** Habilitação geral do envio (permite desligar em dev sem SMTP). */
-  private get habilitado(): boolean {
-    return (process.env.MAIL_ENABLED ?? 'false').toLowerCase() === 'true';
-  }
+  private readonly host = ler('SMTP_HOST') ?? '';
+  private readonly port = Number(ler('SMTP_PORT') ?? '25');
+  private readonly ligado = envioLigado();
+  /** E-mail institucional: remetente e também o contato exibido no corpo. */
+  private readonly contato = ler('INOVACAO_MAIL_FROM') ?? 'bi.7@cedae.com.br';
+  private readonly remetente = `"${ler('INOVACAO_MAIL_FROM_NAME') ?? 'CEDAE Inovação'}" <${this.contato}>`;
 
-  private get remetente(): string {
-    const email = process.env.MAIL_FROM || 'bi.7@cedae.com.br';
-    const nome = process.env.MAIL_FROM_NAME || 'CEDAE Inovação';
-    return `"${nome}" <${email}>`;
-  }
+  private readonly transporter: Transporter | null = this.criarTransporte();
 
-  /** E-mail de contato/suporte exibido no corpo (mesmo do remetente por padrão). */
-  private get contato(): string {
-    return process.env.MAIL_FROM || 'bi.7@cedae.com.br';
-  }
-
-  onModuleInit(): void {
-    if (!this.habilitado) {
-      this.logger.warn('Envio de e-mail DESABILITADO (MAIL_ENABLED != true).');
-      return;
+  private criarTransporte(): Transporter | null {
+    // Deploy com a configuração anterior (tudo sob INOVACAO_): o app não lê
+    // mais esses nomes, então o sintoma seria "e-mail parou sem motivo".
+    const renomeadas = renomeadasPendentes();
+    if (renomeadas.length) {
+      this.logger.error(
+        `Variáveis de e-mail no formato ANTIGO, ignoradas — renomeie: ${renomeadas.join(', ')}.`,
+      );
     }
-    const host = process.env.SMTP_HOST;
-    if (!host) {
-      this.logger.warn('SMTP_HOST não configurado — envio de e-mail indisponível.');
-      return;
+
+    // Estas são do servidor (cron de deploy da infra) e continuam ignoradas;
+    // avisar só importa quando o app não tem a sua própria.
+    const doServidor = remetenteDoServidorIgnorado();
+    if (doServidor.length) {
+      this.logger.warn(
+        `Remetente do ambiente do servidor ignorado (${doServidor.join(', ')}) — ` +
+          'pertence ao host, não ao app.',
+      );
     }
-    const port = Number(process.env.SMTP_PORT ?? '25');
-    this.transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: (process.env.SMTP_SECURE ?? 'false').toLowerCase() === 'true',
-      // O relay interno usa certificado de CA própria: por padrão não exigimos
-      // cadeia confiável no STARTTLS (a rede já é interna). Ligue a validação
-      // com SMTP_TLS_REJECT_UNAUTHORIZED=true quando houver CA publicável.
+
+    if (!this.ligado) {
+      this.logger.warn('Envio de e-mail DESLIGADO (SMTP_ENABLED != true).');
+      return null;
+    }
+    if (!this.host) {
+      this.logger.error('SMTP_ENABLED=true mas SMTP_HOST está vazio — nenhum e-mail sairá.');
+      return null;
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: this.host,
+      port: this.port,
+      secure: (ler('SMTP_SECURE') ?? 'false').toLowerCase() === 'true',
+      // O relay usa certificado de CA própria e a rede já é interna, então o
+      // STARTTLS oportunista não exige cadeia confiável. Ligue a validação com
+      // SMTP_TLS_REJECT_UNAUTHORIZED=true quando houver CA publicável.
       tls: {
-        rejectUnauthorized:
-          (process.env.SMTP_TLS_REJECT_UNAUTHORIZED ?? 'false').toLowerCase() === 'true',
+        rejectUnauthorized: (ler('SMTP_TLS_REJECT_UNAUTHORIZED') ?? 'false').toLowerCase() === 'true',
       },
-      auth: process.env.SMTP_USER
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        : undefined,
+      // Sem `auth`: o relay interno libera por whitelist de IP e não aceita
+      // credencial. Se um dia exigir autenticação, é aqui que ela entra.
+
+      // Sem estes limites, um relay inalcançável (firewall que engole o SYN)
+      // segura a conexão por minutos antes de falhar.
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     });
 
-    // Diagnóstico de boot: distingue firewall/DNS de recusa do relay, sem
-    // bloquear a inicialização do módulo.
-    void this.transporter
-      .verify()
-      .then(() => this.logger.log(`Transporte SMTP OK (${host}:${port}).`))
-      .catch((e: any) =>
-        this.logger.error(`SMTP inacessível (${host}:${port}): ${e?.message ?? e}`),
-      );
-  }
+    // O remetente efetivo vai para o log porque é o valor mais fácil de herdar
+    // por engano do ambiente do host (ver mail.config.ts).
+    this.logger.log(`Remetente configurado: ${this.remetente}`);
 
-  /** Localiza a logo horizontal para anexar por CID (best-effort). */
-  private caminhoLogo(): string | null {
-    const candidatos = [
-      // dist/mail → sobe até a raiz do projeto e desce em frontend/static/img.
-      join(__dirname, '..', '..', '..', 'frontend', 'static', 'img', 'logo-colorido-horizontal.png'),
-      join(process.cwd(), 'frontend', 'static', 'img', 'logo-colorido-horizontal.png'),
-      join(process.cwd(), '..', 'frontend', 'static', 'img', 'logo-colorido-horizontal.png'),
-    ];
-    return candidatos.find((p) => existsSync(p)) ?? null;
+    // Diagnóstico de boot: separa "firewall/DNS" de "relay recusou", sem
+    // bloquear a inicialização.
+    void transporter
+      .verify()
+      .then(() => this.logger.log(`Relay SMTP acessível (${this.host}:${this.port}).`))
+      .catch((e: any) =>
+        this.logger.error(`Relay SMTP inacessível (${this.host}:${this.port}): ${e?.message ?? e}`),
+      );
+
+    return transporter;
   }
 
   /**
-   * E-mail de confirmação ao proponente da Via 2. Não lança — retorna false em
-   * caso de falha ou quando o envio está desabilitado/sem destinatário.
+   * E-mail de confirmação ao proponente da Via 2. Não lança: retorna false
+   * quando o envio está desligado, falta destinatário ou o relay recusou —
+   * sempre com o motivo em log.
    */
-  async sendConfirmacaoVia2(dados: { nome: string; email: string; protocolo: string }): Promise<boolean> {
-    if (!this.transporter || !dados.email) return false;
+  async sendConfirmacaoVia2(dados: {
+    nome: string;
+    email: string;
+    protocolo: string;
+  }): Promise<boolean> {
+    const conteudo = { nome: dados.nome, protocolo: dados.protocolo, contato: this.contato };
+    return this.enviar({
+      para: dados.email,
+      assunto: assuntoConfirmacaoVia2(dados.protocolo),
+      texto: renderConfirmacaoVia2Texto(conteudo),
+      html: renderConfirmacaoVia2(conteudo),
+      referencia: `confirmação Via 2 ${dados.protocolo}`,
+    });
+  }
 
-    const conteudo = {
-      nome: dados.nome,
-      protocolo: dados.protocolo,
-      contato: this.contato,
-    };
-    const html = renderConfirmacaoVia2(conteudo);
-    const text = renderConfirmacaoVia2Texto(conteudo);
-    const logo = this.caminhoLogo();
+  /** Envio propriamente dito. Único ponto que fala com o relay. */
+  private async enviar(msg: {
+    para: string;
+    assunto: string;
+    texto: string;
+    html: string;
+    /** Rótulo curto usado só nos logs, para identificar o envio. */
+    referencia: string;
+  }): Promise<boolean> {
+    if (!this.transporter) {
+      this.logger.warn(`E-mail não enviado (${msg.referencia}): transporte SMTP indisponível.`);
+      return false;
+    }
+    if (!msg.para?.trim()) {
+      this.logger.warn(`E-mail não enviado (${msg.referencia}): destinatário vazio.`);
+      return false;
+    }
+
+    const temLogo = existsSync(CAMINHO_LOGO);
+    if (!temLogo) {
+      this.logger.warn(`Logo não encontrada em ${CAMINHO_LOGO} — e-mail seguirá sem o cabeçalho.`);
+    }
 
     try {
-      await this.transporter.sendMail({
+      const info = await this.transporter.sendMail({
         from: this.remetente,
-        to: dados.email,
-        subject: assuntoConfirmacaoVia2(dados.protocolo),
-        text,
-        html,
-        attachments: logo
-          ? [{ filename: 'logo-cedae.png', path: logo, cid: 'logo-cedae' }]
+        to: msg.para,
+        subject: msg.assunto,
+        text: msg.texto,
+        html: msg.html,
+        attachments: temLogo
+          ? [{ filename: 'logo-cedae.png', path: CAMINHO_LOGO, cid: 'logo-cedae' }]
           : [],
       });
-      this.logger.log(`Confirmação Via 2 enviada para ${dados.email} (${dados.protocolo}).`);
+      this.logger.log(
+        `E-mail enviado (${msg.referencia}) para ${msg.para} — relay respondeu: ${info.response}`,
+      );
       return true;
     } catch (e: any) {
-      this.logger.error(`Falha ao enviar confirmação Via 2: ${e?.message ?? e}`);
+      this.logger.error(
+        `Falha ao enviar e-mail (${msg.referencia}) para ${msg.para}: ${e?.message ?? e}` +
+          (e?.responseCode ? ` [SMTP ${e.responseCode}: ${e.response}]` : '') +
+          (e?.code ? ` [${e.code}]` : ''),
+      );
       return false;
     }
   }

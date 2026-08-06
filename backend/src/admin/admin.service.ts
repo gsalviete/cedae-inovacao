@@ -192,12 +192,20 @@ export class AdminService {
     }
   }
 
+  /**
+   * Busca usuários no diretório (INFRA.VIEW_AD_USER) para a tela de cadastro.
+   *
+   * O filtro de conta habilitada é `SITUACAO = 'ATIVO'`. A view **não tem**
+   * coluna ENABLED — usá-la fazia a consulta morrer com ORA-00904 e o endpoint
+   * devolver 500, quebrando o cadastro de usuário logo no primeiro passo.
+   * Domínio de SITUACAO: ATIVO | INATIVO.
+   */
   async buscarUsuariosAD(termo: string): Promise<{ nome: string; email: string }[]> {
     const sql = `
       SELECT NAME, MAIL
-        FROM CONSCORP.vw_ad_user
+        FROM INFRA.view_ad_user
        WHERE MAIL IS NOT NULL
-         AND ENABLED = 'True'
+         AND SITUACAO = 'ATIVO'
          AND (UPPER(NAME) LIKE UPPER('%' || :1 || '%') OR UPPER(MAIL) LIKE UPPER('%' || :2 || '%'))
        ORDER BY NAME
        FETCH FIRST 20 ROWS ONLY
@@ -214,10 +222,10 @@ export class AdminService {
   async resolverUsuarioAD(nome: string): Promise<{ email: string; login: string } | null> {
     const sql = `
       SELECT MAIL, SAMACCOUNTNAME
-        FROM CONSCORP.vw_ad_user
+        FROM INFRA.view_ad_user
        WHERE NAME = :1
          AND MAIL IS NOT NULL
-         AND ENABLED = 'True'
+         AND SITUACAO = 'ATIVO'
          AND ROWNUM = 1
     `;
     const conn = await this.db.getConnection();

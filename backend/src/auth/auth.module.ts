@@ -1,35 +1,19 @@
-import { randomBytes } from 'crypto';
-import { Logger, Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { AuthController } from './auth.controller';
+import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AdminGuard } from './admin.guard';
-import { LdapModule } from './ldap/ldap.module';
+import { IdentidadeService } from './identidade.service';
 import { MeController } from './me.controller';
-import { SessionService } from './session.service';
 
 /**
- * Segredo de assinatura do JWT de sessão. Em produção defina SESSION_SECRET;
- * na ausência, gera um segredo efêmero (as sessões caem a cada restart).
+ * Identidade e autorização.
+ *
+ * Não há login nem sessão: o IIS autentica no AD (Kerberos) e injeta
+ * `x-remote-user`. Este módulo só resolve quem é o requisitante
+ * (IdentidadeService) e o que ele pode fazer (AuthService/ADMIN_USERS).
  */
-function resolveSessionSecret(): string {
-  const secret = (process.env.SESSION_SECRET ?? '').trim();
-  if (secret) return secret;
-  new Logger('AuthModule').warn(
-    'SESSION_SECRET não definido — usando segredo efêmero. Sessões expiram a cada reinício.',
-  );
-  return randomBytes(48).toString('hex');
-}
-
 @Module({
-  imports: [
-    LdapModule,
-    JwtModule.register({
-      secret: resolveSessionSecret(),
-    }),
-  ],
-  controllers: [MeController, AuthController],
-  providers: [AuthService, AdminGuard, SessionService],
-  exports: [AuthService, AdminGuard, SessionService],
+  controllers: [MeController],
+  providers: [AuthService, AdminGuard, IdentidadeService],
+  exports: [AuthService, AdminGuard, IdentidadeService],
 })
 export class AuthModule {}

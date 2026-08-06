@@ -43,3 +43,4 @@ include:
       - '/docker/docker-build-push-prod.yml'
     rules:
       - *main_rule
+      - *prod_mr_rule

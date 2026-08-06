@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './env';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -6,7 +6,6 @@ import { join } from 'path';
 import { readFileSync } from 'fs';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
-import * as cookieParser from 'cookie-parser';
 
 const projectPath = process.env.PROJECT_PATH?.trim();
 const basePath = projectPath ? `/${projectPath}` : '';
@@ -34,9 +33,6 @@ async function bootstrap(): Promise<void> {
 
   // Access log para stdout (docker/podman logs)
   app.use(morgan('combined'));
-
-  // Necessário para ler o cookie de sessão (inovacao_session) — ver SessionService.
-  app.use(cookieParser());
 
   app.enableCors();
 
@@ -78,17 +74,13 @@ async function bootstrap(): Promise<void> {
 
   const templatesPath = join(frontendPath, 'templates');
 
-  // Páginas públicas — renderizadas uma vez no boot com o BASE_PATH embutido.
-  const simplePages: Record<string, string> = {
-    '/': 'index.html',
-    '/login': 'login.html',
-  };
-  for (const [route, file] of Object.entries(simplePages)) {
-    const rendered = renderTemplate(join(templatesPath, file), basePath);
-    httpAdapter.get(`${basePath}${route}`, (_, res) => {
-      res.type('html').send(rendered);
-    });
-  }
+  // Página pública — renderizada uma vez no boot com o BASE_PATH embutido.
+  // Não há tela de login: a identidade vem do header `x-remote-user` injetado
+  // pelo IIS em toda requisição (ver IdentidadeService).
+  const indexRenderizado = renderTemplate(join(templatesPath, 'index.html'), basePath);
+  httpAdapter.get(`${basePath}/`, (_, res) => {
+    res.type('html').send(indexRenderizado);
+  });
 
   // ── Painel administrativo — cada módulo é uma página própria ──────────
   // O shell (sidebar + topbar) fica num layout único; cada rota injeta apenas
@@ -194,7 +186,13 @@ async function bootstrap(): Promise<void> {
   await app.listen(port);
 
   if (remoteUser) {
-    console.log(`[DEV] x-remote-user fallback ativo: ${remoteUser}`);
+    const producao = (process.env.NODE_ENV ?? '').trim() === 'production';
+    console.log(
+      producao
+        ? `[ATENÇÃO] DEV_REMOTE_USER=${remoteUser} com NODE_ENV=production — ` +
+            'toda requisição sem sessão é atendida como este usuário, sem passar pelo AD.'
+        : `[DEV] x-remote-user fallback ativo: ${remoteUser}`,
+    );
   }
 
   console.log(`Aplicação rodando na porta ${port}`);

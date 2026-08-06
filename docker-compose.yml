@@ -8,40 +8,81 @@ services:
     container_name: cedae_inovacao_app
     restart: unless-stopped
     ports:
+      # A porta interna é fixa em 8095 (EXPOSE do Dockerfile). PORT no arquivo
+      # de ambiente deve continuar 8095 — mudá-lo lá quebra este mapeamento.
       - "8095:8095"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    environment:
-      - ORACLE_HOST=${ORACLE_HOST}
-      - ORACLE_PORT=${ORACLE_PORT:-1521}
-      - ORACLE_SERVICE=${ORACLE_SERVICE}
-      - ORACLE_USER=${ORACLE_USER}
-      - ORACLE_PASSWORD=${ORACLE_PASSWORD}
-      - PORT=8095
-      - PROJECT_PATH=${PROJECT_PATH:-}
-      - RATE_LIMIT_TTL=${RATE_LIMIT_TTL:-60}
-      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
-      # Só necessário em dev/Docker sem IIS. Em produção o IIS injeta x-remote-user.
-      - DEV_REMOTE_USER=${DEV_REMOTE_USER:-}
 
-      # ── E-mail (SMTP) — confirmação automática da Via 2 ───────────────────
-      # A ausência destas era o motivo de o e-mail não sair rodando em Docker.
-      - MAIL_ENABLED=${MAIL_ENABLED:-false}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-25}
-      - SMTP_SECURE=${SMTP_SECURE:-false}
-      - SMTP_TLS_REJECT_UNAUTHORIZED=${SMTP_TLS_REJECT_UNAUTHORIZED:-false}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASS=${SMTP_PASS:-}
-      - MAIL_FROM=${MAIL_FROM:-bi.7@cedae.com.br}
-      - MAIL_FROM_NAME=${MAIL_FROM_NAME:-CEDAE Inovação}
+    # ── Configuração ──────────────────────────────────────────────────────────
+    # Fonte única: o arquivo montado em /app/.env. O app o carrega com override,
+    # então ele vence qualquer variável herdada do host — é o que impede o
+    # ambiente do servidor (o cron de deploy da infra define MAIL_*/SMTP_*) de
+    # mudar o comportamento da aplicação pelas costas.
+    #
+    # A lista abaixo é só passagem por nome, sem "=": a variável entra no
+    # container apenas quando existe no ambiente do deploy (stack do Portainer).
+    # A forma antiga, "VAR=${VAR:-}", injetava VAR="" quando não definida, e a
+    # string vazia bloqueava o valor do arquivo montado — dotenv não sobrescreve
+    # chave já existente. Era assim que um PROJECT_PATH configurado no .env
+    # sumia dentro do container.
+    environment:
+      - NODE_ENV
+      - PORT
+      - PROJECT_PATH
+      - RATE_LIMIT_TTL
+      - RATE_LIMIT_MAX
+
+      # ── Oracle ────────────────────────────────────────────────────────────
+      # Easy Connect montado de HOST/PORT/SERVICE. Em produção o host é o SCAN
+      # do RAC (ora-prod-scan.cedae.corp), que já faz o failover entre nós.
+      - ORACLE_USER
+      - ORACLE_PASSWORD
+      - ORACLE_HOST
+      - ORACLE_PORT
+      - ORACLE_SERVICE
+
+      # ── Identidade ────────────────────────────────────────────────────────
+      # Não há login: o IIS injeta x-remote-user em toda requisição. Esta
+      # variável só cobre quem chega SEM o header (dev, sem IIS na frente).
+      - DEV_REMOTE_USER
+
+      # ── E-mail (SMTP) — confirmação automática da Via 2 ────────────────────
+      # Transporte com nome nu; remetente com prefixo INOVACAO_ porque
+      # MAIL_FROM/MAIL_FROM_NAME existem no ambiente dos servidores e já
+      # fizeram e-mail sair assinado como deploy@cedae.com.br.
+      - SMTP_ENABLED
+      - SMTP_HOST
+      - SMTP_PORT
+      - SMTP_SECURE
+      - SMTP_TLS_REJECT_UNAUTHORIZED
+      - INOVACAO_MAIL_FROM
+      - INOVACAO_MAIL_FROM_NAME
 
       # ── Termos e Condições de Uso ─────────────────────────────────────────
       # Incrementar faz o aceite ser solicitado novamente.
-      - TERMOS_VERSAO=${TERMOS_VERSAO:-2.0}
+      - TERMOS_VERSAO
+
     volumes:
-      - ./backend/.env:/app/.env
+      # Precisa existir antes do `up`: um caminho inexistente vira DIRETÓRIO
+      # dentro do container e nenhuma variável é carregada.
+      - ./.env:/app/.env
       - ./frontend:/frontend
+
+    # Responde pelo prefixo configurado e também na raiz (main.ts normaliza a
+    # URL), então o teste não precisa saber o valor de PROJECT_PATH. Devolve 503
+    # quando falta configuração essencial — ver HealthController.
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8095/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
     networks:
       - cedae_net
 

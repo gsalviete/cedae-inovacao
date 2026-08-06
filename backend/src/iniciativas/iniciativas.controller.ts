@@ -146,8 +146,8 @@ export class IniciativasController {
   }
 
   /**
-   * Edição administrativa dos dados da iniciativa (ADR-014). Exclusivo de ADM —
-   * o colaborador visualiza, mas não altera o conteúdo. Auditado em INOVACAO_LOGS.
+   * Edição administrativa dos dados da iniciativa (ADR-014). Agora disponível para
+   * administradores (ADM) e colaboradores (CONTRIBUTOR). Auditado em INOVACAO_LOGS.
    */
   @Patch(':id')
   @UseGuards(AdminGuard)
@@ -157,9 +157,7 @@ export class IniciativasController {
     @Req() req: Request,
   ): Promise<object> {
     const user = (req as AuthRequest).user;
-    if (user.role !== 'ADM') {
-      throw new ForbiddenException('Apenas administradores podem editar iniciativas.');
-    }
+    
     const alteracoes = await this.iniciativasService.atualizar(id, dto);
     this.authService
       .registrarLog(user.login, 'editar_iniciativa', `Iniciativa #${id} editada`)

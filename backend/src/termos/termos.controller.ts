@@ -6,32 +6,32 @@ import {
   HttpStatus,
   Post,
   Req,
-  Res,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { AuthService } from '../auth/auth.service';
-import { SessionService } from '../auth/session.service';
+import { IdentidadeService } from '../auth/identidade.service';
 import { RegistrarTermosDto } from './dto/registrar-termos.dto';
 import { TermosService } from './termos.service';
 
 /**
  * Termos e Condições de Uso (ADR-014 §12-bis).
  *
- * Aplica-se ao usuário autenticado no AD que não possui perfil administrativo.
- * A identidade vem da sessão (SessionService). Aceite/recusa são auditados em
- * duas camadas: TERMOS_ACEITES (estado) + INOVACAO_LOGS (trilha geral).
+ * Aplica-se ao usuário identificado pelo IIS que não possui perfil
+ * administrativo. A identidade vem do header `x-remote-user`
+ * (IdentidadeService). Aceite/recusa são auditados em duas camadas:
+ * TERMOS_ACEITES (estado) + INOVACAO_LOGS (trilha geral).
  */
 @Controller('api/termos')
 export class TermosController {
   constructor(
     private readonly termos: TermosService,
-    private readonly session: SessionService,
+    private readonly identidade: IdentidadeService,
     private readonly authService: AuthService,
   ) {}
 
   private loginOrThrow(req: Request): string {
-    const login = this.session.readLogin(req);
+    const login = this.identidade.readLogin(req);
     if (!login) throw new UnauthorizedException('Usuário não autenticado.');
     return login;
   }
@@ -54,8 +54,7 @@ export class TermosController {
   async registrar(
     @Body() dto: RegistrarTermosDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<{ acao: string; versao: string; sessaoEncerrada: boolean }> {
+  ): Promise<{ acao: string; versao: string }> {
     const login = this.loginOrThrow(req);
     const ip = this.extrairIp(req);
     const userAgent = (req.headers['user-agent'] as string | undefined) ?? null;
@@ -71,13 +70,10 @@ export class TermosController {
       )
       .catch(() => {});
 
-    // Recusa encerra a sessão (ADR-014 §12-bis.3): sem aceite não há uso.
-    let sessaoEncerrada = false;
-    if (dto.acao === 'RECUSA') {
-      this.session.clear(res);
-      sessaoEncerrada = true;
-    }
-
-    return { acao: dto.acao, versao, sessaoEncerrada };
+    // Sem aceite não há uso (ADR-014 §12-bis.3). Não existe sessão para
+    // encerrar: a identidade vem do IIS a cada requisição, então a recusa fica
+    // registrada em TERMOS_ACEITES e os termos voltam a ser exigidos no
+    // próximo acesso — o front devolve o usuário à página pública.
+    return { acao: dto.acao, versao };
   }
 }

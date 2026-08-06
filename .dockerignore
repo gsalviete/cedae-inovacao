@@ -7,3 +7,13 @@ npm-debug.log
 .npm
 yarn-debug.log
 yarn-error.log
+
+# Arquivos de ambiente NUNCA entram na imagem: `COPY backend/. .` levaria um
+# backend/.env com credenciais para dentro do build (e para /app/.env, o mesmo
+# caminho que o compose monta em runtime). A configuração chega por volume ou
+# pelas variáveis da stack.
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example

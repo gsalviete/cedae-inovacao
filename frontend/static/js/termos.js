@@ -48,9 +48,11 @@ async function enviarDecisaoTermos(acao) {
       ocultarTermos();
       _termosEnviando = false;
     } else {
-      // Recusa: o backend já encerrou a sessão. Volta ao login com aviso.
+      // Recusa: sem aceite não há uso. Não existe sessão para encerrar (a
+      // identidade vem do IIS), então a recusa fica registrada e a página é
+      // recarregada — os termos voltam a ser exigidos no próximo acesso.
       const base = window.__BASE_PATH__ || '';
-      window.location.href = `${base}/login?termos=recusados`;
+      window.location.href = `${base}/?termos=recusados`;
     }
   } catch {
     _termosEnviando = false;

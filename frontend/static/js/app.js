@@ -6,19 +6,13 @@
 const EMAIL_REGEX = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 
 /* ── Header: identifica usuário via /api/me ──────────────
-   O formulário é PÚBLICO: usuário anônimo (401) usa a página normalmente,
-   apenas sem saudação/painel. Se houver sessão (login AD), mostra a saudação
-   e o botão de admin (quando aplicável). Não há logout: a identidade vem do
-   AD e o usuário não se desloga da aplicação. */
+   O formulário é PÚBLICO: sem identidade (401) a página funciona normalmente,
+   apenas sem saudação/painel. Não há login nem logout — a identidade vem do
+   header x-remote-user que o IIS injeta em toda requisição. */
 async function initHeader() {
-  const btnLogin = document.getElementById('btn-login-header');
   try {
     const res = await fetch(`${API}/api/me`);
-    if (!res.ok) {
-      // anônimo — segue usando o formulário; oferece caminho para login (admins)
-      if (btnLogin) btnLogin.classList.remove('hidden');
-      return;
-    }
+    if (!res.ok) return; // anônimo — segue usando o formulário
     const me = await res.json();
 
     renderGreeting(me);
@@ -34,8 +28,7 @@ async function initHeader() {
       verificarTermos();
     }
   } catch {
-    // falha de rede não deve travar o formulário; ainda oferece login
-    if (btnLogin) btnLogin.classList.remove('hidden');
+    // falha de rede não deve travar o formulário
   }
 }
 

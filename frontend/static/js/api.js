@@ -13,14 +13,9 @@ function goTo(path) {
   window.location.href = `${BASE_PATH}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-/* Redireciona para a tela de login (autenticação AD). */
-function redirectToLogin() {
-  goTo('/login');
-}
-
 /* ── Saudação do header ──────────────────────────────────
-   Compartilhada pelas três páginas autenticadas. Não há logout: a identidade
-   vem do AD e o usuário não se desloga da aplicação. */
+   Compartilhada pelas páginas do painel. Não há login nem logout: a identidade
+   vem do header x-remote-user que o IIS injeta em toda requisição. */
 
 /** Bom dia / Boa tarde / Boa noite conforme o horário local do usuário. */
 function saudacaoPorHorario(hora = new Date().getHours()) {

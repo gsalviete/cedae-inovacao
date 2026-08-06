@@ -10,93 +10,91 @@ Sistema de captação e gestão de iniciativas de inovação.
 
 ## Configuração do ambiente
 
+**Um ambiente, um arquivo.** O app carrega exatamente um, nunca dois em cascata
+(`backend/src/env.ts`):
+
+| Situação | Arquivo lido |
+|---|---|
+| `ENV_FILE=/caminho/arquivo` | o caminho indicado (vence tudo) |
+| `NODE_ENV=production` | `.env` — todo container, o Dockerfile define |
+| qualquer outro caso | `.env.dev`, e `.env` só se `.env.dev` não existir |
+
+Ler os dois em cascata seria pior que não ler nenhum: uma variável ausente do
+`.env.dev` cairia no valor de produção sem avisar. Quando o arquivo existe, ele
+vence as variáveis do ambiente — é o que impede a configuração do host (o cron
+de deploy da infra define `MAIL_FROM`, `SMTP_SERVER`) de vazar para o app.
+
 ```bash
-# 1. Copie o template de variáveis
-cp .env.example .env
-cp .env.example backend/.env
+# 1. Copie o template — .env para produção/container, .env.dev para sua máquina
+cp .env.example .env.dev
 
-# 2. Preencha as credenciais no arquivo .env (e em backend/.env)
-#    - Credenciais Oracle: solicitar ao DBA responsável pelo schema CEDAE_INOVACAO
-#    - JWT_SECRET: gerar com o comando abaixo (mínimo 32 caracteres)
-
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# 2. Preencha (o próprio template explica cada variável)
+#    - Oracle: solicitar host/service/usuário/senha ao DBA
+#    - DEV_REMOTE_USER: seu login, para simular o header do IIS fora do servidor
 
 # 3. Execute o DDL no Oracle (como DBA ou com permissão CREATE TABLE)
-sqlplus usuario/senha@dsn @docs/create_tables.sql
+sqlplus usuario/senha@dsn @database/schema/create_tables.sql
 
 # 4. Suba a aplicação
 docker compose up --build
 
-# 5. Acesse
-#    Formulário: http://localhost:8095
-#    Painel Admin: http://localhost:8095/admin-panel
+# 5. Acesse (com PROJECT_PATH=esteira_inovacao)
+#    Formulário:   http://localhost:8095/esteira_inovacao/
+#    Painel Admin: http://localhost:8095/esteira_inovacao/admin/dashboard
+#    Health:       http://localhost:8095/esteira_inovacao/api/health
 ```
+
+Nunca commite `.env` nem `.env.dev` (o `.gitignore` bloqueia `.env*`, menos o
+`.env.example`) e não crie `backend/.env`: o Dockerfile copia `backend/` para
+dentro da imagem — o `.dockerignore` bloqueia, mas o arquivo não deve existir.
 
 ## Variáveis de ambiente obrigatórias
 
+Ausência de qualquer uma faz `/api/health` responder **503** com o nome do que
+falta, e o balanceador tira a instância do pool.
+
 | Variável | Descrição | Como obter |
 |---|---|---|
-| `ORACLE_HOST` | Host do Oracle | Solicitar ao DBA |
-| `ORACLE_PORT` | Porta Oracle | Padrão: `1521` |
-| `ORACLE_SERVICE` | Service name Oracle | Solicitar ao DBA |
 | `ORACLE_USER` | Usuário Oracle | Solicitar ao DBA |
 | `ORACLE_PASSWORD` | Senha Oracle | Solicitar ao DBA — **rotacionar após qualquer exposição** |
-| `JWT_SECRET` | Chave de assinatura JWT | Gerar com `crypto.randomBytes(32).toString('hex')` |
-| `JWT_EXPIRES_IN` | Expiração do token | Padrão: `60m` |
-| `ADMIN_USERNAME` | Login do administrador | Definir livremente |
-| `ADMIN_PASSWORD` | Senha do administrador | Definir — mínimo 12 caracteres |
-| `PORT` | Porta HTTP | Padrão: `8095` |
+| `ORACLE_HOST` | Host do Oracle (em produção, o SCAN do RAC) | Solicitar ao DBA |
+| `ORACLE_SERVICE` | Service name Oracle | Solicitar ao DBA |
 
-**Importante:** O arquivo `.env` contém segredos e nunca deve ser commitado.
-O `.gitignore` já bloqueia `.env` e `.env.*`.
+A conexão é sempre Easy Connect (`HOST:PORT/SERVICE`) — não há
+`ORACLE_CONNECT_STRING` nem `tnsnames.ora` dentro do container. O failover entre
+nós do RAC vem do próprio SCAN.
 
-## Gestão do JWT_SECRET
+Demais variáveis (`PORT`, `PROJECT_PATH`, `SMTP_*`, `INOVACAO_MAIL_FROM*`,
+`TERMOS_VERSAO`, rate limit) estão documentadas uma a uma no
+[`.env.example`](.env.example).
 
-O `JWT_SECRET` assina e verifica todos os tokens de autenticação.
-A aplicação **recusa iniciar** se o valor estiver ausente ou tiver menos de 32 caracteres.
+## Autenticação
 
-### Gerar um novo JWT_SECRET
+**A aplicação não tem tela de login.** Em produção o IIS autentica no Active
+Directory (Kerberos) e injeta o header `x-remote-user` em toda requisição; o app
+apenas lê esse header (`backend/src/auth/identidade.service.ts`) e resolve as
+permissões na tabela `ADMIN_USERS`. Não há sessão, cookie, JWT nem logout.
 
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-Copie o resultado (64 caracteres hexadecimais) e coloque no `.env`:
-
-```
-JWT_SECRET=<resultado-do-comando-acima>
-```
-
-### Requisitos mínimos
-
-- Mínimo 32 caracteres
-- Gerado aleatoriamente (`crypto.randomBytes` ou equivalente)
-- Não deve conter palavras como "troque", "change", "default", "secret"
-- Não deve ser commitado — o `.gitignore` já bloqueia `.env`
-
-### Verificar o valor atual
-
-```bash
-node -e "const s = process.env.JWT_SECRET; console.log('Tamanho:', s?.length ?? 'NÃO DEFINIDO', s && s.length >= 32 ? '✓ OK' : '✗ INVÁLIDO')"
-```
-
-### Quando rotacionar
-
-- Após qualquer exposição do valor atual (commit acidental, log, etc.)
-- A cada 90 dias em produção como boa prática
-- Ao substituir membros da equipe com acesso ao `.env`
-
-### Impacto da rotação
-
-**Todos os tokens ativos são imediatamente invalidados.** Usuários logados precisarão fazer login novamente. Planejar a rotação fora do horário de pico.
+Fora do servidor não existe IIS na frente: `DEV_REMOTE_USER` faz o papel do
+header. Em produção ela significa que uma requisição que chegue **sem** o header
+— alguém falando direto com o container, sem passar pelo proxy — é atendida como
+esse usuário; o app avisa no log de boot e em `/api/health`.
 
 ## Rotação de credenciais
 
-Sempre que uma credencial for exposta (acidentalmente commitada, logada, etc.):
+Sempre que uma credencial for exposta (acidentalmente commitada, logada, etc.),
+acionar o DBA para alterar a senha do usuário `CEDAE_INOVACAO` e atualizar o
+`.env`.
 
-1. **Oracle:** Acionar o DBA para alterar a senha do usuário `CEDAE_INOVACAO`.
-2. **JWT_SECRET:** Gerar um novo valor conforme seção acima. Todos os tokens ativos são invalidados.
-3. **ADMIN_PASSWORD:** Atualizar o `.env` e reiniciar a aplicação.
+## Diagnóstico
+
+```bash
+# Configuração essencial presente? (503 = falta algo; a resposta diz o quê)
+curl -s http://localhost:8095/esteira_inovacao/api/health
+
+# Onde exatamente o envio de e-mail para: variável, DNS/firewall ou o relay
+docker exec cedae_inovacao_app node dist/mail/mail.diagnostico.js seu.nome@cedae.com.br
+```
 
 ## Documentação técnica
 
