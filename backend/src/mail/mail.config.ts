@@ -1,9 +1,10 @@
 /**
  * Nomes de variáveis de e-mail — e por que são dois namespaces.
  *
- * `SMTP_*` (sem prefixo): parâmetros de transporte. Nenhum deles existe no
- * ambiente dos servidores — o cron de notificação de deploy da infra usa
- * `SMTP_SERVER`, que não é `SMTP_HOST` — então não há o que herdar por engano.
+ * `SMTP_*` (sem prefixo): parâmetros de transporte. `SMTP_SERVER` é o mesmo
+ * nome que o cron de notificação de deploy da infra usa nos servidores, e com
+ * o mesmo valor (`smtp.cedae.corp`) — herdar aqui não muda para onde o e-mail
+ * vai. Os demais não existem no ambiente do host.
  *
  * `INOVACAO_MAIL_FROM` / `INOVACAO_MAIL_FROM_NAME`: identidade do remetente.
  * Estas mantêm o prefixo porque `MAIL_FROM` e `MAIL_FROM_NAME` *existem* no
@@ -23,7 +24,7 @@
  */
 export const CHAVES_SMTP = [
   'SMTP_ENABLED',
-  'SMTP_HOST',
+  'SMTP_SERVER',
   'SMTP_PORT',
   'SMTP_SECURE',
   'SMTP_TLS_REJECT_UNAUTHORIZED',
@@ -34,10 +35,11 @@ export const CHAVES_REMETENTE = ['INOVACAO_MAIL_FROM', 'INOVACAO_MAIL_FROM_NAME'
 
 export const CHAVES_EMAIL: readonly string[] = [...CHAVES_SMTP, ...CHAVES_REMETENTE];
 
-/** Esquema anterior (tudo sob INOVACAO_) → nome atual. */
+/** Nomes já usados por este app em versões anteriores → nome atual. */
 export const RENOMEADAS: Readonly<Record<string, string>> = {
   INOVACAO_MAIL_ENABLED: 'SMTP_ENABLED',
-  INOVACAO_SMTP_HOST: 'SMTP_HOST',
+  INOVACAO_SMTP_HOST: 'SMTP_SERVER',
+  SMTP_HOST: 'SMTP_SERVER',
   INOVACAO_SMTP_PORT: 'SMTP_PORT',
   INOVACAO_SMTP_SECURE: 'SMTP_SECURE',
   INOVACAO_SMTP_TLS_REJECT_UNAUTHORIZED: 'SMTP_TLS_REJECT_UNAUTHORIZED',
@@ -59,9 +61,9 @@ export function ligado(): boolean {
 }
 
 /**
- * Configuração no formato antigo que o app não lê mais — `INOVACAO_SMTP_HOST`
- * definida enquanto `SMTP_HOST` não existe. Sem isso, um Portainer que não foi
- * atualizado desliga o e-mail em silêncio.
+ * Configuração num nome que o app não lê mais — `INOVACAO_SMTP_HOST` ou
+ * `SMTP_HOST` definida enquanto `SMTP_SERVER` não existe. Sem isso, um
+ * Portainer que não foi atualizado desliga o e-mail em silêncio.
  */
 export function renomeadasPendentes(): string[] {
   return Object.entries(RENOMEADAS)

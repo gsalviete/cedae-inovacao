@@ -86,8 +86,8 @@ export class HealthController {
       );
     }
 
-    if (envioLigado() && !(process.env.SMTP_HOST ?? '').trim()) {
-      alertas.push('SMTP_ENABLED=true sem SMTP_HOST — nenhum e-mail sairá.');
+    if (envioLigado() && !(process.env.SMTP_SERVER ?? '').trim()) {
+      alertas.push('SMTP_ENABLED=true sem SMTP_SERVER — nenhum e-mail sairá.');
     }
 
     // A identidade vem do `x-remote-user` injetado pelo IIS. Com esta variável
