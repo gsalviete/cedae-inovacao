@@ -7,7 +7,8 @@ import { readFileSync } from 'fs';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as morgan from 'morgan';
 
-const projectPath = process.env.PROJECT_PATH?.trim();
+const rawPath = process.env.PROJECT_PATH?.trim() || '';
+const projectPath = rawPath.replace(/^\/+|\/+$/g, '');
 const basePath = projectPath ? `/${projectPath}` : '';
 const remoteUser = process.env.DEV_REMOTE_USER;
 
@@ -185,6 +186,13 @@ async function bootstrap(): Promise<void> {
   const port = Number(process.env.APP_PORT) || 8095;
 
   await app.listen(port, '0.0.0.0');
+
+  // Ajuste do keep-alive timeout para reverse proxies (como IIS)
+  // O Node.js fecha conexões em 5s por padrão. Se o proxy tentar reusar a
+  // conexão após 5s, ocorre connection reset / 502 Bad Gateway / 503.
+  const server = app.getHttpServer();
+  server.keepAliveTimeout = 120000;
+  server.headersTimeout = 121000;
 
   if (remoteUser) {
     const producao = (process.env.NODE_ENV ?? '').trim() === 'production';
