@@ -184,7 +184,7 @@ async function bootstrap(): Promise<void> {
   // APP_PORT, não PORT: o nome nu é genérico demais para um host compartilhado.
   const port = Number(process.env.APP_PORT) || 8095;
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   if (remoteUser) {
     const producao = (process.env.NODE_ENV ?? '').trim() === 'production';
