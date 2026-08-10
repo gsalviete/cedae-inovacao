@@ -43,6 +43,6 @@ COPY --from=builder /app/dist ./dist
 # empacotado na imagem para a pipeline não depender do volume usado no docker-compose local.
 COPY frontend /frontend
 
-EXPOSE 8095
+EXPOSE 9200
 
 CMD ["node", "dist/main.js"]
