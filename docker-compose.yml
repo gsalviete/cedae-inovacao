@@ -64,14 +64,9 @@ services:
       - TERMOS_VERSAO
 
     volumes:
-      # Precisa existir antes do `up`: um caminho inexistente vira DIRETÓRIO
-      # dentro do container e nenhuma variável é carregada.
       - ./.env:/app/.env
       - ./frontend:/frontend
 
-    # Responde pelo prefixo configurado e também na raiz (main.ts normaliza a
-    # URL), então o teste não precisa saber o valor de PROJECT_PATH. Devolve 503
-    # quando falta configuração essencial — ver HealthController.
     healthcheck:
       test:
         - CMD
