@@ -333,6 +333,45 @@ export class IniciativasService {
     }
   }
 
+  /**
+   * Base completa para exportação (ADR-014 §11.4).
+   *
+   * A listagem do painel devolve só as colunas da tabela em tela; o arquivo
+   * exportado precisa do registro inteiro — as mesmas colunas do detalhe, para
+   * todas as iniciativas. O ID interno fica de fora de propósito: é chave
+   * técnica, e quem identifica a iniciativa fora do sistema é o protocolo
+   * (CODIGO_PUBLICO).
+   */
+  async listarParaExport(): Promise<Record<string, unknown>[]> {
+    const sql = `
+      SELECT CODIGO_PUBLICO, NOME_COLABORADOR, CANAL_CONTATO, EMAIL_PROPONENTE,
+             TITULO_INICIATIVA, AREA_PROPONENTE, LOCAL_APLICACAO,
+             DBMS_LOB.SUBSTR(PROBLEMA_PRATICO,       32767, 1) AS PROBLEMA_PRATICO,
+             DBMS_LOB.SUBSTR(SOLUCAO_PROPOSTA,       32767, 1) AS SOLUCAO_PROPOSTA,
+             DBMS_LOB.SUBSTR(RISCO_MITIGADO,         32767, 1) AS RISCO_MITIGADO,
+             ESTAGIO_DESENVOLVIMENTO, MACRODIMENSAO, MACRODIMENSAO_OBSERVACAO,
+             PERFIL_IMPACTO, APORTE_FINANCEIRO, VALOR_APORTE, RETORNO_ECONOMICO,
+             SUPORTE_NECESSARIO, DIAGNOSTICO_OBSERVACAO,
+             DBMS_LOB.SUBSTR(COMENTARIOS_ADICIONAIS, 32767, 1) AS COMENTARIOS_ADICIONAIS,
+             NVL(CANAL_CODIGO, 'VIA_2') AS CANAL_CODIGO,
+             NVL(PROPONENTE_TIPO, 'INTERNO') AS PROPONENTE_TIPO,
+             ORGANIZACAO_EXTERNA, TIPO_INSTITUICAO, SISTEMA_ORIGEM, CODIGO_ORIGEM,
+             REGISTRADO_POR_LOGIN,
+             NVL(RELEVANCIA_ESTRATEGICA, 'INDETERMINADA') AS RELEVANCIA_ESTRATEGICA,
+             CLASSIFICACAO_INICIATIVA,
+             CRIADO_EM, NVL(STATUS, 'SUBMETIDA') AS STATUS, ATUALIZADO_EM
+      FROM INOVACAO_INICIATIVAS
+      ORDER BY CRIADO_EM DESC
+    `;
+    const conn = await this.db.getConnection();
+    try {
+      const result = await conn.execute(sql, [], { outFormat: oracledb.OUT_FORMAT_OBJECT });
+      return (result.rows as any[]).map((row) => this.normalize(row));
+    } finally {
+      await conn.close();
+    }
+  }
+
   async getById(id: number): Promise<object | null> {
     const sql = `
       SELECT ID, CODIGO_PUBLICO, NOME_COLABORADOR, CANAL_CONTATO, EMAIL_PROPONENTE,

@@ -110,6 +110,19 @@
   min-width: 0;
 }
 
+/* Indicador sim/não com ícone (ex.: aporte financeiro). */
+.detalhe-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.detalhe-flag svg { width: 16px; height: 16px; flex: 0 0 auto; }
+
+.detalhe-flag.is-ok  { color: var(--success); }
+.detalhe-flag.is-off { color: var(--gray-500); }
+
 .detalhe-text {
   font-size: 14px;
   color: var(--gray-800);

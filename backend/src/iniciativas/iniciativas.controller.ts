@@ -105,6 +105,11 @@ export class IniciativasController {
   /**
    * Exportação da base (Excel ou PDF) — disponível a ADM e CONTRIBUTOR
    * (ADR-014 §11). Respeita os mesmos filtros da listagem do painel.
+   *
+   * A leitura é a da exportação (`listarParaExport`), não a da tela: o arquivo
+   * carrega o registro inteiro de cada iniciativa, e não só as colunas da
+   * tabela do painel.
+   *
    * Declarado antes de `:id` para não ser capturado pela rota paramétrica.
    */
   @Get('export')
@@ -116,7 +121,7 @@ export class IniciativasController {
     @Query('q') q: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
-    const todas = (await this.iniciativasService.listar()) as IniciativaExport[];
+    const todas = (await this.iniciativasService.listarParaExport()) as IniciativaExport[];
     const rows = filtrarIniciativas(todas, { canal, status, q });
     const stamp = new Date().toISOString().slice(0, 10);
 

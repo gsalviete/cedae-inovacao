@@ -58,6 +58,14 @@ function setField(id, val) {
   if (el) el.textContent = val || '—';
 }
 
+/* Converte o valor gravado (chave do domínio) no rótulo de exibição. Valores
+   sem rótulo — dados legados ou fora do domínio — são mostrados como estão,
+   em vez de sumirem da tela. */
+function rotulo(mapa, val) {
+  if (!val) return null;
+  return mapa[val] || val;
+}
+
 /* Marca (ou desmarca) um label como obrigatório. Usado nos campos cuja
    exigência depende do contexto — via de captação, transição, tipo de
    registro —, mantendo o mesmo asterisco dos formulários públicos. */
@@ -89,9 +97,9 @@ async function loadDetalhe() {
     _iniciativaData = data;
 
     document.getElementById('d-titulo').textContent = data.titulo_iniciativa || 'Sem título';
-    document.getElementById('d-id').textContent = data.codigo_publico
-      ? `${data.codigo_publico} · #${data.id}`
-      : `#${data.id}`;
+    // Identificação pelo código protocolar; o id interno só aparece nos
+    // registros antigos, sem código gerado.
+    document.getElementById('d-id').textContent = data.codigo_publico || `#${data.id}`;
     document.getElementById('d-status-badge').innerHTML =
       `${canalBadge(data.canal_codigo || 'VIA_2', true)} ${statusBadge(data.status || 'SUBMETIDA')}`;
 
@@ -108,21 +116,21 @@ async function loadDetalhe() {
     setField('d-solucao_proposta', data.solucao_proposta);
     setField('d-risco_mitigado', data.risco_mitigado);
 
-    setField('d-estagio_desenvolvimento', data.estagio_desenvolvimento);
-    setField('d-macrodimensao', data.macrodimensao);
+    setField('d-estagio_desenvolvimento', rotulo(ESTAGIO_LABEL, data.estagio_desenvolvimento));
+    setField('d-macrodimensao', rotulo(MACRODIMENSAO_LABEL, data.macrodimensao));
     // Só existe quando a macrodimensão é "outros" — sem isso o campo apareceria
     // vazio para todas as demais iniciativas.
     setField('d-macrodimensao_observacao', data.macrodimensao_observacao);
     document
       .getElementById('d-macrodimensao_observacao-field')
       ?.classList.toggle('hidden', !data.macrodimensao_observacao);
-    setField('d-perfil_impacto', data.perfil_impacto);
+    setField('d-perfil_impacto', rotulo(PERFIL_IMPACTO_LABEL, data.perfil_impacto));
     setField('d-relevancia_estrategica',
-      RELEVANCIA_LABEL[data.relevancia_estrategica] || data.relevancia_estrategica);
+      rotulo(RELEVANCIA_LABEL, data.relevancia_estrategica));
     setField('d-classificacao_iniciativa',
-      CLASSIFICACAO_LABEL[data.classificacao_iniciativa] || null);
+      CLASSIFICACAO_LABEL[String(data.classificacao_iniciativa || '').toUpperCase()] || null);
 
-    setField('d-aporte_financeiro', data.aporte_financeiro);
+    renderAporte(data);
     setField('d-valor_aporte', data.valor_aporte);
     setField('d-retorno_economico', data.retorno_economico);
     setField('d-suporte_necessario', formatSuporte(data.suporte_necessario));
@@ -156,6 +164,31 @@ function renderOrigem(data) {
   show('d-tipo-inst-field', 'd-tipo_instituicao',
     data.tipo_instituicao ? (TIPO_INSTITUICAO_LABEL[data.tipo_instituicao] || data.tipo_instituicao) : null);
   show('d-registrado-field', 'd-registrado_por_login', data.registrado_por_login);
+}
+
+/* ── Aporte financeiro ───────────────────────────────────
+   O valor gravado é "sim"/"nao" (formulário público, Bloco III). Aqui vira um
+   indicador com ícone; sem aporte previsto, valor estimado e retorno econômico
+   somem da tela — a menos que estejam preenchidos, caso em que continuam
+   visíveis para não esconder dado já registrado. */
+function renderAporte(data) {
+  const el = document.getElementById('d-aporte_financeiro');
+  const tem = data.aporte_financeiro === 'sim';
+  const nao = data.aporte_financeiro === 'nao';
+
+  if (el) {
+    if (tem || nao) {
+      const ico = window.CedaeUI.icon(tem ? 'check-circle' : 'x-circle');
+      el.innerHTML = `<span class="detalhe-flag ${tem ? 'is-ok' : 'is-off'}">${ico}${tem ? 'Sim' : 'Não'}</span>`;
+    } else {
+      el.textContent = '—';
+    }
+  }
+
+  document.getElementById('d-valor_aporte-field')
+    ?.classList.toggle('hidden', !tem && !data.valor_aporte);
+  document.getElementById('d-retorno_economico-field')
+    ?.classList.toggle('hidden', !tem && !data.retorno_economico);
 }
 
 /* ── Ações de tramitação ─────────────────────────────── */

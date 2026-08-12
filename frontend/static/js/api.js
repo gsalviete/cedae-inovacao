@@ -78,6 +78,30 @@ const TIPO_INSTITUICAO_LABEL = {
   OUTRO:           'Outro',
 };
 
+/* ── Classificação da iniciativa ──────────────────────────
+   Os valores persistidos são as chaves em minúsculo usadas pelo formulário
+   público (Blocos II e III) e pela edição administrativa; aqui ficam os
+   rótulos de exibição correspondentes. */
+const ESTAGIO_LABEL = {
+  ideacao:    'Ideação',
+  piloto:     'Teste / Piloto (MVP)',
+  escala:     'Escala / Operação Ativa',
+  paralisada: 'Paralisada',
+};
+
+const MACRODIMENSAO_LABEL = {
+  tecnologica:      'Tecnológica',
+  operacional:      'Operacional',
+  gerencial:        'Gerencial / Administrativa',
+  social_ambiental: 'Social e Ambiental',
+  outros:           'Outros / Multidimensionais',
+};
+
+const PERFIL_IMPACTO_LABEL = {
+  incremental: 'Incremental',
+  radical:     'Radical / Disruptivo',
+};
+
 /* ── Relevância estratégica e classificação (ADR-015) ─────
    Espelham os domínios do backend (`dominio-iniciativa.ts`). */
 const RELEVANCIA_LABEL = {

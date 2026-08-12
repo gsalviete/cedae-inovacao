@@ -148,14 +148,16 @@
   </div>
   <div class="detalhe-grid">
     <div class="detalhe-field">
-      <span class="detalhe-label">Aporte Financeiro?</span>
+      <span class="detalhe-label">Possui Aporte Financeiro?</span>
       <span class="detalhe-value" id="d-aporte_financeiro">—</span>
     </div>
-    <div class="detalhe-field">
+    <!-- Sem aporte previsto, os dois campos abaixo não têm o que mostrar e
+         ficam ocultos (mesmo comportamento condicional do formulário). -->
+    <div class="detalhe-field" id="d-valor_aporte-field">
       <span class="detalhe-label">Valor Estimado</span>
       <span class="detalhe-value" id="d-valor_aporte">—</span>
     </div>
-    <div class="detalhe-field">
+    <div class="detalhe-field" id="d-retorno_economico-field">
       <span class="detalhe-label">Retorno Econômico</span>
       <span class="detalhe-value" id="d-retorno_economico">—</span>
     </div>
