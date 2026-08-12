@@ -572,7 +572,7 @@ async function confirmarEdicao(btn) {
 }
 
 /* ── Init ────────────────────────────────────────────── */
-/* ── Edição administrativa da iniciativa (ADM) ─────────── */
+/* ── Edição administrativa da iniciativa (ADM e CONTRIBUTOR) ── */
 /* Campos texto/select simples: valor lido e escrito diretamente em `e-<campo>`.
    Os demais (suporte, monetários, classificação) têm tratamento próprio. */
 const EDIT_FIELDS = [
@@ -788,10 +788,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const me = await Admin.guard();
   if (!me) return;
   _me = me;
-  // Edição administrativa: só ADM vê o botão de editar (ADR-014).
-  if (me.role === 'ADM') {
-    document.getElementById('btn-editar-iniciativa')?.classList.remove('hidden');
-    initEdicaoIniciativa();
-  }
+  // Edição administrativa: disponível a ADM e CONTRIBUTOR — o backend
+  // (PATCH /api/iniciativas/:id) autoriza os dois perfis, protegido apenas
+  // pelo AdminGuard. As restrições de papel seguem sendo homologar e
+  // desclassificar, tratadas em loadAcoes().
+  document.getElementById('btn-editar-iniciativa')?.classList.remove('hidden');
+  initEdicaoIniciativa();
   loadDetalhe();
 });
