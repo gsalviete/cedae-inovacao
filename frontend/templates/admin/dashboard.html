@@ -1,31 +1,31 @@
 <!-- KPIs executivos -->
 <section class="admin-section admin-section--flush">
-  <div class="metric-grid" id="kpi-grid">
-    <article class="metric-card fade-in">
+  <div class="metric-grid" id="kpi-grid" data-reveal-group>
+    <article class="metric-card" data-reveal="card">
       <div class="metric-top"><span class="metric-ic metric-ic--blue"><i data-icon="layers"></i></span></div>
       <div class="metric-value" id="kpi-total"><span class="skeleton skeleton-value">0</span></div>
       <div class="metric-label">Total de iniciativas</div>
       <div class="metric-hint">na base consolidada</div>
     </article>
-    <article class="metric-card fade-in">
+    <article class="metric-card" data-reveal="card">
       <div class="metric-top"><span class="metric-ic metric-ic--blue"><i data-icon="lightbulb"></i></span></div>
       <div class="metric-value" id="kpi-ideacao"><span class="skeleton skeleton-value">0</span></div>
       <div class="metric-label">Em ideação</div>
       <div class="metric-hint">ideias estruturadas</div>
     </article>
-    <article class="metric-card fade-in">
+    <article class="metric-card" data-reveal="card">
       <div class="metric-top"><span class="metric-ic metric-ic--slate"><i data-icon="flask"></i></span></div>
       <div class="metric-value" id="kpi-piloto"><span class="skeleton skeleton-value">0</span></div>
       <div class="metric-label">Em piloto</div>
       <div class="metric-hint">testes e MVPs em campo</div>
     </article>
-    <article class="metric-card fade-in">
+    <article class="metric-card" data-reveal="card">
       <div class="metric-top"><span class="metric-ic metric-ic--green"><i data-icon="rocket"></i></span></div>
       <div class="metric-value" id="kpi-escala"><span class="skeleton skeleton-value">0</span></div>
       <div class="metric-label">Em escala</div>
       <div class="metric-hint">operando na rotina</div>
     </article>
-    <article class="metric-card fade-in">
+    <article class="metric-card" data-reveal="card">
       <div class="metric-top"><span class="metric-ic metric-ic--slate"><i data-icon="alert-triangle"></i></span></div>
       <div class="metric-value" id="kpi-paralisada"><span class="skeleton skeleton-value">0</span></div>
       <div class="metric-label">Paralisadas</div>
@@ -36,39 +36,39 @@
 
 <!-- Funil da Inovação -->
 <section class="admin-section">
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <span class="section-head-ic"><i data-icon="git-branch"></i></span>
     <div class="section-head-txt">
       <h2>Funil da inovação</h2>
       <p>Da ideação à escala — a jornada de cada iniciativa na esteira.</p>
     </div>
   </div>
-  <div class="funnel" id="funnel">
-    <div class="funnel-stage fs--ideacao">
+  <div class="funnel" id="funnel" data-reveal-group>
+    <div class="funnel-stage fs--ideacao" data-reveal="card">
       <div class="funnel-stage-top"><span class="funnel-stage-ic"><i data-icon="lightbulb"></i></span><span class="funnel-stage-name">Ideação</span></div>
       <span class="funnel-stage-count" id="fn-ideacao">0</span>
       <div class="funnel-stage-bar"><i id="fnb-ideacao"></i></div>
       <span class="funnel-stage-share" id="fns-ideacao">—</span>
     </div>
-    <div class="funnel-stage fs--analise">
+    <div class="funnel-stage fs--analise" data-reveal="card">
       <div class="funnel-stage-top"><span class="funnel-stage-ic"><i data-icon="search-check"></i></span><span class="funnel-stage-name">Análise</span></div>
       <span class="funnel-stage-count" id="fn-analise">0</span>
       <div class="funnel-stage-bar"><i id="fnb-analise"></i></div>
       <span class="funnel-stage-share" id="fns-analise">—</span>
     </div>
-    <div class="funnel-stage fs--homolog">
+    <div class="funnel-stage fs--homolog" data-reveal="card">
       <div class="funnel-stage-top"><span class="funnel-stage-ic"><i data-icon="badge-check"></i></span><span class="funnel-stage-name">Homologação</span></div>
       <span class="funnel-stage-count" id="fn-homolog">0</span>
       <div class="funnel-stage-bar"><i id="fnb-homolog"></i></div>
       <span class="funnel-stage-share" id="fns-homolog">—</span>
     </div>
-    <div class="funnel-stage fs--piloto">
+    <div class="funnel-stage fs--piloto" data-reveal="card">
       <div class="funnel-stage-top"><span class="funnel-stage-ic"><i data-icon="flask"></i></span><span class="funnel-stage-name">Piloto</span></div>
       <span class="funnel-stage-count" id="fn-piloto">0</span>
       <div class="funnel-stage-bar"><i id="fnb-piloto"></i></div>
       <span class="funnel-stage-share" id="fns-piloto">—</span>
     </div>
-    <div class="funnel-stage fs--escala">
+    <div class="funnel-stage fs--escala" data-reveal="card">
       <div class="funnel-stage-top"><span class="funnel-stage-ic"><i data-icon="rocket"></i></span><span class="funnel-stage-name">Escala</span></div>
       <span class="funnel-stage-count" id="fn-escala">0</span>
       <div class="funnel-stage-bar"><i id="fnb-escala"></i></div>
@@ -79,39 +79,39 @@
 
 <!-- Cards de atenção -->
 <section class="admin-section" id="sec-atencao" hidden>
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <span class="section-head-ic"><i data-icon="activity"></i></span>
     <div class="section-head-txt">
       <h2>Precisa da sua atenção</h2>
       <p>Iniciativas que aguardam uma ação da assessoria.</p>
     </div>
   </div>
-  <div class="attention-grid" id="attention-grid"></div>
+  <div class="attention-grid" id="attention-grid" data-reveal-group></div>
 </section>
 
 <!-- Status das Tramitações -->
 <section class="admin-section">
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <span class="section-head-ic"><i data-icon="gauge"></i></span>
     <div class="section-head-txt">
       <h2>Status das tramitações</h2>
       <p>Distribuição das iniciativas pelo fluxo de análise.</p>
     </div>
   </div>
-  <div class="status-kpi-row" id="status-kpi-row">
-    <div class="status-kpi-card">
+  <div class="status-kpi-row" id="status-kpi-row" data-reveal-group>
+    <div class="status-kpi-card" data-reveal="card">
       <span class="badge badge-status-submetida">Submetida</span>
       <span class="status-kpi-value" id="sk-submetida"><span class="skeleton skeleton-value">0</span></span>
     </div>
-    <div class="status-kpi-card">
+    <div class="status-kpi-card" data-reveal="card">
       <span class="badge badge-status-em_analise">Em Análise</span>
       <span class="status-kpi-value" id="sk-em_analise"><span class="skeleton skeleton-value">0</span></span>
     </div>
-    <div class="status-kpi-card">
+    <div class="status-kpi-card" data-reveal="card">
       <span class="badge badge-status-homologada">Homologada</span>
       <span class="status-kpi-value" id="sk-homologada"><span class="skeleton skeleton-value">0</span></span>
     </div>
-    <div class="status-kpi-card">
+    <div class="status-kpi-card" data-reveal="card">
       <span class="badge badge-status-desclassificada">Desclassificada</span>
       <span class="status-kpi-value" id="sk-desclassificada"><span class="skeleton skeleton-value">0</span></span>
     </div>
@@ -120,28 +120,28 @@
 
 <!-- Captação por Canal (ADR-013) -->
 <section class="admin-section">
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <span class="section-head-ic"><i data-icon="inbox"></i></span>
     <div class="section-head-txt">
       <h2>Captação por canal</h2>
       <p>De onde vêm as iniciativas — vias internas e captação externa.</p>
     </div>
   </div>
-  <div class="canal-kpi-row" id="canal-kpi-row">
-    <div class="canal-kpi-card"><span class="badge badge-canal-via_1">SGE/SGP</span><span class="canal-kpi-value" id="ck-VIA_1"><span class="skeleton skeleton-value">0</span></span><span class="canal-kpi-rate" id="cr-VIA_1"></span></div>
-    <div class="canal-kpi-card"><span class="badge badge-canal-via_2">Formulário</span><span class="canal-kpi-value" id="ck-VIA_2"><span class="skeleton skeleton-value">0</span></span><span class="canal-kpi-rate" id="cr-VIA_2"></span></div>
-    <div class="canal-kpi-card"><span class="badge badge-canal-via_3">Reunião</span><span class="canal-kpi-value" id="ck-VIA_3"><span class="skeleton skeleton-value">0</span></span><span class="canal-kpi-rate" id="cr-VIA_3"></span></div>
-    <div class="canal-kpi-card"><span class="badge badge-canal-externo">Externa</span><span class="canal-kpi-value" id="ck-MAPEAMENTO_EXTERNO"><span class="skeleton skeleton-value">0</span></span><span class="canal-kpi-rate" id="cr-MAPEAMENTO_EXTERNO"></span></div>
+  <div class="canal-kpi-row" id="canal-kpi-row" data-reveal-group>
+    <div class="canal-kpi-card" data-reveal="card"><span class="badge badge-canal-via_1">SGE/SGP</span><span class="canal-kpi-value" id="ck-VIA_1"><span class="skeleton skeleton-value">0</span></span><span class="canal-kpi-rate" id="cr-VIA_1"></span></div>
+    <div class="canal-kpi-card" data-reveal="card"><span class="badge badge-canal-via_2">Formulário</span><span class="canal-kpi-value" id="ck-VIA_2"><span class="skeleton skeleton-value">0</span></span><span class="canal-kpi-rate" id="cr-VIA_2"></span></div>
+    <div class="canal-kpi-card" data-reveal="card"><span class="badge badge-canal-via_3">Reunião</span><span class="canal-kpi-value" id="ck-VIA_3"><span class="skeleton skeleton-value">0</span></span><span class="canal-kpi-rate" id="cr-VIA_3"></span></div>
+    <div class="canal-kpi-card" data-reveal="card"><span class="badge badge-canal-externo">Externa</span><span class="canal-kpi-value" id="ck-MAPEAMENTO_EXTERNO"><span class="skeleton skeleton-value">0</span></span><span class="canal-kpi-rate" id="cr-MAPEAMENTO_EXTERNO"></span></div>
   </div>
   <div class="canal-split">
     <div class="canal-split-item">
       <span class="canal-split-label">Interno</span>
-      <div class="canal-split-bar"><div class="canal-split-fill canal-split-fill--interno" id="split-interno-fill" style="width:0%"></div></div>
+      <div class="canal-split-bar"><div class="canal-split-fill canal-split-fill--interno" id="split-interno-fill"></div></div>
       <span class="canal-split-count" id="split-interno">0</span>
     </div>
     <div class="canal-split-item">
       <span class="canal-split-label">Externo</span>
-      <div class="canal-split-bar"><div class="canal-split-fill canal-split-fill--externo" id="split-externo-fill" style="width:0%"></div></div>
+      <div class="canal-split-bar"><div class="canal-split-fill canal-split-fill--externo" id="split-externo-fill"></div></div>
       <span class="canal-split-count" id="split-externo">0</span>
     </div>
   </div>
@@ -150,7 +150,7 @@
 
 <!-- Distribuição por Dimensão -->
 <section class="admin-section">
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <span class="section-head-ic"><i data-icon="bar-chart"></i></span>
     <div class="section-head-txt">
       <h2>Distribuição por macrodimensão</h2>

@@ -26,8 +26,11 @@ async function loadUsers() {
       const ativoLabel = u.ativo
         ? '<span class="badge badge-status-homologada">Ativo</span>'
         : '<span class="badge badge-status-desclassificada">Inativo</span>';
+      // tabindex/role: a linha é clicável e precisa existir para o teclado.
+      // Enter/Espaço são tratados pelo handler delegado de ui.js.
       return `
-        <tr class="fade-in row-clickable" onclick="verUsuario(${u.id})" title="Ver detalhes">
+        <tr class="fade-in row-clickable" onclick="verUsuario(${u.id})" title="Ver detalhes"
+            tabindex="0" role="button" aria-label="Ver detalhes de ${Admin.escapeHtml(u.nome || u.login)}">
           <td>${u.nome || '—'}</td>
           <td>${roleLabel}</td>
           <td>${ativoLabel}</td>
@@ -53,7 +56,9 @@ function verUsuario(id) {
   Admin.setText('vu-ativo', u.ativo ? 'Ativo' : 'Inativo');
   Admin.setText('vu-desde', Admin.fmtDate(u.criado_em));
   renderGestaoUsuario(u);
-  document.getElementById('modal-view-user').classList.remove('hidden');
+  // Abre pelo helper compartilhado: role/aria, Escape, armadilha de foco,
+  // trava de rolagem e devolução do foco à linha de origem (ui.js).
+  CedaeUI.modal.open('modal-view-user', { onClose: closeViewUser });
 }
 
 function renderGestaoUsuario(u) {
@@ -69,20 +74,22 @@ function renderGestaoUsuario(u) {
   }
 
   const botoes = [];
+  // `this` vai junto para que o botão possa entrar em estado de carregamento
+  // no clique — toda ação que altera dado confirma na hora que foi recebida.
   // Promoção a administrador (não há rebaixamento).
   if (u.role !== 'ADM') {
-    botoes.push(`<button class="btn-action-sm" onclick="promoverUsuario(${u.id})">Promover a Administrador</button>`);
+    botoes.push(`<button class="btn-action-sm" onclick="promoverUsuario(${u.id}, this)">Promover a Administrador</button>`);
   }
   // Ativar / desativar.
   botoes.push(u.ativo
-    ? `<button class="btn-danger-sm" onclick="alterarStatusUsuario(${u.id}, false)">Desativar</button>`
-    : `<button class="btn-action-sm" onclick="alterarStatusUsuario(${u.id}, true)">Ativar</button>`);
+    ? `<button class="btn-danger-sm" onclick="alterarStatusUsuario(${u.id}, false, this)">Desativar</button>`
+    : `<button class="btn-action-sm" onclick="alterarStatusUsuario(${u.id}, true, this)">Ativar</button>`);
 
   el.innerHTML = `<span class="vu-gestao-label">Gestão</span><div class="vu-gestao-acoes">${botoes.join(' ')}</div>`;
 }
 
 function closeViewUser() {
-  document.getElementById('modal-view-user').classList.add('hidden');
+  CedaeUI.modal.close('modal-view-user');
   _vuId = null;
 }
 
@@ -91,7 +98,8 @@ function closeViewUserOnOverlay(e) {
 }
 
 /* ── Promoção a administrador — só ADM (sem rebaixamento) ── */
-async function promoverUsuario(id) {
+async function promoverUsuario(id, btn) {
+  CedaeUI.busy(btn, true, 'Promovendo…');
   try {
     const res = await fetch(`${API}/api/admin/users/${id}/role`, {
       method: 'PATCH',
@@ -102,16 +110,19 @@ async function promoverUsuario(id) {
       closeViewUser();
       CedaeUI.toast('Usuário promovido a Administrador.', 'ok');
       loadUsers();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      CedaeUI.toast(data.message || 'Não foi possível promover o usuário.', 'erro');
+      return;
     }
+    const data = await res.json().catch(() => ({}));
+    CedaeUI.toast(data.message || 'Não foi possível promover o usuário.', 'erro');
   } catch {
     CedaeUI.toast('Erro de comunicação com o servidor.', 'erro');
+  } finally {
+    CedaeUI.busy(btn, false);
   }
 }
 
-async function alterarStatusUsuario(id, ativo) {
+async function alterarStatusUsuario(id, ativo, btn) {
+  CedaeUI.busy(btn, true, ativo ? 'Ativando…' : 'Desativando…');
   try {
     const res = await fetch(`${API}/api/admin/users/${id}/status`, {
       method: 'PATCH',
@@ -122,12 +133,14 @@ async function alterarStatusUsuario(id, ativo) {
       closeViewUser();
       CedaeUI.toast(ativo ? 'Usuário ativado.' : 'Usuário desativado.', 'ok');
       loadUsers();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      CedaeUI.toast(data.message || 'Não foi possível atualizar o status.', 'erro');
+      return;
     }
+    const data = await res.json().catch(() => ({}));
+    CedaeUI.toast(data.message || 'Não foi possível atualizar o status.', 'erro');
   } catch {
     CedaeUI.toast('Erro de comunicação com o servidor.', 'erro');
+  } finally {
+    CedaeUI.busy(btn, false);
   }
 }
 
@@ -136,14 +149,19 @@ let _adSelected = null;
 let _adSearchTimer = null;
 
 function openCreateUser() {
-  document.getElementById('modal-create-user').classList.remove('hidden');
   document.getElementById('form-create-user').reset();
   document.getElementById('cu-result').classList.add('hidden');
   clearAdSelection();
+  // O foco vai direto para a busca do AD: é o primeiro (e único) campo que
+  // o usuário precisa preencher — os demais são resolvidos a partir dele.
+  CedaeUI.modal.open('modal-create-user', {
+    focus: '#cu-ad-search',
+    onClose: closeCreateUser,
+  });
 }
 
 function closeCreateUser() {
-  document.getElementById('modal-create-user').classList.add('hidden');
+  CedaeUI.modal.close('modal-create-user');
 }
 
 function closeModalOnOverlay(e) {
@@ -240,6 +258,8 @@ async function submitCreateUser(e) {
 
   const resultEl = document.getElementById('cu-result');
   resultEl.classList.add('hidden');
+  const btnSubmit = document.getElementById('cu-submit');
+  CedaeUI.busy(btnSubmit, true, 'Adicionando…');
 
   try {
     const res = await fetch(`${API}/api/admin/users`, {
@@ -263,6 +283,8 @@ async function submitCreateUser(e) {
     resultEl.className = 'cu-result cu-result-err';
     resultEl.textContent = 'Erro de comunicação com o servidor.';
     resultEl.classList.remove('hidden');
+  } finally {
+    CedaeUI.busy(btnSubmit, false);
   }
 }
 

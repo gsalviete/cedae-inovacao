@@ -36,35 +36,34 @@ async function initHeader() {
    O aviso mora só na modal: o formulário em etapas é área de preenchimento,
    não de texto informativo. Aberto pelo link do topo e pelo checkbox de
    ciência da última etapa, sem tirar o proponente de onde ele está. */
-let _avisoOrigemFoco = null;
-
+/* O comportamento (Escape, foco preso, foco devolvido à origem, rolagem
+   travada) vive em CedaeUI.modal — o mesmo helper usado pelos seis modais do
+   painel. Este modal era o único que já fazia o certo; virou o padrão. */
 function abrirAvisoPrivacidade() {
   const modal = document.getElementById('aviso-modal');
   if (!modal) return;
-
-  _avisoOrigemFoco = document.activeElement;
-  document.getElementById('aviso-overlay').classList.remove('hidden');
-  document.getElementById('aviso-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-  document.getElementById('aviso-modal-fechar')?.focus();
+  window.CedaeUI.modal.open(modal, {
+    overlay: document.getElementById('aviso-overlay'),
+    focus: '#aviso-modal-fechar',
+    onClose: fecharAvisoPrivacidade,
+  });
 }
 
 function fecharAvisoPrivacidade() {
-  document.getElementById('aviso-overlay')?.classList.add('hidden');
-  document.getElementById('aviso-modal')?.classList.add('hidden');
-  document.body.style.overflow = '';
-  // Devolve o foco a quem abriu (o link dentro do checkbox de ciência).
-  if (_avisoOrigemFoco && document.contains(_avisoOrigemFoco)) _avisoOrigemFoco.focus();
-  _avisoOrigemFoco = null;
+  window.CedaeUI.modal.close('aviso-modal');
 }
 
 /* ── Modal de Erro ───────────────────────────────────── */
 function toggleErrorModal(open, msg) {
-  document.getElementById('error-overlay').classList.toggle('hidden', !open);
-  document.getElementById('error-modal').classList.toggle('hidden', !open);
-  if (open && msg) {
-    document.getElementById('error-modal-msg').textContent = msg;
+  if (open) {
+    if (msg) document.getElementById('error-modal-msg').textContent = msg;
+    window.CedaeUI.modal.open('error-modal', {
+      overlay: document.getElementById('error-overlay'),
+      onClose: () => toggleErrorModal(false),
+    });
+    return;
   }
+  window.CedaeUI.modal.close('error-modal');
 }
 
 /* ── Máscara de moeda BRL ──────────────────────────────── */
@@ -275,7 +274,11 @@ async function submitForm(e) {
     }
 
     document.getElementById('inovacao-form').classList.add('hidden');
-    document.getElementById('form-success').classList.remove('hidden');
+    const sucesso = document.getElementById('form-success');
+    sucesso.classList.remove('hidden');
+    // O card só existe depois do envio: a exibição já é o evento, então ele
+    // entra na hora (reveal "soft"), sem esperar cruzar a viewport.
+    window.CedaeReveal?.show(sucesso);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch {
     alert('Erro de conexão. Verifique sua rede e tente novamente.');
@@ -332,14 +335,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Esc fecha a modal do aviso (o modal de Termos tem fluxo próprio e não é
-  // dispensável por Esc — ali a decisão é obrigatória).
-  document.addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Escape') return;
-    if (!document.getElementById('aviso-modal')?.classList.contains('hidden')) {
-      fecharAvisoPrivacidade();
-    }
-  });
+  // O Esc é tratado pela pilha de modais de ui.js (o modal de Termos tem
+  // fluxo próprio e não é dispensável por Esc — ali a decisão é obrigatória,
+  // e por isso ele não passa pelo helper).
 
   // Qualquer troca no grupo dispara o toggle — inclusive sair de "outros"
   // para outra opção, que precisa esconder e limpar o campo.

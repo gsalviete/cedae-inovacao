@@ -85,8 +85,208 @@
     requestAnimationFrame(tick);
   }
 
+  /* ══════════════════════════════════════════════════════
+     Trava de rolagem do body
+     Compartilhada por modais e pelo drawer mobile. Contada por referência:
+     fechar uma modal aberta sobre outra não pode liberar a rolagem da que
+     continua aberta. A largura da barra de rolagem é compensada em padding
+     para o conteúdo não saltar horizontalmente ao travar.
+     ══════════════════════════════════════════════════════ */
+  let _scrollLocks = 0;
+  let _paddingAnterior = '';
+
+  function travarScroll() {
+    if (_scrollLocks++ > 0) return;
+    const larguraBarra = window.innerWidth - document.documentElement.clientWidth;
+    _paddingAnterior = document.body.style.paddingRight;
+    if (larguraBarra > 0) document.body.style.paddingRight = `${larguraBarra}px`;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function liberarScroll() {
+    if (_scrollLocks === 0) return;
+    if (--_scrollLocks > 0) return;
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = _paddingAnterior;
+  }
+
+  /* ══════════════════════════════════════════════════════
+     Modal acessível (CedaeUI.modal)
+     Extraído do modal de aviso de privacidade do formulário público, que já
+     fazia o certo, e generalizado para os seis modais do painel. Cobre o que
+     faltava: role/aria, Escape, foco inicial, devolução do foco à origem,
+     armadilha de Tab e trava de rolagem.
+
+     Serve às duas anatomias do sistema:
+     - painel: um `.modal-overlay` que contém a `.modal-box` (o próprio
+       overlay é o elemento escondido);
+     - formulário público: uma `.modal` centrada por transform, com o overlay
+       em um elemento irmão (informado em `opts.overlay`).
+     ══════════════════════════════════════════════════════ */
+  const SELETOR_FOCAVEL = [
+    'a[href]', 'button:not(:disabled)', 'input:not(:disabled):not([type="hidden"])',
+    'select:not(:disabled)', 'textarea:not(:disabled)', '[tabindex]:not([tabindex="-1"])',
+  ].join(',');
+
+  const _modais = [];   // pilha: o topo é quem recebe Escape e Tab
+
+  /** Elemento que representa o diálogo em si (a caixa, não o overlay). */
+  function caixaDe(el) {
+    return el.querySelector('.modal-box') || el;
+  }
+
+  function focaveis(el) {
+    return Array.from(caixaDe(el).querySelectorAll(SELETOR_FOCAVEL))
+      .filter((n) => n.offsetParent !== null || n === document.activeElement);
+  }
+
+  function aplicarAria(el) {
+    const caixa = caixaDe(el);
+    caixa.setAttribute('role', 'dialog');
+    caixa.setAttribute('aria-modal', 'true');
+    const titulo = caixa.querySelector('.modal-title, .modal-header h3, h3');
+    if (titulo) {
+      if (!titulo.id) titulo.id = `${el.id || 'modal'}-titulo`;
+      caixa.setAttribute('aria-labelledby', titulo.id);
+    }
+  }
+
+  /**
+   * Abre um modal.
+   * @param {HTMLElement|string} alvo   elemento (ou id) que perde `.hidden`
+   * @param {object} [opts]
+   * @param {HTMLElement} [opts.overlay] overlay irmão (formulário público)
+   * @param {HTMLElement|string} [opts.focus] primeiro elemento a receber foco
+   * @param {Function} [opts.onClose] fechamento por Escape/overlay — deve ser
+   *        a função de fechar da própria página, para que ela limpe o estado
+   */
+  function abrirModal(alvo, opts) {
+    const el = typeof alvo === 'string' ? document.getElementById(alvo) : alvo;
+    if (!el || _modais.some((m) => m.el === el)) return;
+    const o = opts || {};
+
+    const origem = document.activeElement;
+    aplicarAria(el);
+
+    o.overlay?.classList.remove('hidden');
+    el.classList.remove('hidden');
+    travarScroll();
+
+    _modais.push({ el, overlay: o.overlay || null, origem, onClose: o.onClose || null, fechando: false });
+
+    // Foco no primeiro campo (ou no primeiro controle disponível). Sem alvo
+    // focável a caixa recebe o foco, para que o leitor de tela entre nela.
+    const alvoFoco = typeof o.focus === 'string'
+      ? el.querySelector(o.focus)
+      : (o.focus || focaveis(el)[0]);
+    if (alvoFoco) {
+      alvoFoco.focus();
+    } else {
+      const caixa = caixaDe(el);
+      caixa.setAttribute('tabindex', '-1');
+      caixa.focus();
+    }
+  }
+
+  /** Fecha um modal e devolve o foco a quem o abriu. */
+  function fecharModal(alvo) {
+    const el = typeof alvo === 'string' ? document.getElementById(alvo) : alvo;
+    if (!el) return;
+    const idx = _modais.findIndex((m) => m.el === el);
+
+    el.classList.add('hidden');
+    if (idx < 0) return;                 // já fora da pilha: só esconde
+
+    const entrada = _modais.splice(idx, 1)[0];
+    entrada.overlay?.classList.add('hidden');
+    liberarScroll();
+    if (entrada.origem && document.contains(entrada.origem)) entrada.origem.focus();
+  }
+
+  /** Fecha pelo caminho da página (para que ela limpe o próprio estado). */
+  function encerrarTopo() {
+    const topo = _modais[_modais.length - 1];
+    if (!topo || topo.fechando) return;
+    topo.fechando = true;
+    if (topo.onClose) topo.onClose();
+    else fecharModal(topo.el);
+    topo.fechando = false;
+  }
+
+  /** True quando o clique caiu no overlay, e não dentro da caixa. */
+  function cliqueNoOverlay(ev) {
+    const topo = _modais[_modais.length - 1];
+    return !!topo && ev.target === topo.el;
+  }
+
+  document.addEventListener('keydown', (ev) => {
+    if (!_modais.length) return;
+
+    if (ev.key === 'Escape') {
+      ev.stopPropagation();
+      encerrarTopo();
+      return;
+    }
+
+    // Armadilha de foco: Tab circula dentro da caixa do topo.
+    if (ev.key !== 'Tab') return;
+    const topo = _modais[_modais.length - 1];
+    const lista = focaveis(topo.el);
+    if (!lista.length) { ev.preventDefault(); return; }
+    const primeiro = lista[0];
+    const ultimo = lista[lista.length - 1];
+    const atual = document.activeElement;
+
+    if (!caixaDe(topo.el).contains(atual)) {
+      ev.preventDefault();
+      (ev.shiftKey ? ultimo : primeiro).focus();
+    } else if (ev.shiftKey && atual === primeiro) {
+      ev.preventDefault();
+      ultimo.focus();
+    } else if (!ev.shiftKey && atual === ultimo) {
+      ev.preventDefault();
+      primeiro.focus();
+    }
+  }, true);
+
+  /* ══════════════════════════════════════════════════════
+     Estado de carregamento de botão
+     Toda ação que altera dado precisa de confirmação visível de imediato —
+     nem que seja o botão dizendo que está trabalhando.
+     ══════════════════════════════════════════════════════ */
+  function botaoOcupado(btn, ocupado, textoOcupado) {
+    if (!btn) return;
+    if (ocupado) {
+      if (btn.dataset.textoOriginal === undefined) btn.dataset.textoOriginal = btn.textContent;
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      if (textoOcupado) btn.textContent = textoOcupado;
+    } else {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      if (btn.dataset.textoOriginal !== undefined) {
+        btn.textContent = btn.dataset.textoOriginal;
+        delete btn.dataset.textoOriginal;
+      }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     Linhas de tabela clicáveis
+     São `<tr onclick>`: sem isto, não existem para quem usa teclado. O
+     handler é delegado — vale para linhas renderizadas depois.
+     ══════════════════════════════════════════════════════ */
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' && ev.key !== ' ' && ev.key !== 'Spacebar') return;
+    const linha = ev.target.closest?.('tr.row-clickable');
+    if (!linha || linha !== ev.target) return;
+    ev.preventDefault();      // Espaço rolaria a página
+    linha.click();
+  });
+
   /* ── App shell: sidebar colapsável + drawer mobile ─────── */
   const COLLAPSE_KEY = 'cedae.sidebar.collapsed';
+  let _origemDrawer = null;
 
   function isMobile() { return window.matchMedia('(max-width: 960px)').matches; }
 
@@ -94,7 +294,13 @@
     const app = document.querySelector('.app');
     if (!app) return;
     if (isMobile()) {
-      app.classList.toggle('is-drawer-open');
+      if (app.classList.contains('is-drawer-open')) { closeDrawer(); return; }
+      _origemDrawer = document.activeElement;
+      app.classList.add('is-drawer-open');
+      travarScroll();
+      // O primeiro item do menu recebe o foco: o drawer é navegação, e a
+      // navegação precisa começar onde o usuário acabou de abrir.
+      app.querySelector('.sidebar-nav .nav-item')?.focus();
     } else {
       app.classList.toggle('is-collapsed');
       try { localStorage.setItem(COLLAPSE_KEY, app.classList.contains('is-collapsed') ? '1' : '0'); } catch (e) { /* storage indisponível */ }
@@ -102,7 +308,17 @@
   }
 
   function closeDrawer() {
-    document.querySelector('.app')?.classList.remove('is-drawer-open');
+    const app = document.querySelector('.app');
+    if (!app || !app.classList.contains('is-drawer-open')) return;
+    app.classList.remove('is-drawer-open');
+    liberarScroll();
+    // Devolve o foco ao botão que abriu — sem isso ele volta para o topo do
+    // documento e a navegação por teclado recomeça do zero.
+    const origem = _origemDrawer && document.contains(_origemDrawer)
+      ? _origemDrawer
+      : app.querySelector('.topbar-toggle.drawer-only');
+    origem?.focus();
+    _origemDrawer = null;
   }
 
   function initShell() {
@@ -122,7 +338,8 @@
       }
     } catch (e) { /* storage indisponível */ }
 
-    // Fecha o drawer ao navegar por um item ou tecla Esc
+    // Fecha o drawer ao navegar por um item ou tecla Esc. Com um modal
+    // aberto o Escape é consumido por ele (ver a pilha de modais acima).
     app.querySelector('.sidebar-scrim')?.addEventListener('click', closeDrawer);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
     window.addEventListener('resize', () => { if (!isMobile()) closeDrawer(); });
@@ -145,25 +362,55 @@
 
   /* ── Toast de feedback ─────────────────────────────────
      Notificação efêmera, reutilizável por qualquer página do painel.
-     tipo: 'ok' (padrão) | 'erro'. Cria o container sob demanda. */
-  function toast(msg, tipo) {
+     tipo: 'ok' (padrão) | 'erro'. Cria o container sob demanda.
+
+     O host é uma coluna: dois toasts simultâneos empilham (o segundo entra
+     abaixo, deslocando o primeiro pelo próprio layout), nunca se sobrepõem.
+     A região é anunciada por leitor de tela — sem isso, o retorno de toda
+     ação administrativa seria invisível para quem não vê a tela. */
+  const TOAST_MS = 3200;
+  const TOAST_SAIDA_MS = 250;
+
+  function toastHost() {
     let host = document.getElementById('toast-host');
     if (!host) {
       host = document.createElement('div');
       host.id = 'toast-host';
       host.className = 'toast-host';
+      host.setAttribute('role', 'status');
+      host.setAttribute('aria-live', 'polite');
+      host.setAttribute('aria-atomic', 'false');
       document.body.appendChild(host);
     }
+    return host;
+  }
+
+  function toast(msg, tipo) {
+    const erro = tipo === 'erro';
+    const host = toastHost();
+    // Erro interrompe a leitura em curso; confirmação espera a vez.
+    host.setAttribute('aria-live', erro ? 'assertive' : 'polite');
+
     const el = document.createElement('div');
-    el.className = `toast toast-${tipo === 'erro' ? 'erro' : 'ok'}`;
+    el.className = `toast toast-${erro ? 'erro' : 'ok'}`;
     el.textContent = msg;
     host.appendChild(el);
+
+    let timer = null;
+    const sair = () => {
+      el.classList.remove('is-visible');
+      setTimeout(() => el.remove(), TOAST_SAIDA_MS);
+    };
+    const agendar = () => { timer = setTimeout(sair, TOAST_MS); };
+
+    // Quem está lendo a mensagem não pode perdê-la no meio: o mouse sobre o
+    // toast pausa o timer, e sair reinicia a contagem.
+    el.addEventListener('mouseenter', () => clearTimeout(timer));
+    el.addEventListener('mouseleave', agendar);
+
     // força reflow para a transição de entrada e agenda a saída.
     requestAnimationFrame(() => el.classList.add('is-visible'));
-    setTimeout(() => {
-      el.classList.remove('is-visible');
-      setTimeout(() => el.remove(), 250);
-    }, 3200);
+    agendar();
   }
 
   /* ── Máscara monetária BRL (compartilhada) ─────────────
@@ -234,13 +481,36 @@
     el.value = formatBRL(cents);
   }
 
+  /** Exibição de um valor já gravado (Number ou string vinda da API, em reais):
+     "1000000" vira "R$ 1.000.000,00". Devolve null quando não há valor — quem
+     chama decide o placeholder — e o texto original quando não é numérico,
+     para que dado legado não suma da tela. */
+  function displayBRL(valor) {
+    if (valor === null || valor === undefined || valor === '') return null;
+    const num = typeof valor === 'number'
+      ? valor
+      : Number(String(valor).trim().replace(',', '.'));
+    if (!Number.isFinite(num)) return String(valor);
+    return formatBRL(Math.round(num * 100));
+  }
+
   window.CedaeMoney = {
     formatBRL, attach: attachMoney, initAll: initMoney,
-    value: moneyValue, setValue: setMoney,
+    value: moneyValue, setValue: setMoney, display: displayBRL,
   };
 
   // Exposição global (os templates chamam via onclick / os scripts de página usam os helpers)
-  window.CedaeUI = { icon, hydrateIcons, animateCount, renderSidebarUser, toast };
+  window.CedaeUI = {
+    icon, hydrateIcons, animateCount, renderSidebarUser, toast,
+    modal: {
+      open: abrirModal,
+      close: fecharModal,
+      isOverlayClick: cliqueNoOverlay,
+    },
+    busy: botaoOcupado,
+    lockScroll: travarScroll,
+    unlockScroll: liberarScroll,
+  };
   window.renderSidebarUser = renderSidebarUser;
   window.toggleNav = toggleNav;
   window.closeDrawer = closeDrawer;

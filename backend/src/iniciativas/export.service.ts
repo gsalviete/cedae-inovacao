@@ -114,7 +114,9 @@ function fmtData(val: string | Date | null | undefined): string {
   return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
-/** RETORNO_ECONOMICO é NUMBER(15,2) no banco; sai como moeda. */
+/** Valores em reais: RETORNO_ECONOMICO é NUMBER(15,2) e VALOR_APORTE é
+   VARCHAR2 com o número em texto ("1000000"). Ambos saem como moeda; o que
+   não for numérico (dado legado) é exportado como está. */
 function fmtMoeda(val: unknown): string {
   if (val === null || val === undefined || val === '') return '';
   const n = typeof val === 'number' ? val : Number(String(val).replace(',', '.'));
@@ -210,7 +212,7 @@ const GRUPOS: Array<{ titulo: string; campos: Campo[] }> = [
     titulo: 'Aporte financeiro',
     campos: [
       { header: 'Possui aporte financeiro?', get: (r) => fmtSimNao(r.aporte_financeiro), width: 18 },
-      { header: 'Valor estimado', get: (r) => texto(r.valor_aporte), width: 20 },
+      { header: 'Valor estimado', get: (r) => fmtMoeda(r.valor_aporte), width: 20 },
       { header: 'Retorno econômico', get: (r) => fmtMoeda(r.retorno_economico), width: 20 },
     ],
   },

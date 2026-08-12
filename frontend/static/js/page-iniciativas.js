@@ -60,9 +60,16 @@ function renderIniciativas() {
   // A origem tem uma única identificação visual: o badge do canal. O antigo
   // selo "Externo" era redundante — proponente externo só existe na Captação
   // Externa (RN-02), cujo badge já diz "Externa" (ADR-015 §7.2).
+  //
+  // A linha é clicável e precisa existir para o teclado: `tabindex` a coloca
+  // na ordem de tabulação, `role="button"` diz o que ela faz e o Enter/Espaço
+  // é tratado no handler delegado de ui.js. O `aria-label` evita que o leitor
+  // de tela anuncie a linha inteira como rótulo do botão.
   tbody.innerHTML = lista.map((i) => {
+    const rotulo = esc(i.titulo_iniciativa || i.codigo_publico || 'iniciativa');
     return `
-      <tr class="row-clickable fade-in" onclick="abrirDetalhe(${i.id})" title="Ver detalhes">
+      <tr class="row-clickable fade-in" onclick="abrirDetalhe(${i.id})" title="Ver detalhes"
+          tabindex="0" role="button" aria-label="Abrir detalhes de ${rotulo}">
         <td class="cell-protocol">${i.codigo_publico || '—'}</td>
         <td>${esc(i.titulo_iniciativa) || '—'}</td>
         <td>${canalBadge(i.canal_codigo || 'VIA_2')}</td>
@@ -80,12 +87,15 @@ function abrirDetalhe(id) {
 }
 
 /* Exporta a base respeitando os filtros vigentes (canal + busca livre).
-   O backend gera o arquivo; aqui apenas montamos a URL e disparamos o download. */
+   O backend gera o arquivo; aqui apenas montamos a URL e disparamos o
+   download. O arquivo demora a chegar e o navegador não dá sinal nenhum
+   nesse intervalo — o toast confirma que o pedido saiu. */
 function exportarIniciativas(format) {
   const termo = (document.getElementById('filtro-busca')?.value || '').trim();
   const params = new URLSearchParams({ format });
   if (_filtroCanal) params.set('canal', _filtroCanal);
   if (termo) params.set('q', termo);
+  window.CedaeUI?.toast(`Gerando o arquivo ${format.toUpperCase()}…`, 'ok');
   window.location.href = `${API}/api/iniciativas/export?${params.toString()}`;
 }
 

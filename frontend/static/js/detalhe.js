@@ -131,8 +131,10 @@ async function loadDetalhe() {
       CLASSIFICACAO_LABEL[String(data.classificacao_iniciativa || '').toUpperCase()] || null);
 
     renderAporte(data);
-    setField('d-valor_aporte', data.valor_aporte);
-    setField('d-retorno_economico', data.retorno_economico);
+    // Valores monetários chegam crus da API (número/string em reais); a
+    // exibição usa a mesma formatação BRL da máscara dos formulários.
+    setField('d-valor_aporte', window.CedaeMoney.display(data.valor_aporte));
+    setField('d-retorno_economico', window.CedaeMoney.display(data.retorno_economico));
     setField('d-suporte_necessario', formatSuporte(data.suporte_necessario));
     setField('d-diagnostico_observacao', data.diagnostico_observacao);
     setField('d-comentarios_adicionais', data.comentarios_adicionais);
@@ -230,7 +232,7 @@ async function loadAcoes(id, statusAtual) {
   }
 
   const aviso = ehTerminal
-    ? '<p class="workflow-aviso">A reversão exige justificativa e fica registrada no histórico — nenhum evento anterior é removido.</p>'
+    ? '<p class="workflow-aviso" data-reveal>A reversão exige justificativa e fica registrada no histórico — nenhum evento anterior é removido.</p>'
     : '';
 
   el.innerHTML = aviso + acoes.map(a => `
@@ -239,6 +241,7 @@ async function loadAcoes(id, statusAtual) {
       ${a.label}
     </button>
   `).join('');
+  window.CedaeReveal?.scan(el);
 }
 
 function iniciarTransicao(id, statusDestino, justObrig, titulo) {
@@ -259,11 +262,16 @@ function iniciarTransicao(id, statusDestino, justObrig, titulo) {
     : 'Justificativa (opcional)...';
   marcarObrigatorio('lbl-justificativa', 'Justificativa', justObrig);
 
-  document.getElementById('modal-justificativa').classList.remove('hidden');
+  // Comportamento acessível de modal (role/aria, Escape, foco preso e
+  // devolvido, rolagem travada) vem do helper compartilhado em ui.js.
+  window.CedaeUI.modal.open('modal-justificativa', {
+    focus: '#just-text',
+    onClose: closeJustModal,
+  });
 }
 
 function closeJustModal() {
-  document.getElementById('modal-justificativa').classList.add('hidden');
+  window.CedaeUI.modal.close('modal-justificativa');
   _pendingStatus = null;
 }
 
@@ -271,7 +279,7 @@ function closeJustModalOnOverlay(e) {
   if (e.target === document.getElementById('modal-justificativa')) closeJustModal();
 }
 
-async function confirmarTransicao() {
+async function confirmarTransicao(btn) {
   if (!_pendingStatus) return;
   const justificativa = document.getElementById('just-text').value.trim();
   const errEl = document.getElementById('just-error');
@@ -282,6 +290,7 @@ async function confirmarTransicao() {
     return;
   }
 
+  window.CedaeUI.busy(btn, true, 'Registrando…');
   try {
     const res = await fetch(`${API}/api/iniciativas/${_pendingStatus.id}/status`, {
       method: 'PATCH',
@@ -292,6 +301,9 @@ async function confirmarTransicao() {
 
     if (res.ok) {
       closeJustModal();
+      // O novo evento entra na timeline com reveal E o toast confirma. Um
+      // sem o outro deixaria dúvida se a tramitação foi mesmo registrada.
+      window.CedaeUI.toast('Tramitação registrada.', 'ok');
       await loadDetalhe();
     } else {
       errEl.textContent = data.message || 'Erro ao realizar transição.';
@@ -300,6 +312,8 @@ async function confirmarTransicao() {
   } catch {
     errEl.textContent = 'Erro de comunicação com o servidor.';
     errEl.classList.remove('hidden');
+  } finally {
+    window.CedaeUI.busy(btn, false);
   }
 }
 
@@ -310,11 +324,14 @@ function abrirModalObservacao(id) {
   _obsId = id;
   document.getElementById('obs-text').value = '';
   document.getElementById('obs-error').classList.add('hidden');
-  document.getElementById('modal-observacao').classList.remove('hidden');
+  window.CedaeUI.modal.open('modal-observacao', {
+    focus: '#obs-text',
+    onClose: closeObsModal,
+  });
 }
 
 function closeObsModal() {
-  document.getElementById('modal-observacao').classList.add('hidden');
+  window.CedaeUI.modal.close('modal-observacao');
   _obsId = null;
 }
 
@@ -322,7 +339,7 @@ function closeObsModalOnOverlay(e) {
   if (e.target === document.getElementById('modal-observacao')) closeObsModal();
 }
 
-async function confirmarObservacao() {
+async function confirmarObservacao(btn) {
   const texto = document.getElementById('obs-text').value.trim();
   const errEl = document.getElementById('obs-error');
   if (!texto) {
@@ -330,6 +347,7 @@ async function confirmarObservacao() {
     errEl.classList.remove('hidden');
     return;
   }
+  window.CedaeUI.busy(btn, true, 'Registrando…');
   try {
     const res = await fetch(`${API}/api/iniciativas/${_obsId}/observacao`, {
       method: 'POST',
@@ -338,6 +356,7 @@ async function confirmarObservacao() {
     });
     if (res.ok) {
       closeObsModal();
+      window.CedaeUI.toast('Observação registrada.', 'ok');
       await loadDetalhe();
     } else {
       const data = await res.json();
@@ -347,6 +366,8 @@ async function confirmarObservacao() {
   } catch {
     errEl.textContent = 'Erro de comunicação com o servidor.';
     errEl.classList.remove('hidden');
+  } finally {
+    window.CedaeUI.busy(btn, false);
   }
 }
 
@@ -390,11 +411,19 @@ async function loadHistorico(id) {
     ].sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
 
     if (!eventos.length) {
-      el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Sem histórico registrado.</p>';
+      // Estado vazio entra com reveal padrão, sem cascata: é uma frase só.
+      el.innerHTML = '<p class="obs-vazia" data-reveal>Sem histórico registrado.</p>';
+      el.removeAttribute('data-reveal-group');
+      window.CedaeReveal?.scan(el);
       return;
     }
 
     el.innerHTML = eventos.map(ev => renderEvento(ev, id)).join('');
+    // A timeline é o componente narrativo da tela: os itens entram em ordem
+    // cronológica, com cascata de 60ms e teto de 360ms (o container declara
+    // o grupo; o reveal.js distribui os atrasos).
+    el.setAttribute('data-reveal-group', '');
+    window.CedaeReveal?.scan(el);
   } catch { /* silencioso */ }
 }
 
@@ -422,7 +451,7 @@ function renderEvento(ev, iniciativaId) {
       ? `<div class="historico-just" data-evento-texto>"${escapeHtml(ev.justificativa)}"</div>`
       : '';
     return `
-      <div class="historico-item" data-evento-kind="${ev.kind}" data-evento-id="${ev.id}">
+      <div class="historico-item" data-reveal data-evento-kind="${ev.kind}" data-evento-id="${ev.id}">
         <div class="historico-dot ${cls}"></div>
         <div class="historico-body">
           <div class="historico-top">
@@ -445,7 +474,7 @@ function renderEvento(ev, iniciativaId) {
     ? `<div class="historico-just" data-evento-texto>"${escapeHtml(ev.justificativa)}"</div>`
     : '';
   return `
-    <div class="historico-item" data-evento-kind="${ev.kind}" data-evento-id="${ev.id}">
+    <div class="historico-item" data-reveal data-evento-kind="${ev.kind}" data-evento-id="${ev.id}">
       <div class="historico-dot ${cls}"></div>
       <div class="historico-body">
         <div class="historico-top">
@@ -484,11 +513,14 @@ function iniciarEdicao(kind, iniciativaId, recordId) {
   );
   document.getElementById('edit-text').value = textoAtual;
   document.getElementById('edit-error').classList.add('hidden');
-  document.getElementById('modal-edit-evento').classList.remove('hidden');
+  window.CedaeUI.modal.open('modal-edit-evento', {
+    focus: '#edit-text',
+    onClose: closeEditModal,
+  });
 }
 
 function closeEditModal() {
-  document.getElementById('modal-edit-evento').classList.add('hidden');
+  window.CedaeUI.modal.close('modal-edit-evento');
   _editTarget = null;
 }
 
@@ -496,7 +528,7 @@ function closeEditModalOnOverlay(e) {
   if (e.target === document.getElementById('modal-edit-evento')) closeEditModal();
 }
 
-async function confirmarEdicao() {
+async function confirmarEdicao(btn) {
   if (!_editTarget) return;
   const texto = document.getElementById('edit-text').value.trim();
   const errEl = document.getElementById('edit-error');
@@ -515,6 +547,7 @@ async function confirmarEdicao() {
     ? { texto }
     : { justificativa: texto || null };
 
+  window.CedaeUI.busy(btn, true, 'Salvando…');
   try {
     const res = await fetch(url, {
       method: 'PATCH',
@@ -523,6 +556,7 @@ async function confirmarEdicao() {
     });
     if (res.ok) {
       closeEditModal();
+      window.CedaeUI.toast('Registro atualizado.', 'ok');
       await loadHistorico(iniciativaId);
       return;
     }
@@ -532,6 +566,8 @@ async function confirmarEdicao() {
   } catch {
     errEl.textContent = 'Erro de comunicação com o servidor.';
     errEl.classList.remove('hidden');
+  } finally {
+    window.CedaeUI.busy(btn, false);
   }
 }
 
@@ -664,11 +700,16 @@ function abrirEdicaoIniciativa() {
   toggleEditDiagnostico();
 
   document.getElementById('edit-ini-error')?.classList.add('hidden');
-  document.getElementById('modal-edit-iniciativa').classList.remove('hidden');
+  // Formulário longo com corpo rolável (.edit-scroll): a trava de rolagem
+  // do body não afeta o scroll interno da caixa.
+  window.CedaeUI.modal.open('modal-edit-iniciativa', {
+    focus: '#e-titulo_iniciativa',
+    onClose: closeEditIniciativa,
+  });
 }
 
 function closeEditIniciativa() {
-  document.getElementById('modal-edit-iniciativa').classList.add('hidden');
+  window.CedaeUI.modal.close('modal-edit-iniciativa');
 }
 
 function closeEditIniciativaOnOverlay(e) {
@@ -711,7 +752,7 @@ async function salvarEdicaoIniciativa() {
   // O DTO valida o domínio; "não definido" precisa ir como null, não como "".
   payload.classificacao_iniciativa = lerClassificacao();
 
-  if (btn) btn.disabled = true;
+  window.CedaeUI.busy(btn, true, 'Salvando…');
   try {
     const res = await fetch(`${API}/api/iniciativas/${id}`, {
       method: 'PATCH',
@@ -730,7 +771,7 @@ async function salvarEdicaoIniciativa() {
   } catch {
     if (errEl) { errEl.textContent = 'Erro de comunicação com o servidor.'; errEl.classList.remove('hidden'); }
   } finally {
-    if (btn) btn.disabled = false;
+    window.CedaeUI.busy(btn, false);
   }
 }
 

@@ -85,7 +85,18 @@
               color var(--dur-base) var(--ease-out),
               transform var(--dur-base) var(--ease-spring);
 }
-.wizard-step-dot svg { width: 16px; height: 16px; }
+/* O check da etapa concluída pousa com a curva de toque. O wizard.js só
+   reescreve o conteúdo do ponto quando ele realmente muda, então a animação
+   dispara na etapa que acabou de ser concluída — não em todas, toda vez. */
+.wizard-step-dot svg {
+  width: 16px; height: 16px;
+  animation: check-in var(--dur-base) var(--ease-spring) both;
+}
+@keyframes check-in {
+  0%   { opacity: 0; transform: scale(0); }
+  60%  { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
 .wizard-step-pill[data-state="done"] .wizard-step-dot {
   background: var(--blue-800); border-color: var(--blue-800); color: #fff;
 }
@@ -112,12 +123,16 @@
   overflow: hidden;
   margin-top: 16px;
 }
+/* Proporção como escala (mesma regra das barras do painel): o avanço é
+   confirmado sem reflow. O JS define `--fill` de 0 a 1. */
 .wizard-progress-bar > i {
   display: block; height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--blue-800), var(--brand-green));
-  width: 0;
-  transition: width var(--dur-slow) var(--ease-out);
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(var(--fill, 0));
+  transition: transform var(--dur-slow) var(--ease-out);
 }
 
 /* ── Etapas (cada .form-block vira uma etapa) ─────────── */
@@ -128,20 +143,34 @@
   display: block;
   animation: wizard-in var(--dur-slow) var(--ease-out) both;
 }
+/* A direção acompanha o sentido da navegação: avançar entra pela direita,
+   voltar entra pela esquerda. É orientação espacial, não enfeite — o usuário
+   percebe para que lado a esteira andou. A classe vem do wizard.js. */
+.wizard-step.is-active.is-back { animation-name: wizard-in-back; }
+
 /* Neutraliza o stagger/hover herdado de .form-block: só uma etapa aparece. */
 .wizard-step.form-block { animation-delay: 0ms !important; }
 .wizard-step.form-block:hover { transform: none; box-shadow: var(--shadow-sm); border-color: var(--border); }
 
 @keyframes wizard-in {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateX(18px); }
   to   { opacity: 1; transform: none; }
 }
 
-/* Campo obrigatório em falta (validação por etapa) */
+@keyframes wizard-in-back {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Campo obrigatório em falta (validação por etapa). A borda muda com
+   transição — o campo não "pisca" em vermelho, ele fica vermelho. */
 .field-input.is-invalid,
 .field-textarea.is-invalid {
   border-color: var(--error);
   box-shadow: 0 0 0 3px rgba(194,41,41,.12);
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow   var(--dur-base) var(--ease-out);
 }
 
 /* ── Navegação do wizard ─────────────────────────────── */
@@ -168,9 +197,18 @@
   transition: background .2s, border-color .2s, color .2s, transform var(--dur-fast) var(--ease-out);
 }
 .btn-ghost svg { width: 16px; height: 16px; }
-.btn-ghost:hover { background: var(--blue-50); border-color: var(--blue-400); color: var(--blue-800); }
-.btn-ghost:active { transform: scale(.98); }
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover:not(:disabled) { background: var(--blue-50); border-color: var(--blue-400); color: var(--blue-800); }
+}
+.btn-ghost:active:not(:disabled) { transform: scale(.98); }
 .btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
+
+/* A pílula só é clicável nas etapas já alcançadas — o foco acompanha isso. */
+.wizard-step-pill[data-done="1"]:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
 
 .btn-next {
   display: inline-flex;

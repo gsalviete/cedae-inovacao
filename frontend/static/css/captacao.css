@@ -49,10 +49,17 @@
               box-shadow var(--dur-base) var(--ease-out),
               transform var(--dur-fast) var(--ease-out);
 }
-.via-card:hover {
-  border-color: var(--blue-200);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .via-card:hover {
+    border-color: var(--blue-200);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+}
+.via-card:active { transform: translateY(0) scale(.995); }
+.via-card:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
 }
 .via-card.is-active {
   border-color: var(--blue-600);

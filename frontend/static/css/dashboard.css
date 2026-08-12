@@ -85,12 +85,16 @@
   transform-origin: left;
   transition: transform var(--dur-base) var(--ease-out);
 }
-.metric-card:hover {
-  border-color: var(--blue-200);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-3px);
+/* Painel de indicadores corporativos, não portfólio: nada de rotação, e a
+   escala nunca passa de 1.02 em card nenhum. O movimento é de 2px. */
+@media (hover: hover) and (pointer: fine) {
+  .metric-card:hover {
+    border-color: var(--blue-200);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .metric-card:hover::after { transform: scaleX(1); }
 }
-.metric-card:hover::after { transform: scaleX(1); }
 
 .metric-top {
   display: flex;
@@ -162,10 +166,12 @@
               box-shadow var(--dur-base) var(--ease-out),
               transform var(--dur-fast) var(--ease-out);
 }
-.funnel-stage:hover {
-  border-color: var(--blue-200);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .funnel-stage:hover {
+    border-color: var(--blue-200);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
 }
 /* Seta entre estágios */
 .funnel-stage:not(:last-child)::after {
@@ -211,12 +217,15 @@
   background: var(--gray-100);
   overflow: hidden;
 }
+/* Proporção como escala, não como largura (mesma regra de `.bar-fill`). */
 .funnel-stage-bar > i {
   display: block;
   height: 100%;
-  width: 0;
+  width: 100%;
   border-radius: inherit;
-  transition: width var(--dur-slower) var(--ease-out);
+  transform-origin: left center;
+  transform: scaleX(var(--fill, 0));
+  transition: transform var(--dur-slower) var(--ease-out);
 }
 .funnel-stage-share { font-size: 11px; color: var(--text-muted); }
 
@@ -240,6 +249,9 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
 }
+/* Card de alerta entra e responde como qualquer outro card. Sem pulsação,
+   sem piscar, sem destaque contínuo: alerta que se mexe sozinho é ignorado
+   em dois dias e atrapalha quem tem sensibilidade a movimento. */
 .attention-card {
   display: flex;
   align-items: flex-start;
@@ -248,6 +260,25 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface);
+}
+
+/* Alinhamento de comportamento entre todas as famílias de card do painel —
+   o padrão de referência é o `.metric-card`. */
+.kpi-card,
+.attention-card {
+  transition:
+    transform    var(--dur-fast) var(--ease-out),
+    box-shadow   var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  /* Sem `border-color` aqui: nos cards de atenção a borda é semântica
+     (is-warn / is-info / is-ok) e trocá-la no hover apagaria o sinal. */
+  .kpi-card:hover,
+  .attention-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
 }
 .attention-card.is-warn  { border-color: #fce7ba; background: linear-gradient(180deg, var(--amber-50), var(--surface) 60%); }
 .attention-card.is-info  { border-color: var(--blue-100); background: linear-gradient(180deg, var(--blue-50), var(--surface) 60%); }
@@ -286,7 +317,9 @@
   padding: 0;
 }
 .attention-cta svg { width: 14px; height: 14px; transition: transform var(--dur-base) var(--ease-out); }
-.attention-cta:hover svg { transform: translateX(3px); }
+@media (hover: hover) and (pointer: fine) {
+  .attention-cta:hover svg { transform: translateX(3px); }
+}
 
 /* ── EmptyState reutilizável ─────────────────────────── */
 .empty-state {

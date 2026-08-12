@@ -13,6 +13,11 @@
     rel="stylesheet">
   <link rel="stylesheet" href="{{BASE_PATH}}/static/css/style.css">
   <link rel="stylesheet" href="{{BASE_PATH}}/static/css/wizard.css">
+  <!-- Scroll reveal: carregado no <head> de propósito. O estado inicial
+       oculto vive sob `.js-reveal`, classe que este script coloca em <html>;
+       no fim do <body> o conteúdo seria pintado antes de ser escondido e
+       piscaria. Não bloqueia dado algum: só marca a raiz e espera o DOM. -->
+  <script src="{{BASE_PATH}}/static/js/reveal.js"></script>
 </head>
 
 <body>
@@ -40,7 +45,7 @@
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-water"></div>
+    <div class="hero-water" data-reveal="water"></div>
     <div class="hero-content">
       <span class="hero-logo" aria-label="Formulário Via 2">
         <img src="{{BASE_PATH}}/static/img/logo-colorido-horizontal.png"
@@ -61,7 +66,7 @@
 
   <!-- FORM -->
   <main class="form-wrapper">
-    <div id="form-success" class="success-card hidden">
+    <div id="form-success" class="success-card hidden" data-reveal="soft">
       <div class="success-icon">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
           <circle cx="24" cy="24" r="24" fill="#0B4F8A" opacity=".12" />
@@ -514,7 +519,7 @@
     </div>
   </div>
 
-  <footer class="site-footer">
+  <footer class="site-footer" data-reveal>
     <p>CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro</p>
     <p>Assessoria de Inovação para Planejamento</p>
   </footer>

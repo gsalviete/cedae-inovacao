@@ -15,6 +15,11 @@
   <link rel="stylesheet" href="{{BASE_PATH}}/static/css/dashboard.css">
   <link rel="stylesheet" href="{{BASE_PATH}}/static/css/captacao.css">
   <link rel="stylesheet" href="{{BASE_PATH}}/static/css/detalhe.css">
+  <!-- Scroll reveal: carregado no <head> de propósito. O estado inicial
+       oculto vive sob `.js-reveal`, classe que este script coloca em <html>;
+       no fim do <body> o conteúdo seria pintado antes de ser escondido e
+       piscaria. Não bloqueia dado algum: só marca a raiz e espera o DOM. -->
+  <script src="{{BASE_PATH}}/static/js/reveal.js"></script>
 </head>
 <body class="admin-body">
 
@@ -86,7 +91,7 @@
         </div>
       </main>
 
-      <footer class="site-footer">
+      <footer class="site-footer" data-reveal>
         <p>CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro</p>
         <p>Assessoria de Inovação para Planejamento</p>
       </footer>

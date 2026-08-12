@@ -10,7 +10,7 @@ services:
     ports:
       # A porta interna é fixa em 8095 (EXPOSE do Dockerfile). APP_PORT no
       # arquivo de ambiente deve continuar 8095 — mudá-lo quebra este mapeamento.
-      - "9200:9200"
+      - "8095:8095"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

@@ -1,18 +1,18 @@
 <!-- Seletor de via -->
-<div class="via-selector" id="via-selector">
-  <button type="button" class="via-card" data-canal="VIA_1" onclick="selecionarVia('VIA_1')">
+<div class="via-selector" id="via-selector" data-reveal-group>
+  <button type="button" class="via-card" data-reveal="card" data-canal="VIA_1" onclick="selecionarVia('VIA_1')">
     <span class="via-card-ic"><i data-icon="git-branch"></i></span>
     <span class="via-card-badge badge badge-canal-via_1">SGE/SGP</span>
     <span class="via-card-title">Sistemas Corporativos</span>
     <span class="via-card-desc">Iniciativa identificada manualmente no SGE ou SGP.</span>
   </button>
-  <button type="button" class="via-card" data-canal="VIA_3" onclick="selecionarVia('VIA_3')">
+  <button type="button" class="via-card" data-reveal="card" data-canal="VIA_3" onclick="selecionarVia('VIA_3')">
     <span class="via-card-ic"><i data-icon="users"></i></span>
     <span class="via-card-badge badge badge-canal-via_3">Reunião</span>
     <span class="via-card-title">Reuniões com Áreas</span>
     <span class="via-card-desc">Iniciativa levantada em reunião com uma área.</span>
   </button>
-  <button type="button" class="via-card" data-canal="MAPEAMENTO_EXTERNO" onclick="selecionarVia('MAPEAMENTO_EXTERNO')">
+  <button type="button" class="via-card" data-reveal="card" data-canal="MAPEAMENTO_EXTERNO" onclick="selecionarVia('MAPEAMENTO_EXTERNO')">
     <span class="via-card-ic"><i data-icon="building"></i></span>
     <span class="via-card-badge badge badge-canal-externo">Externa</span>
     <span class="via-card-title">Captação Externa</span>
@@ -21,7 +21,7 @@
 </div>
 
 <!-- Sucesso -->
-<div id="captacao-success" class="success-card hidden">
+<div id="captacao-success" class="success-card hidden" data-reveal="soft">
   <div class="success-icon">
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
       <circle cx="24" cy="24" r="24" fill="#0067AC" opacity=".12" />

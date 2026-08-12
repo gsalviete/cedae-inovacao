@@ -8,9 +8,16 @@
 const CANAL_ORDER = ['VIA_1', 'VIA_2', 'VIA_3', 'MAPEAMENTO_EXTERNO'];
 const SETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000;
 
-function setWidth(id, pct) {
+/* Barra proporcional: a proporção (0 a 1) vira `--fill` e o CSS a aplica em
+   scaleX — nada de animar largura. O preenchimento dispara quando a barra
+   entra na viewport (CedaeReveal.fill), então a seção abaixo da dobra não
+   termina de crescer antes de ser vista. Sem o módulo, o valor é aplicado
+   direto: o dado nunca depende da animação para aparecer. */
+function setFill(id, ratio) {
   const el = document.getElementById(id);
-  if (el) requestAnimationFrame(() => { el.style.width = `${pct}%`; });
+  if (!el) return;
+  if (window.CedaeReveal) window.CedaeReveal.fill(el, ratio);
+  else el.style.setProperty('--fill', String(ratio));
 }
 
 /* ── KPIs + agregados ────────────────────────────────── */
@@ -53,7 +60,7 @@ function renderFunnel(data) {
   const totalRef = data.total_iniciativas || stages.reduce((a, s) => a + s[1], 0) || 1;
   stages.forEach(([key, val]) => {
     Admin.setNum(`fn-${key}`, val);
-    setWidth(`fnb-${key}`, Math.round((val / max) * 100));
+    setFill(`fnb-${key}`, val / max);
     const share = document.getElementById(`fns-${key}`);
     if (share) share.textContent = val ? `${Math.round((val / totalRef) * 100)}% do total` : '—';
   });
@@ -71,21 +78,21 @@ function renderDimensao(dims) {
     barEl.insertAdjacentHTML('beforeend', `
       <div class="bar-row fade-in">
         <span class="bar-label" title="${label}">${label}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>
+        <div class="bar-track"><div class="bar-fill"></div></div>
         <span class="bar-count">${count}</span>
       </div>`);
   });
 
-  requestAnimationFrame(() => {
-    Object.values(dims).forEach((count, idx) => {
-      const pct  = Math.round((count / max) * 100);
-      const fill = barEl.children[idx]?.querySelector('.bar-fill');
-      if (fill) fill.style.width = `${pct}%`;
-    });
+  Object.values(dims).forEach((count, idx) => {
+    const fill = barEl.children[idx]?.querySelector('.bar-fill');
+    if (!fill) return;
+    if (window.CedaeReveal) window.CedaeReveal.fill(fill, count / max);
+    else fill.style.setProperty('--fill', String(count / max));
   });
 
   if (!Object.keys(dims).length) {
-    barEl.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">Nenhuma iniciativa registrada ainda.</p>';
+    barEl.innerHTML = '<p class="section-note" data-reveal>Nenhuma iniciativa registrada ainda.</p>';
+    window.CedaeReveal?.scan(barEl);
   }
 }
 
@@ -109,8 +116,8 @@ function renderCanalKpis(data) {
   const totalProp = interno + externo || 1;
   Admin.setText('split-interno', interno);
   Admin.setText('split-externo', externo);
-  setWidth('split-interno-fill', Math.round((interno / totalProp) * 100));
-  setWidth('split-externo-fill', Math.round((externo / totalProp) * 100));
+  setFill('split-interno-fill', interno / totalProp);
+  setFill('split-externo-fill', externo / totalProp);
 
   const breakdown = document.getElementById('canal-breakdown');
   if (breakdown) {
@@ -163,7 +170,7 @@ function renderAttention(lista) {
 
   if (antigas.length) {
     cards.push(`
-      <div class="attention-card is-warn">
+      <div class="attention-card is-warn" data-reveal="card">
         <span class="attention-ic">${ic('clock')}</span>
         <div class="attention-body">
           <h4><b>${antigas.length}</b> aguardando triagem há mais de 7 dias</h4>
@@ -174,7 +181,7 @@ function renderAttention(lista) {
   }
   if (submetidas.length) {
     cards.push(`
-      <div class="attention-card is-info">
+      <div class="attention-card is-info" data-reveal="card">
         <span class="attention-ic">${ic('inbox')}</span>
         <div class="attention-body">
           <h4><b>${submetidas.length}</b> na fila de triagem</h4>
@@ -185,7 +192,7 @@ function renderAttention(lista) {
   }
   if (emAnalise.length) {
     cards.push(`
-      <div class="attention-card is-ok">
+      <div class="attention-card is-ok" data-reveal="card">
         <span class="attention-ic">${ic('search-check')}</span>
         <div class="attention-body">
           <h4><b>${emAnalise.length}</b> em análise</h4>
@@ -198,6 +205,8 @@ function renderAttention(lista) {
   if (!cards.length) { sec.hidden = true; return; }
   grid.innerHTML = cards.join('');
   sec.hidden = false;
+  // Cards nascem por JS: precisam ser observados depois de inseridos.
+  window.CedaeReveal?.scan(grid);
 }
 
 /* ── Init ────────────────────────────────────────────── */

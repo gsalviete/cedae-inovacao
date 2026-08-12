@@ -27,7 +27,7 @@ async function loadCanais() {
         acao = bloqueado
           ? '<button class="btn-action-sm" disabled title="A Via 2 (formulário público) não pode ser desativada.">—</button>'
           : `<button class="${c.ativo ? 'btn-danger-sm' : 'btn-action-sm'}"
-                     onclick="toggleCanal('${c.codigo}', ${!c.ativo})">${c.ativo ? 'Desativar' : 'Ativar'}</button>`;
+                     onclick="toggleCanal('${c.codigo}', ${!c.ativo}, this)">${c.ativo ? 'Desativar' : 'Ativar'}</button>`;
       }
       return `
         <tr class="fade-in">
@@ -40,15 +40,27 @@ async function loadCanais() {
   } catch { /* silencioso */ }
 }
 
-async function toggleCanal(codigo, ativo) {
+/* Alterar canal muda dado: o botão confirma na hora que recebeu o clique e o
+   toast confirma o resultado — sem isso a tabela só se redesenha do nada. */
+async function toggleCanal(codigo, ativo, btn) {
+  window.CedaeUI?.busy(btn, true, ativo ? 'Ativando…' : 'Desativando…');
   try {
     const res = await fetch(`${API}/api/admin/canais/${codigo}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ativo }),
     });
-    if (res.ok) loadCanais();
-  } catch { /* silencioso */ }
+    if (res.ok) {
+      window.CedaeUI?.toast(ativo ? 'Canal ativado.' : 'Canal desativado.', 'ok');
+      loadCanais();
+      return;
+    }
+    window.CedaeUI?.toast('Não foi possível alterar o canal.', 'erro');
+  } catch {
+    window.CedaeUI?.toast('Erro de comunicação com o servidor.', 'erro');
+  } finally {
+    window.CedaeUI?.busy(btn, false);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

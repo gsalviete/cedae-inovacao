@@ -242,7 +242,12 @@ async function submitCaptacao(e) {
       document.getElementById('cap-protocol-code').textContent = data.codigo_publico || '—';
       document.getElementById('captacao-form').classList.add('hidden');
       document.getElementById('via-selector').classList.add('hidden');
-      document.getElementById('captacao-success').classList.remove('hidden');
+      const sucesso = document.getElementById('captacao-success');
+      sucesso.classList.remove('hidden');
+      // A exibição do card já é o evento — entra na hora, sem esperar a
+      // viewport (mesmo tratamento do formulário público).
+      window.CedaeReveal?.show(sucesso);
+      window.CedaeUI?.toast('Iniciativa registrada.', 'ok');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       const msg = Array.isArray(data.message) ? data.message.join(' ') : (data.message || 'Erro ao registrar iniciativa.');

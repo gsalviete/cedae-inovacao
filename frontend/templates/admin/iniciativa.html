@@ -1,5 +1,5 @@
 <!-- Cabeçalho da iniciativa -->
-<section class="admin-section detalhe-hero">
+<section class="admin-section detalhe-hero" data-reveal>
   <div class="detalhe-header">
     <div class="detalhe-header-main">
       <h1 class="detalhe-titulo" id="d-titulo">Carregando...</h1>
@@ -15,7 +15,7 @@
 </section>
 
 <!-- Origem (ADR-013) -->
-<section class="admin-section">
+<section class="admin-section" data-reveal>
   <div class="section-head">
     <span class="section-head-ic"><i data-icon="inbox"></i></span>
     <div class="section-head-txt"><h2>Origem</h2></div>
@@ -53,7 +53,7 @@
 </section>
 
 <!-- Dados do proponente -->
-<section class="admin-section">
+<section class="admin-section" data-reveal>
   <div class="section-head">
     <span class="section-head-ic"><i data-icon="users"></i></span>
     <div class="section-head-txt"><h2>Dados do Proponente</h2></div>
@@ -87,7 +87,7 @@
 </section>
 
 <!-- Descrição da iniciativa -->
-<section class="admin-section">
+<section class="admin-section" data-reveal>
   <div class="section-head">
     <span class="section-head-ic"><i data-icon="file-text"></i></span>
     <div class="section-head-txt"><h2>Descrição da Iniciativa</h2></div>
@@ -107,7 +107,7 @@
 </section>
 
 <!-- Classificação -->
-<section class="admin-section">
+<section class="admin-section" data-reveal>
   <div class="section-head">
     <span class="section-head-ic"><i data-icon="layers"></i></span>
     <div class="section-head-txt"><h2>Classificação</h2></div>
@@ -141,7 +141,7 @@
 </section>
 
 <!-- Viabilidade -->
-<section class="admin-section">
+<section class="admin-section" data-reveal>
   <div class="section-head">
     <span class="section-head-ic"><i data-icon="gauge"></i></span>
     <div class="section-head-txt"><h2>Viabilidade</h2></div>
@@ -177,7 +177,7 @@
 </section>
 
 <!-- Workflow -->
-<section class="admin-section" id="section-workflow">
+<section class="admin-section" id="section-workflow" data-reveal>
   <div class="section-head">
     <span class="section-head-ic"><i data-icon="git-branch"></i></span>
     <div class="section-head-txt"><h2>Tramitação</h2></div>
@@ -188,7 +188,7 @@
 </section>
 
 <!-- Histórico -->
-<section class="admin-section">
+<section class="admin-section" data-reveal>
   <div class="section-head">
     <span class="section-head-ic"><i data-icon="activity"></i></span>
     <div class="section-head-txt"><h2>Histórico de Tramitação</h2></div>
@@ -213,7 +213,7 @@
     <div id="obs-error" class="cu-result cu-result-err hidden"></div>
     <div class="modal-actions">
       <button type="button" class="btn-secondary" onclick="closeObsModal()">Cancelar</button>
-      <button type="button" class="btn-primary" onclick="confirmarObservacao()">Registrar</button>
+      <button type="button" class="btn-primary" onclick="confirmarObservacao(this)">Registrar</button>
     </div>
   </div>
 </div>
@@ -231,7 +231,7 @@
     <div id="just-error" class="cu-result cu-result-err hidden"></div>
     <div class="modal-actions">
       <button type="button" class="btn-secondary" onclick="closeJustModal()">Cancelar</button>
-      <button type="button" class="btn-primary" onclick="confirmarTransicao()">Confirmar</button>
+      <button type="button" class="btn-primary" onclick="confirmarTransicao(this)">Confirmar</button>
     </div>
   </div>
 </div>
@@ -400,7 +400,7 @@
     <div id="edit-error" class="cu-result cu-result-err hidden"></div>
     <div class="modal-actions">
       <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancelar</button>
-      <button type="button" class="btn-primary" onclick="confirmarEdicao()">Salvar</button>
+      <button type="button" class="btn-primary" onclick="confirmarEdicao(this)">Salvar</button>
     </div>
   </div>
 </div>

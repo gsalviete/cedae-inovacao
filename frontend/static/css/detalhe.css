@@ -153,8 +153,23 @@
               box-shadow var(--dur-base) var(--ease-out),
               transform var(--dur-fast) var(--ease-out);
 }
-.btn-workflow:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.btn-workflow:active { transform: translateY(0) scale(.99); }
+@media (hover: hover) and (pointer: fine) {
+  .btn-workflow:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+}
+.btn-workflow:active:not(:disabled) { transform: translateY(0) scale(.99); }
+
+/* São as ações que mudam o status de um registro: o usuário precisa ver com
+   clareza qual está prestes a acionar, e qual está indisponível. */
+.btn-workflow:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
+}
+.btn-workflow:disabled {
+  opacity: .6;
+  cursor: progress;
+  transform: none;
+  box-shadow: none;
+}
 
 .btn-workflow-info  { background: var(--blue-800); color: #fff; }
 .btn-workflow-info:hover  { background: var(--blue-900); }
@@ -215,6 +230,18 @@
   flex-shrink: 0;
 }
 
+/* O ponto é o marco do evento: ele pousa depois do item, com a curva de
+   toque. O atraso conta a partir do reveal do próprio item (--reveal-delay),
+   por isso a cascata da timeline continua legível de cima para baixo. */
+.js-reveal .historico-item[data-reveal] .historico-dot {
+  transform: scale(0);
+  transition: transform var(--dur-base) var(--ease-spring)
+              calc(var(--reveal-delay, 0ms) + 80ms);
+}
+.js-reveal .historico-item[data-reveal].is-revealed .historico-dot {
+  transform: scale(1);
+}
+
 .historico-dot.badge-status-submetida  { background: #3b82f6; }
 .historico-dot.badge-status-em_analise { background: #f59e0b; }
 .historico-dot.badge-status-homologada      { background: #22c55e; }
@@ -254,11 +281,15 @@
   border-radius: var(--radius-sm);
   padding: 3px 10px;
   cursor: pointer;
-  transition: background .15s ease, border-color .15s ease;
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    border-color     var(--dur-base) var(--ease-out);
 }
-.btn-editar-evento:hover {
-  background: var(--blue-50);
-  border-color: var(--blue-100);
+@media (hover: hover) and (pointer: fine) {
+  .btn-editar-evento:hover {
+    background: var(--blue-50);
+    border-color: var(--blue-100);
+  }
 }
 
 .historico-data {

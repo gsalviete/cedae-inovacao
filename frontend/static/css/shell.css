@@ -57,7 +57,13 @@
   box-shadow: 0 1px 3px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.6);
   transition: transform var(--dur-base) var(--ease-spring);
 }
-.sidebar-brand:hover .sidebar-brand-plate { transform: translateY(-1px); }
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-brand:hover .sidebar-brand-plate { transform: translateY(-1px); }
+}
+.sidebar-brand:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: -3px;
+}
 /* Logo horizontal: ocupa a largura da placa. */
 .sidebar-brand-plate img { width: 100%; max-width: 180px; height: auto; margin: 0 auto; display: block; }
 /* Marca compacta (gota) — aparece apenas quando a sidebar está recolhida. */
@@ -111,22 +117,37 @@
 .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; stroke-width: 2; opacity: .9; }
 /* display:flex do .nav-item venceria o [hidden] da UA — força a ocultação. */
 .nav-item[hidden] { display: none !important; }
-.nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+/* O menu não se mexe sob o cursor: só cor de fundo. */
+@media (hover: hover) and (pointer: fine) {
+  .nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+}
 .nav-item.is-active {
   background: rgba(255,255,255,.12);
   color: #fff;
   border-color: rgba(255,255,255,.10);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
 }
-.nav-item.is-active::before {
+/* Barra lateral de indicação: existe em todo item e cresce por scaleY a
+   partir do centro quando o item fica ativo. Animar a altura reflowaria a
+   sidebar inteira a cada navegação. */
+.nav-item::before {
   content: '';
   position: absolute;
   left: 0;
+  top: 50%;
   width: 3px; height: 20px;
   border-radius: 0 3px 3px 0;
   background: var(--brand-green);
+  transform: translateY(-50%) scaleY(0);
+  transform-origin: center;
+  transition: transform var(--dur-base) var(--ease-out);
 }
+.nav-item.is-active::before { transform: translateY(-50%) scaleY(1); }
 .nav-item { position: relative; }
+.nav-item:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: -2px;
+}
 .nav-item .nav-badge {
   margin-left: auto;
   font-size: 11px;
@@ -172,7 +193,25 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Colapso: some textos e a placa da logo, centraliza ícones e mostra a gota */
+/* Colapso: some textos e a placa da logo, centraliza ícones e mostra a gota.
+   O `--sidebar-w` muda de valor e a largura reflowa a página inteira — não há
+   como transicionar isso sem custo, e animar largura é justamente o que não
+   se faz aqui. O que tira a brusquidão é a volta dos rótulos.
+
+   Os rótulos somem por `display: none`, e `display` não transiciona — mas
+   *keyframes* reiniciam quando o elemento volta ao fluxo. Por isso a volta
+   dos rótulos é uma animação curta, não uma transição: ela dispara sozinha
+   ao expandir, sem custo de layout e sem animar largura. */
+@keyframes label-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.app:not(.is-collapsed) .nav-item span,
+.app:not(.is-collapsed) .nav-section-label,
+.app:not(.is-collapsed) .sidebar-user-info {
+  animation: label-in var(--dur-fast) var(--ease-out) both;
+}
+
 .app.is-collapsed .nav-section-label,
 .app.is-collapsed .nav-item span,
 .app.is-collapsed .nav-item .nav-badge,
@@ -213,9 +252,18 @@
   color: var(--gray-600);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background .16s, color .16s;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color            var(--dur-fast) var(--ease-out);
 }
-.topbar-toggle:hover { background: var(--gray-100); color: var(--gray-900); }
+@media (hover: hover) and (pointer: fine) {
+  .topbar-toggle:hover { background: var(--gray-100); color: var(--gray-900); }
+}
+.topbar-toggle:focus-visible,
+.topbar-crumb a:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
+}
 .topbar-toggle svg { width: 20px; height: 20px; }
 
 .topbar-heading { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
@@ -273,7 +321,8 @@
   padding: 30px 28px 72px;
 }
 
-/* Scrim do drawer mobile */
+/* Scrim do drawer mobile. Entra por opacidade (keyframe, porque a troca é de
+   `display`); o painel entra por translateX — nenhum dos dois toca layout. */
 .sidebar-scrim {
   display: none;
   position: fixed;
@@ -281,6 +330,9 @@
   background: rgba(10,15,26,.5);
   backdrop-filter: blur(2px);
   z-index: 55;
+}
+.app.is-drawer-open .sidebar-scrim {
+  animation: fade-in var(--dur-base) var(--ease-out) both;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -296,7 +348,7 @@
     transition: transform var(--dur-base) var(--ease-in-out);
     box-shadow: var(--shadow-xl);
   }
-  .app.is-drawer-open .sidebar { transform: translateX(0); }
+  .app.is-drawer-open .sidebar { transform: translateX(0); will-change: transform; }
   .app.is-drawer-open .sidebar-scrim { display: block; }
   /* No mobile o colapso não se aplica — o drawer mostra a sidebar completa */
   .app.is-collapsed { --sidebar-w: 280px; }

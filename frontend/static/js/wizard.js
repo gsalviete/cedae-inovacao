@@ -94,7 +94,12 @@
         el.classList.remove('is-invalid');
       }
     });
-    if (!ok && primeiro) primeiro.focus();
+    // O primeiro campo inválido recebe o foco e é trazido à vista com
+    // rolagem suave — sem isso, em etapa longa o erro fica fora da tela.
+    if (!ok && primeiro) {
+      primeiro.focus({ preventScroll: true });
+      primeiro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     return ok;
   }
 
@@ -110,10 +115,16 @@
   function hideAlert() { alert.classList.remove('show'); }
 
   /* ── Render de uma etapa ───────────────────────────── */
-  function render() {
+  /* `voltando` decide o sentido da entrada da etapa: avançar entra pela
+     direita, voltar pela esquerda. É orientação espacial — o usuário vê para
+     que lado a esteira andou (a classe é lida por wizard.css). */
+  function render(voltando) {
     const last = current === steps.length - 1;
 
-    steps.forEach((s, i) => s.classList.toggle('is-active', i === current));
+    steps.forEach((s, i) => {
+      s.classList.toggle('is-back', i === current && !!voltando);
+      s.classList.toggle('is-active', i === current);
+    });
 
     pills.forEach((p, i) => {
       // done se já passou, active se é a etapa atual, senão pendente
@@ -121,13 +132,23 @@
       p.setAttribute('data-state', st);
       p.setAttribute('data-done', i <= maxReached ? '1' : '0');
       const dot = p.querySelector('.wizard-step-dot');
-      dot.innerHTML = i < current ? ic('check-circle') : String(i + 1);
+      // Só reescreve o ponto quando o conteúdo muda de fato: reescrever a
+      // cada render faria o check de TODAS as etapas concluídas re-animar a
+      // cada navegação, que é ruído.
+      const concluida = i < current;
+      const marcado = dot.dataset.concluida === '1';
+      if (concluida !== marcado) {
+        dot.dataset.concluida = concluida ? '1' : '0';
+        dot.innerHTML = concluida ? ic('check-circle') : String(i + 1);
+      }
     });
 
     document.getElementById('wizard-title').textContent = label(current);
     document.getElementById('wizard-cur').textContent = String(current + 1);
-    document.getElementById('wizard-bar').style.width =
-      `${Math.round(((current + 1) / steps.length) * 100)}%`;
+    // Proporção, não largura: a barra cresce por scaleX (ver wizard.css).
+    document.getElementById('wizard-bar').style.setProperty(
+      '--fill', String((current + 1) / steps.length),
+    );
 
     prevBtn.disabled = current === 0;
     prevBtn.style.visibility = current === 0 ? 'hidden' : 'visible';
@@ -137,15 +158,16 @@
   }
 
   function goTo(i, { skipValidation } = {}) {
+    const voltando = i < current;
     if (i > current && !skipValidation) {
       // avançar exige validar cada etapa intermediária
       for (let s = current; s < i; s++) {
-        if (!validateStep(s)) { current = s; render(); showAlert(); return; }
+        if (!validateStep(s)) { current = s; render(false); showAlert(); return; }
       }
     }
     current = Math.max(0, Math.min(steps.length - 1, i));
     maxReached = Math.max(maxReached, current);
-    render();
+    render(voltando);
     progress.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -167,9 +189,9 @@
       current = 0;
       maxReached = 0;
       steps.forEach((s) => s.querySelectorAll('.is-invalid').forEach((el) => el.classList.remove('is-invalid')));
-      render();
+      render(true);
     },
   };
 
-  render();
+  render(false);
 })();

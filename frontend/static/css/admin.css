@@ -105,10 +105,12 @@
   flex: 1;
   transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-.status-kpi-card:hover {
-  border-color: var(--blue-200);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .status-kpi-card:hover {
+    border-color: var(--blue-200);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
 }
 
 .status-kpi-value {
@@ -146,11 +148,17 @@
   overflow: hidden;
 }
 
+/* A barra é dado, não decoração: a proporção vem de `--fill` (0 a 1) e vira
+   escala, não largura. Animar `width` obrigaria a um reflow por frame; com
+   `scaleX` o compositor resolve na GPU. Ver CedaeReveal.fill(). */
 .bar-fill {
   height: 100%;
+  width: 100%;
   background: linear-gradient(90deg, var(--blue-600), var(--blue-400));
   border-radius: 20px;
-  transition: width .6s ease;
+  transform-origin: left center;
+  transform: scaleX(var(--fill, 0));
+  transition: transform var(--dur-slower) var(--ease-out);
 }
 
 .bar-count {
@@ -193,7 +201,19 @@
 }
 
 .admin-table tr:last-child td { border-bottom: none; }
-.admin-table tr:hover td { background: var(--blue-50); }
+
+/* Linha de tabela muda APENAS de cor. Nada de translate, escala ou sombra:
+   qualquer movimento aqui desalinha a grade e cansa quem lê a tela o dia
+   inteiro. A transição é a mais curta da escala. */
+.admin-table tbody tr td {
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .admin-table tr:hover td { background: var(--blue-50); }
+  .row-clickable:hover td { background: var(--blue-50) !important; }
+  /* Affordance discreta: o protocolo acende, indicando que a linha abre. */
+  .row-clickable:hover .cell-protocol { color: var(--blue-600); }
+}
 
 .table-loading {
   text-align: center;
@@ -202,7 +222,18 @@
 }
 
 .row-clickable { cursor: pointer; }
-.row-clickable:hover td { background: var(--blue-50) !important; }
+/* As linhas clicáveis são alcançáveis por teclado (tabindex/role aplicados
+   no JS que as renderiza). O foco precisa aparecer na linha inteira; o
+   offset negativo mantém o anel dentro da célula, sem empurrar a grade. */
+.row-clickable:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: -2px;
+}
+.row-clickable:focus-visible td { background: var(--blue-50); }
+
+.cell-protocol {
+  transition: color var(--dur-fast) var(--ease-out);
+}
 
 /* ── Badges ────────────────────────────────────────── */
 .badge {
@@ -261,10 +292,8 @@
   cursor: pointer;
   white-space: nowrap;
   box-shadow: var(--shadow-xs);
-  transition: background .2s;
 }
 .btn-action svg { width: 15px; height: 15px; }
-.btn-action:hover { background: var(--blue-900); }
 
 .btn-action-sm {
   background: var(--blue-600);
@@ -275,7 +304,6 @@
   font-size: 11px;
   cursor: pointer;
 }
-.btn-action-sm:hover { background: var(--blue-800); }
 
 .btn-danger-sm {
   background: #fee2e2;
@@ -286,7 +314,23 @@
   font-size: 11px;
   cursor: pointer;
 }
-.btn-danger-sm:hover { background: #fecaca; }
+
+/* Botões de tabela respondem só em cor — nem levantam nem escalam. Ação
+   destrutiva (`.btn-danger-sm`) muda de tom mas nunca ganha o movimento
+   ascendente dos demais: destruir não deve parecer convidativo. */
+.btn-action,
+.btn-action-sm,
+.btn-danger-sm {
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    border-color     var(--dur-base) var(--ease-out),
+    color            var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-action:hover { background: var(--blue-900); }
+  .btn-action-sm:hover:not(:disabled) { background: var(--blue-800); }
+  .btn-danger-sm:hover:not(:disabled) { background: #fecaca; }
+}
 
 .btn-action-sm:disabled,
 .btn-danger-sm:disabled {
@@ -308,6 +352,9 @@
 }
 .modal-overlay.hidden { display: none; }
 
+/* A caixa é centrada pelo flex do overlay (não por translate como a `.modal`
+   do formulário público), então o keyframe pode declarar transform à vontade
+   — não há centralização para apagar. */
 .modal-box {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -315,6 +362,13 @@
   width: 100%;
   max-width: 480px;
   box-shadow: 0 20px 48px rgba(0,0,0,.2);
+  animation: modal-box-in var(--dur-base) var(--ease-spring) both;
+  will-change: transform;
+}
+
+@keyframes modal-box-in {
+  from { opacity: 0; transform: translateY(8px) scale(.96); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* Variante larga (edição de iniciativa) com corpo rolável. */
@@ -329,6 +383,22 @@
 .edit-grid .form-group { margin: 0; }
 @media (max-width: 620px) {
   .edit-grid { grid-template-columns: 1fr; }
+
+  /* Em tela estreita a caixa ocupa quase toda a largura e sobe da borda de
+     baixo — em mobile, subir é o gesto esperado de uma folha modal. */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal-box {
+    max-width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 24px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+    max-height: 92vh;
+    overflow-y: auto;
+    animation-name: modal-box-up;
+  }
+  @keyframes modal-box-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: none; }
+  }
 }
 
 .modal-title {
@@ -501,7 +571,12 @@ select.form-input:disabled { background-color: var(--gray-100); cursor: not-allo
   font-size: 13px; font-weight: 500; color: #fff;
   box-shadow: 0 8px 24px rgba(15, 23, 42, .18);
   opacity: 0; transform: translateY(10px);
-  transition: opacity .25s ease, transform .25s ease;
+  transition:
+    opacity   var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+  /* O host ignora o ponteiro (não pode cobrir a tela); o toast, não — quem
+     está lendo a mensagem passa o mouse e o timer pausa (ver ui.js). */
+  pointer-events: auto;
 }
 .toast.is-visible { opacity: 1; transform: translateY(0); }
 .toast-ok   { background: var(--green-600); }
@@ -563,11 +638,19 @@ select.form-input:disabled { background-color: var(--gray-100); cursor: not-allo
   border-radius: var(--radius-sm);
   color: var(--gray-500);
   flex-shrink: 0;
-  transition: transform .25s ease, background .2s ease;
+  transition:
+    transform        var(--dur-base) var(--ease-out),
+    background-color var(--dur-base) var(--ease-out),
+    color            var(--dur-base) var(--ease-out);
 }
 .collapsible-header .caret svg { width: 18px; height: 18px; }
-.collapsible-header:hover .caret { background: var(--gray-100); color: var(--gray-800); }
-.collapsible-header.is-open .caret { transform: rotate(180deg); }
+@media (hover: hover) and (pointer: fine) {
+  .collapsible-header:hover .caret { background: var(--gray-100); color: var(--gray-800); }
+}
+/* Giro do caret: o segundo (e último) giro legítimo do sistema. Sem bounce
+   na expansão — o corpo alterna por `.hidden`, corte seco e honesto. */
+.collapsible-header.is-open .caret,
+.collapsible-header[aria-expanded="true"] .caret { transform: rotate(180deg); }
 .collapsible-body {
   margin-top: 16px;
   animation: fadeInUp .25s ease both;
@@ -612,12 +695,17 @@ select.form-input:disabled { background-color: var(--gray-100); cursor: not-allo
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  transition: border-color var(--dur-base, .2s) ease, box-shadow var(--dur-base, .2s) ease, transform var(--dur-fast, .12s) ease;
+  transition:
+    transform    var(--dur-fast) var(--ease-out),
+    box-shadow   var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
 }
-.canal-kpi-card:hover {
-  border-color: var(--blue-100);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .canal-kpi-card:hover {
+    border-color: var(--blue-100);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
 }
 .canal-kpi-value {
   font-size: 30px;
@@ -653,8 +741,11 @@ select.form-input:disabled { background-color: var(--gray-100); cursor: not-allo
 }
 .canal-split-fill {
   height: 100%;
+  width: 100%;
   border-radius: 20px;
-  transition: width .6s var(--ease-out, ease);
+  transform-origin: left center;
+  transform: scaleX(var(--fill, 0));
+  transition: transform var(--dur-slower) var(--ease-out);
 }
 .canal-split-fill--interno { background: linear-gradient(90deg, var(--blue-600), var(--blue-400)); }
 .canal-split-fill--externo { background: linear-gradient(90deg, var(--amber-600), #f59e0b); }
@@ -745,9 +836,21 @@ select.form-input:disabled { background-color: var(--gray-100); cursor: not-allo
   font-weight: 500;
   color: var(--gray-600);
   cursor: pointer;
-  transition: all .18s ease;
 }
-.filter-chip:hover { border-color: var(--blue-400); color: var(--blue-600); }
+/* Nada de `transition: all`: a lista explícita evita animar propriedades que
+   ninguém pediu (e que custam layout). O chip muda só de cor — escalar ou
+   mudar padding faria a barra de filtros saltar a cada clique. */
+.filter-chip,
+.btn-export {
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    border-color     var(--dur-base) var(--ease-out),
+    color            var(--dur-base) var(--ease-out),
+    transform        var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .filter-chip:hover { border-color: var(--blue-400); color: var(--blue-600); }
+}
 .filter-chip.is-active {
   background: var(--blue-800);
   border-color: var(--blue-800);
@@ -767,10 +870,16 @@ select.form-input:disabled { background-color: var(--gray-100); cursor: not-allo
   font-weight: 500;
   color: var(--gray-700);
   cursor: pointer;
-  transition: all .18s ease;
 }
-.btn-export:hover { border-color: var(--blue-400); color: var(--blue-600); background: var(--blue-50); }
-.btn-export svg { width: 15px; height: 15px; }
+.btn-export svg {
+  width: 15px; height: 15px;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-export:hover { border-color: var(--blue-400); color: var(--blue-600); background: var(--blue-50); }
+  /* Exportar é baixar: o ícone aponta o sentido da ação. */
+  .btn-export:hover svg { transform: translateY(2px); }
+}
 
 .filter-count {
   font-size: 12px;
@@ -784,6 +893,27 @@ select.form-input:disabled { background-color: var(--gray-100); cursor: not-allo
   color: var(--blue-800);
   white-space: nowrap;
 }
+
+/* ══════════════════════════════════════════════════════
+   FOCO DE TECLADO — painel
+   Todo controle interativo precisa de foco visível. O anel usa o azul
+   institucional, não `currentColor`: em `.btn-danger-sm` o currentColor é
+   vermelho sobre fundo vermelho-claro e o anel desapareceria.
+   ══════════════════════════════════════════════════════ */
+.btn-action:focus-visible,
+.btn-action-sm:focus-visible,
+.btn-danger-sm:focus-visible,
+.btn-export:focus-visible,
+.filter-chip:focus-visible,
+.collapsible-header:focus-visible,
+.attention-cta:focus-visible,
+.btn-editar-evento:focus-visible,
+.ad-lov-item:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+.filter-input:focus-visible { outline: none; }   /* o anel já vem do :focus */
 
 /* ══════════════════════════════════════════════════════
    ADMIN RESPONSIVE — Mobile-First

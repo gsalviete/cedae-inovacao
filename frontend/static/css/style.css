@@ -124,6 +124,18 @@
   --ease-out:    cubic-bezier(.22, 1, .36, 1);
   --ease-in-out: cubic-bezier(.65, 0, .35, 1);
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+
+  /* ── Motion: distâncias e cascata ─────────────────────
+     A escala de duração e as curvas ficam acima — esta é a única escala de
+     motion do sistema. Aqui só o quanto o elemento percorre ao entrar e o
+     intervalo entre irmãos de um grupo. */
+  --rise-sm:  10px;   /* texto, linhas de lista, itens de timeline */
+  --rise-md:  16px;   /* cards, blocos de formulário */
+  --rise-lg:  28px;   /* hero do formulário público — só ele */
+  --reveal-blur: 3px; /* desfoque de entrada; nunca acima de 6px */
+
+  --stagger-step: 60ms;   /* intervalo entre irmãos */
+  --stagger-max:  360ms;  /* teto do grupo — ninguém espera mais que isso */
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -219,8 +231,12 @@ body {
   white-space: nowrap;
 }
 
-.brand-logo { transition: transform var(--dur-base) var(--ease-spring); }
-.brand:hover .brand-logo { transform: scale(1.03); }
+/* A logo responde, mas não pula: escala mínima, sem giro, sem piscar. O hover
+   fica atrás da guarda de ponteiro fino — em touch o estado grudaria no toque. */
+.brand-logo { transition: transform var(--dur-slow) var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover .brand-logo { transform: scale(1.03); }
+}
 
 .header-actions {
   display: flex;
@@ -895,9 +911,11 @@ select.field-input {
 .form-block:nth-child(4) { animation-delay: 270ms; }
 .form-block:nth-child(5) { animation-delay: 340ms; }
 
-.form-block:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--blue-100);
+@media (hover: hover) and (pointer: fine) {
+  .form-block:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--blue-100);
+  }
 }
 
 /* ── Campos condicionais ───────────────────────────────
@@ -936,10 +954,14 @@ select.field-input {
               transform var(--dur-fast) var(--ease-out);
 }
 
-.radio-option:hover,
-.checkbox-option:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+@media (hover: hover) and (pointer: fine) {
+  .radio-option:hover,
+  .checkbox-option:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .radio-option:hover .radio-box,
+  .checkbox-option:hover .checkbox-box { transform: scale(1.1); }
 }
 
 .radio-option:active,
@@ -964,8 +986,6 @@ select.field-input {
               background var(--dur-base) var(--ease-out),
               transform var(--dur-base) var(--ease-spring);
 }
-.radio-option:hover .radio-box,
-.checkbox-option:hover .checkbox-box { transform: scale(1.1); }
 
 .radio-option input:checked ~ .radio-box::after {
   animation: dot-pop var(--dur-base) var(--ease-spring) both;
@@ -986,11 +1006,13 @@ select.field-input {
               transform var(--dur-fast) var(--ease-out);
 }
 
-.btn-primary:hover:not(:disabled),
-.btn-admin:hover,
-.btn-login:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled),
+  .btn-admin:hover,
+  .btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .btn-primary:active:not(:disabled),
@@ -1003,10 +1025,13 @@ select.field-input {
 .btn-primary:disabled { opacity: .65; cursor: not-allowed; }
 
 /* ── Sucesso e modal ───────────────────────────────────
-   O card de sucesso surge com escala; o ícone dá um pop mais tardio. */
-.success-card { animation: pop-in var(--dur-slow) var(--ease-out) both; }
+   O card de sucesso entra pelo reveal "soft" (ver bloco SCROLL REVEAL): ele
+   só existe depois do envio, é um momento de conclusão e merece uma entrada
+   um pouco mais contemplativa. Aqui fica apenas o pop do ícone, que pousa
+   depois do card. Não declare `animation` no `.success-card`: o keyframe com
+   fill-mode `both` congelaria o transform e apagaria o reveal. */
 .success-icon {
-  animation: pop-in var(--dur-slow) var(--ease-spring) 140ms both;
+  animation: pop-in var(--dur-slow) var(--ease-spring) 220ms both;
 }
 
 /* A modal é centrada por `transform: translate(-50%, -50%)`. Uma animação que
@@ -1028,34 +1053,143 @@ select.field-input {
 }
 .modal-overlay { animation: fade-in var(--dur-fast) var(--ease-out) both; }
 
-.modal-close { transition: transform var(--dur-base) var(--ease-spring), color var(--dur-base) var(--ease-out); }
-.modal-close:hover { transform: rotate(90deg); color: var(--gray-900); }
+/* Único giro legítimo do sistema (o outro é o caret do colapsável). */
+.modal-close,
+.modal-box .modal-close {
+  transition: transform var(--dur-base) var(--ease-spring),
+              color var(--dur-base) var(--ease-out),
+              background-color var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .modal-close:hover { transform: rotate(90deg); color: var(--gray-900); }
+}
 
-/* ── Acessibilidade ────────────────────────────────────
-   Quem pediu menos movimento recebe a interface inteira sem animação — os
-   estados (cor, sombra, foco) continuam, só o movimento sai. */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: .001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .001ms !important;
-    scroll-behavior: auto !important;
-  }
-  .brand:hover .brand-logo,
-  .radio-option:hover,
-  .checkbox-option:hover,
-  .btn-primary:hover:not(:disabled),
-  .btn-admin:hover,
-  .btn-login:hover,
-  .field-input:focus,
-  .field-textarea:focus {
-    transform: none;
-  }
-  /* O gradiente do brilho fica ilegível sem a animação que o atravessa. */
-  .user-greeting-name {
-    background-image: none;
-    -webkit-text-fill-color: var(--blue-800);
-  }
+/* ══════════════════════════════════════════════════════
+   SCROLL REVEAL
+   O conteúdo abaixo da dobra entra quando se aproxima da viewport, uma vez
+   só. Todo o estado inicial oculto vive sob `.js-reveal`, classe que o
+   reveal.js coloca em <html> depois de confirmar o próprio suporte: sem JS
+   (ou com movimento reduzido) a interface nunca fica invisível.
+
+   Isto NÃO substitui as entradas por `animation` que já existem (hero,
+   .form-block, .wizard-step). Aquelas cuidam da primeira dobra, que por
+   definição já está visível; reveal é para o que está abaixo dela. Um
+   elemento nunca deve receber os dois: o `fill-mode: both` do keyframe
+   congela o transform final e apaga a transição do reveal.
+   ══════════════════════════════════════════════════════ */
+
+/* ── Reveal padrão — texto, seções, itens de lista ────── */
+.js-reveal [data-reveal] {
+  opacity: 0;
+  transform: translateY(var(--rise-sm));
+  filter: blur(var(--reveal-blur));
+  transition:
+    opacity   var(--dur-slow) var(--ease-out) var(--reveal-delay, 0ms),
+    transform var(--dur-slow) var(--ease-out) var(--reveal-delay, 0ms),
+    filter    var(--dur-slow) var(--ease-out) var(--reveal-delay, 0ms);
+}
+
+.js-reveal [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* ── Reveal de card ────────────────────────────────────
+   Sem blur: card de painel carrega número, e número desfocado por 380ms
+   parece falha de renderização. */
+.js-reveal [data-reveal="card"] {
+  opacity: 0;
+  transform: translateY(var(--rise-md)) scale(.985);
+  filter: none;
+  transition:
+    opacity   var(--dur-slow) var(--ease-out) var(--reveal-delay, 0ms),
+    transform var(--dur-slow) var(--ease-out) var(--reveal-delay, 0ms);
+}
+
+.js-reveal [data-reveal="card"].is-revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: none;
+}
+
+/* ── Reveal de hero — só no formulário público ─────────
+   O painel não tem hero: `.detalhe-hero` é faixa de cabeçalho de registro e
+   recebe o reveal padrão. */
+.js-reveal [data-reveal="hero"] {
+  opacity: 0;
+  transform: translateY(var(--rise-lg));
+  filter: blur(6px);
+  transition:
+    opacity   var(--dur-slower) var(--ease-out) var(--reveal-delay, 0ms),
+    transform var(--dur-slower) var(--ease-out) var(--reveal-delay, 0ms),
+    filter    var(--dur-slower) var(--ease-out) var(--reveal-delay, 0ms);
+}
+
+.js-reveal [data-reveal="hero"].is-revealed {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* ── Reveal suave por escala ───────────────────────────
+   Uso restrito ao `.success-card` do formulário público e da captação
+   manual — momentos de conclusão. Não usar no painel. */
+.js-reveal [data-reveal="soft"] {
+  opacity: 0;
+  transform: scale(.98);
+  filter: blur(var(--reveal-blur));
+  transform-origin: center;
+  transition:
+    opacity   var(--dur-slower) var(--ease-out) var(--reveal-delay, 0ms),
+    transform var(--dur-slower) var(--ease-out) var(--reveal-delay, 0ms),
+    filter    var(--dur-slower) var(--ease-out) var(--reveal-delay, 0ms);
+}
+
+.js-reveal [data-reveal="soft"].is-revealed {
+  opacity: 1;
+  transform: scale(1);
+  filter: none;
+}
+
+/* ── Superfície do hero (.hero-water) ──────────────────
+   Único fundo decorativo do sistema. A entrada sugere profundidade e termina
+   em estado estável — nada de parallax contínuo. */
+.js-reveal [data-reveal="water"] {
+  opacity: 0;
+  transform: scale(1.012);
+  transform-origin: center;
+  filter: none;
+  transition:
+    opacity var(--dur-slower) var(--ease-out),
+    transform 900ms var(--ease-out);
+}
+
+.js-reveal [data-reveal="water"].is-revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ══════════════════════════════════════════════════════
+   FOCO DE TECLADO
+   Nunca remover o foco, nunca substituí-lo por hover. O anel usa o azul
+   institucional, não `currentColor`: em botão de tom vermelho sobre fundo
+   vermelho-claro o anel de currentColor simplesmente some.
+   ══════════════════════════════════════════════════════ */
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-admin:focus-visible,
+.btn-login:focus-visible,
+.btn-submit:focus-visible,
+.btn-ghost:focus-visible,
+.btn-next:focus-visible,
+.modal-close:focus-visible,
+.hero-aviso a:focus-visible,
+.brand:focus-visible,
+.btn-termos-aceitar:focus-visible,
+.btn-termos-recusar:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1270,3 +1404,91 @@ select.field-input {
 .btn-termos-recusar:hover { background: var(--gray-100); }
 .btn-termos-aceitar { background: var(--brand-blue); color: #fff; }
 .btn-termos-aceitar:hover { filter: brightness(1.05); }
+
+/* ══════════════════════════════════════════════════════
+   ACESSIBILIDADE — prefers-reduced-motion
+   Bloco ÚNICO do sistema, no fim de style.css de propósito: ele precisa
+   vencer o que admin.css, shell.css, dashboard.css, detalhe.css, wizard.css
+   e captacao.css declaram, e style.css é o primeiro a carregar em todas as
+   páginas — por isso as regras aqui são explícitas, não só a neutralização
+   genérica por `*`.
+
+   Quem pediu menos movimento recebe a interface inteira sem animação. Os
+   estados (cor, sombra, borda, foco) continuam: eles são informação.
+   ══════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Reveal: tudo já visível, sem estado inicial oculto. (O reveal.js sequer
+     marca o <html> nesse caso; isto é a rede de segurança.) */
+  .js-reveal [data-reveal],
+  .js-reveal [data-reveal="card"],
+  .js-reveal [data-reveal="hero"],
+  .js-reveal [data-reveal="soft"],
+  .js-reveal [data-reveal="water"] {
+    opacity: 1 !important;
+    transform: none !important;
+    scale: 1 !important;
+    filter: none !important;
+  }
+
+  /* Hovers que transladam — o estado (cor, sombra, borda) permanece. */
+  .brand:hover .brand-logo,
+  .radio-option:hover,
+  .checkbox-option:hover,
+  .radio-option:hover .radio-box,
+  .checkbox-option:hover .checkbox-box,
+  .btn-primary:hover:not(:disabled),
+  .btn-admin:hover,
+  .btn-login:hover,
+  .btn-ghost:active,
+  .btn-workflow:hover,
+  .btn-editar-evento:hover,
+  .metric-card:hover,
+  .kpi-card:hover,
+  .status-kpi-card:hover,
+  .canal-kpi-card:hover,
+  .attention-card:hover,
+  .attention-cta:hover svg,
+  .funnel-stage:hover,
+  .via-card:hover,
+  .sidebar-brand:hover .sidebar-brand-plate,
+  .btn-export:hover svg,
+  .modal-close:hover,
+  .field-input:focus,
+  .field-textarea:focus {
+    transform: none;
+  }
+
+  /* Indicadores contínuos param. O `*` acima só reduz a duração para
+     0.001ms, o que faria o gradiente do shimmer vibrar em vez de parar. */
+  .skeleton {
+    animation: none;
+    background: var(--gray-150);
+  }
+  .hero-label::before {
+    animation: none;
+    box-shadow: none;
+  }
+
+  /* Barras proporcionais: o dado aparece completo, sem crescer. */
+  .bar-fill,
+  .funnel-stage-bar > i,
+  .canal-split-fill,
+  .wizard-progress-bar > i {
+    transition: none;
+  }
+
+  /* O gradiente do brilho fica ilegível sem a animação que o atravessa. */
+  .user-greeting-name {
+    background-image: none;
+    -webkit-text-fill-color: var(--blue-800);
+  }
+}
