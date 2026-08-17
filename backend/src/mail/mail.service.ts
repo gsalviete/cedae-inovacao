@@ -9,6 +9,12 @@ import {
   renderConfirmacaoVia2Texto,
 } from './templates/confirmacao-via2.template';
 import {
+  AvisoNovaIniciativaDados,
+  assuntoAvisoNovaIniciativa,
+  renderAvisoNovaIniciativa,
+  renderAvisoNovaIniciativaTexto,
+} from './templates/aviso-nova-iniciativa.template';
+import {
   ler,
   ligado as envioLigado,
   renomeadasPendentes,
@@ -24,6 +30,17 @@ import {
  * motivo em log. Silêncio aqui já custou caro: um retorno `false` mudo tornava
  * indistinguíveis "desligado", "sem destinatário" e "relay recusou".
  */
+
+/**
+ * Caixa institucional que recebe o aviso de toda nova iniciativa.
+ *
+ * Fixo no código por decisão explícita: é o endereço da Assessoria de Inovação,
+ * não um parâmetro de ambiente. Uma variável a mais aqui significaria mais um
+ * item para a infra manter em sincronia entre .env e .env.dev — e um typo lá
+ * viraria "o aviso parou e ninguém sabe". Se um dia o destino precisar variar
+ * por ambiente, este é o único ponto a trocar.
+ */
+const DESTINO_AVISO_INTERNO = 'inovacao@cedae.com.br';
 
 /** Logo anexada por CID. dist/mail → raiz do projeto → frontend/static/img. */
 const CAMINHO_LOGO = join(
@@ -125,6 +142,23 @@ export class MailService {
       texto: renderConfirmacaoVia2Texto(conteudo),
       html: renderConfirmacaoVia2(conteudo),
       referencia: `confirmação Via 2 ${dados.protocolo}`,
+    });
+  }
+
+  /**
+   * Aviso à Assessoria de Inovação a cada nova iniciativa, de qualquer via.
+   *
+   * Independente do e-mail ao proponente: na Via 2 os dois saem, e o fracasso de
+   * um não afeta o outro. Mesmo contrato dos demais envios — não lança, retorna
+   * false com o motivo em log.
+   */
+  async sendAvisoNovaIniciativa(dados: AvisoNovaIniciativaDados): Promise<boolean> {
+    return this.enviar({
+      para: DESTINO_AVISO_INTERNO,
+      assunto: assuntoAvisoNovaIniciativa(dados.protocolo),
+      texto: renderAvisoNovaIniciativaTexto(dados),
+      html: renderAvisoNovaIniciativa(dados),
+      referencia: `aviso interno ${dados.protocolo}`,
     });
   }
 

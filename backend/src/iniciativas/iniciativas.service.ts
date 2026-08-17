@@ -75,7 +75,9 @@ export class IniciativasService {
    * avaliação da Assessoria, não do proponente (ADR-015 §2.2), e o ADM a define
    * na edição administrativa.
    * Dispara o e-mail de confirmação ao proponente (ADR-014 §12), best-effort:
-   * uma falha no envio nunca invalida a submissão.
+   * uma falha no envio nunca invalida a submissão. O aviso à Assessoria sai em
+   * paralelo, disparado por `ingerir` como em toda via — por isso a Via 2 gera
+   * dois e-mails independentes.
    */
   async criar(data: CreateIniciativaDto): Promise<{ id: number; codigo_publico: string }> {
     const resultado = await this.ingerir(data, {
@@ -291,10 +293,44 @@ export class IniciativasService {
       }
 
       await conn.commit();
+
+      // Só depois do commit: um aviso de iniciativa que a transação ainda podia
+      // desfazer mandaria a Assessoria procurar um protocolo inexistente.
+      this.avisarAssessoria({
+        protocolo: codigoPublico,
+        titulo: data.titulo_iniciativa,
+        canal: origem.canal_codigo,
+        proponente: data.nome_colaborador,
+        area: data.area_proponente,
+        organizacaoExterna: origem.organizacao_externa,
+        registradoPor: origem.registrado_por_login,
+      });
+
       return { id: iniciativaId, codigo_publico: codigoPublico };
     } finally {
       await conn.close();
     }
+  }
+
+  /**
+   * Notificação à caixa institucional a cada cadastro, em qualquer via — o
+   * gatilho fica na ingestão justamente para não depender de cada via lembrar
+   * de chamá-lo. Best-effort: falha de e-mail nunca invalida o cadastro.
+   */
+  private avisarAssessoria(dados: {
+    protocolo: string;
+    titulo: string;
+    canal: string;
+    proponente?: string | null;
+    area?: string | null;
+    organizacaoExterna?: string | null;
+    registradoPor?: string | null;
+  }): void {
+    void this.mail.sendAvisoNovaIniciativa(dados).catch((e) => {
+      this.logger.error(
+        `Falha inesperada ao tentar enviar o aviso interno de nova iniciativa: ${e?.message ?? e}`,
+      );
+    });
   }
 
   /** Gera o próximo protocolo INOV-AAAA-NNN dentro da conexão/transação corrente. */
