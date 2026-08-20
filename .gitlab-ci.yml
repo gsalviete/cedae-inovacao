@@ -44,3 +44,27 @@ include:
     rules:
       - *main_rule
       - *prod_mr_rule
+
+      stages:
+  - test
+
+test_dev_runner:
+  stage: test
+
+  tags:
+    - dev-server
+
+  script:
+    - echo "=================================="
+    - echo "DEV RUNNER OK"
+    - echo "=================================="
+    - echo "Usuario:"
+    - whoami
+    - echo "Diretorio:"
+    - pwd
+    - echo "Docker:"
+    - docker --version
+    - echo "Docker Compose:"
+    - docker compose version
+    - echo "Containers:"
+    - docker ps
