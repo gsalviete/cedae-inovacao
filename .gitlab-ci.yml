@@ -63,4 +63,3 @@ test_dev_runner:
     - echo "Docker Compose:"
     - docker compose version
     - echo "Containers:"
-    - docker ps
