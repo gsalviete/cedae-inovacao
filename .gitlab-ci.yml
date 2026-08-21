@@ -62,11 +62,8 @@ deploy_dev:
 
     - cd /opt/containers/cedae-inovacao
 
-    - echo "Atualizando código..."
-    - git config --global --add safe.directory /opt/containers/cedae-inovacao
-    - git fetch origin
-    - git checkout develop
-    - git reset --hard origin/develop
+    - echo "Copiando código para o diretório de deploy..."
+    - cp -a /builds/grupo-bi/cedae-inovacao/. /opt/containers/cedae-inovacao/
 
     - echo "Build da aplicação..."
     - docker build -t cedae_inovacao_app:dev .
