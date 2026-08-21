@@ -46,20 +46,50 @@ include:
       - *main_rule
       - *prod_mr_rule
 
-test_dev_runner:
+deploy_dev:
   stage: test
+
   tags:
     - dev-server
+
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+
   script:
     - echo "=================================="
-    - echo "DEV RUNNER OK"
+    - echo "DEPLOY DEV"
     - echo "=================================="
-    - echo "Usuario:"
-    - whoami
-    - echo "Diretorio:"
-    - pwd
-    - echo "Docker:"
-    - docker --version
-    - echo "Docker Compose:"
-    - docker compose version
-    - echo "Containers:"
+
+    - cd /opt/containers/cedae-inovacao
+
+    - echo "Atualizando código..."
+    - git fetch origin
+    - git checkout develop
+    - git reset --hard origin/develop
+
+    - echo "Build da aplicação..."
+    - docker build -t cedae_inovacao_app:dev .
+
+    - echo "Removendo container anterior..."
+    - docker rm -f cedae_inovacao_app || true
+
+    - echo "Subindo aplicação..."
+    - docker run -d \
+        --name cedae_inovacao_app \
+        --restart unless-stopped \
+        --env-file /opt/containers/cedae-inovacao/.env \
+        -p 8095:8095 \
+        cedae_inovacao_app:dev
+
+    - echo "=================================="
+    - echo "Container:"
+    - docker ps --filter "name=cedae_inovacao_app"
+
+    - echo "=================================="
+    - echo "Health check:"
+    - sleep 5
+    - curl --fail http://localhost:8095/api/health
+
+    - echo "=================================="
+    - echo "DEPLOY CONCLUÍDO"
+    - echo "=================================="
