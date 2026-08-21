@@ -63,6 +63,7 @@ deploy_dev:
     - cd /opt/containers/cedae-inovacao
 
     - echo "Atualizando código..."
+    - git config --global --add safe.directory /opt/containers/cedae-inovacao
     - git fetch origin
     - git checkout develop
     - git reset --hard origin/develop
