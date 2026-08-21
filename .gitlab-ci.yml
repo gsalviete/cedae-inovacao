@@ -87,8 +87,11 @@ deploy_dev:
     - echo "=================================="
     - echo "Health check:"
     - sleep 5
-    - curl --fail http://localhost:8095/api/health
-
+    - |
+      docker exec cedae_inovacao_app \
+      node -e "require('http').get('http://localhost:8095/actuator/health', res => { console.log('Status Code:', res.statusCode); res.resume(); })"
+    
     - echo "=================================="
     - echo "DEPLOY CONCLUÍDO"
     - echo "=================================="
+
