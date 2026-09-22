@@ -176,15 +176,21 @@
   </div>
 </section>
 
-<!-- Workflow -->
+<!-- Workflow — quadro kanban (colunas = status; arrastar = tramitar) -->
 <section class="admin-section" id="section-workflow" data-reveal>
   <div class="section-head">
     <span class="section-head-ic"><i data-icon="git-branch"></i></span>
-    <div class="section-head-txt"><h2>Tramitação</h2></div>
+    <div class="section-head-txt">
+      <h2>Tramitação</h2>
+      <p>Arraste o cartão da iniciativa até a coluna de destino — ou clique nela.</p>
+    </div>
   </div>
-  <div id="workflow-acoes">
-    <p style="color:var(--gray-500);font-size:13px;">Nenhuma ação disponível para o status atual.</p>
+  <!-- O miolo é montado por renderKanban(); o grupo de reveal fica aqui
+       para que as colunas entrem em cascata a cada carga. -->
+  <div id="workflow-kanban" class="kanban" data-reveal-group>
+    <p class="kanban-hint">Carregando a esteira…</p>
   </div>
+  <p id="workflow-nota" class="kanban-nota"></p>
 </section>
 
 <!-- Histórico -->

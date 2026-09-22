@@ -135,59 +135,220 @@
   max-width: 100%;
 }
 
-/* ── Workflow buttons ──────────────────────────────── */
-.btn-workflow {
-  display: inline-flex;
+/* ── Tramitação: quadro kanban ─────────────────────────
+   Quatro colunas — uma por status — em rolagem horizontal quando a tela não
+   comporta todas. Cada coluna tem a mesma altura, para que o cartão sempre
+   pareça ocupar um lugar e não flutuar sobre a seção. */
+.kanban {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.kanban-col {
+  flex: 1 1 0;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    border-color     var(--dur-base) var(--ease-out),
+    box-shadow       var(--dur-base) var(--ease-out);
+}
+
+.kanban-col-head {
+  display: flex;
   align-items: center;
-  gap: 7px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 10px 20px;
-  font-size: 14px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kanban-col-tag {
+  font-size: 10px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--gray-500);
+}
+
+.kanban-col-body {
+  flex: 1;
+  display: flex;
+  min-height: 132px;
+}
+
+/* A coluna do status atual é a única com fundo de superfície: é onde o
+   cartão está, e o contraste diz isso antes de qualquer rótulo. */
+.kanban-col.is-current {
+  background: var(--surface);
+  border-color: var(--blue-100);
+  box-shadow: var(--shadow-xs);
+}
+
+.kanban-hint {
+  margin: auto 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gray-400);
+}
+
+/* ── Cartão da iniciativa ──────────────────────────── */
+.kanban-card {
+  position: relative;
+  width: 100%;
+  align-self: flex-start;
+  padding: 12px 12px 10px 26px;
+  border: 1px solid var(--blue-100);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  cursor: grab;
+  transition:
+    box-shadow var(--dur-base) var(--ease-out),
+    transform  var(--dur-fast) var(--ease-snappy),
+    opacity    var(--dur-fast) var(--ease-out);
+}
+.kanban-card.is-fixed { cursor: default; border-color: var(--border); }
+
+@media (hover: hover) and (pointer: fine) {
+  .kanban-card:not(.is-fixed):hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+}
+.kanban-card:active:not(.is-fixed) { cursor: grabbing; }
+
+/* Enquanto viaja, o cartão fica fantasma no lugar de origem — o que o
+   usuário está movendo é a imagem de arrasto do navegador. */
+.kanban-card.is-grabbed { opacity: .4; transform: none; box-shadow: none; }
+
+.kanban-card-grip {
+  position: absolute;
+  left: 6px;
+  top: 11px;
+  color: var(--gray-300);
+  display: grid;
+  place-items: center;
+}
+.kanban-card-grip svg { width: 14px; height: 14px; }
+.kanban-card.is-fixed .kanban-card-grip { display: none; }
+.kanban-card.is-fixed { padding-left: 12px; }
+
+.kanban-card-proto {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue-800);
+}
+
+.kanban-card-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--gray-900);
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.kanban-card-meta {
+  font-size: 11.5px;
+  color: var(--gray-500);
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.kanban-card-dica {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
+/* ── Zona de destino ───────────────────────────────────
+   É um <button>: o arrasto é o caminho bonito, o clique é o caminho que
+   existe em qualquer dispositivo e para quem navega por teclado. */
+.kanban-drop {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border: 1px dashed var(--blue-200);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--blue-800);
+  font-family: inherit;
   cursor: pointer;
-  margin-right: 10px;
-  margin-bottom: 8px;
-  transition: background var(--dur-base) var(--ease-out),
-              border-color var(--dur-base) var(--ease-out),
-              box-shadow var(--dur-base) var(--ease-out),
-              transform var(--dur-fast) var(--ease-out);
+  text-align: center;
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    border-color     var(--dur-base) var(--ease-out),
+    color            var(--dur-base) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
-  .btn-workflow:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .kanban-drop:hover { background: var(--blue-50); border-color: var(--blue-400); }
 }
-.btn-workflow:active:not(:disabled) { transform: translateY(0) scale(.99); }
-
-/* São as ações que mudam o status de um registro: o usuário precisa ver com
-   clareza qual está prestes a acionar, e qual está indisponível. */
-.btn-workflow:focus-visible {
+.kanban-drop:focus-visible {
   outline: 2px solid var(--blue-600);
   outline-offset: 2px;
 }
-.btn-workflow:disabled {
-  opacity: .6;
-  cursor: progress;
-  transform: none;
-  box-shadow: none;
+
+.kanban-drop-ic { display: grid; place-items: center; color: var(--blue-600); }
+.kanban-drop-ic svg { width: 18px; height: 18px; }
+.kanban-drop-txt  { font-size: 13px; font-weight: 600; }
+.kanban-drop-hint { font-size: 10.5px; color: var(--gray-500); line-height: 1.4; }
+.kanban-drop-just {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--amber-600);
 }
 
-.btn-workflow-info  { background: var(--blue-800); color: #fff; }
-.btn-workflow-info:hover  { background: var(--blue-900); }
-.btn-workflow-ok    { background: var(--green-600); color: #fff; }
-.btn-workflow-ok:hover    { background: var(--green-700); }
-.btn-workflow-err   { background: var(--white); color: #b02020; border-color: #f0bcbc; }
-.btn-workflow-err:hover   { background: var(--red-50); }
-.btn-workflow-obs   { background: var(--gray-100); color: var(--gray-600); border: 1px dashed var(--gray-300); }
-.btn-workflow-obs:hover   { background: var(--gray-150); }
-/* Reversão de decisão terminal (ADR-015 §4): tom de atenção, não destrutivo. */
-.btn-workflow-warn  { background: var(--white); color: #92610e; border-color: #f5e2b8; }
-.btn-workflow-warn:hover  { background: var(--amber-50); }
+/* ── Estados de arrasto ────────────────────────────────
+   Durante o arrasto o quadro responde: o destino válido acende, o inválido
+   se apaga. Sem isso o usuário descobre o que pode fazer só ao soltar. */
+.kanban.is-dragging .kanban-col.is-target {
+  border-color: var(--blue-400);
+  background: var(--blue-50);
+}
+.kanban.is-dragging .kanban-col:not(.is-target):not(.is-current) { opacity: .55; }
 
-.workflow-aviso {
+.kanban-col.is-over {
+  border-color: var(--blue-600);
+  background: var(--blue-100);
+  box-shadow: var(--ring);
+}
+.kanban-col.is-over .kanban-drop { border-color: var(--blue-600); }
+
+.kanban-col.is-barrado {
+  border-color: #f6cccc;
+  background: var(--red-50);
+}
+
+.kanban-nota {
   font-size: 12.5px;
   color: var(--gray-500);
-  margin: 0 0 10px;
+  margin: 12px 0 0;
   line-height: 1.5;
+}
+
+/* Rolagem horizontal é a regra em telas estreitas: espremer quatro colunas
+   em 360px tornaria os cartões ilegíveis. */
+@media (max-width: 720px) {
+  .kanban { scroll-snap-type: x proximity; }
+  .kanban-col { flex: 0 0 200px; scroll-snap-align: start; }
 }
 
 /* ── Histórico timeline ────────────────────────────── */

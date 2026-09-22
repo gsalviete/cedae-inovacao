@@ -139,7 +139,7 @@ async function loadDetalhe() {
     setField('d-diagnostico_observacao', data.diagnostico_observacao);
     setField('d-comentarios_adicionais', data.comentarios_adicionais);
 
-    await loadAcoes(id, data.status || 'SUBMETIDA');
+    renderKanban(id, data.status || 'SUBMETIDA');
     await loadHistorico(id);
   } catch {
     document.getElementById('d-titulo').textContent = 'Erro ao carregar iniciativa.';
@@ -193,55 +193,252 @@ function renderAporte(data) {
     ?.classList.toggle('hidden', !tem && !data.retorno_economico);
 }
 
-/* ── Ações de tramitação ─────────────────────────────── */
-async function loadAcoes(id, statusAtual) {
-  const el = document.getElementById('workflow-acoes');
+/* ── Tramitação em quadro kanban ──────────────────────────
+   A esteira deixou de ser uma fileira de botões e virou um quadro: cada
+   coluna é um status possível, o cartão da iniciativa ocupa a coluna do
+   status atual e tramitar é levá-lo até a coluna de destino.
 
-  // A partir de um status terminal a única ação é a reversão da decisão, que
-  // devolve a iniciativa à análise (ADR-015 §4). Nada é apagado: o histórico
-  // ganha um evento de reversão a mais.
-  const TRANSICOES = {
-    SUBMETIDA:  [{ status_destino: 'EM_ANALISE', label: 'Iniciar Análise', classe: 'btn-workflow-info', justObrig: false }],
-    EM_ANALISE: [
-      { status_destino: 'HOMOLOGADA',      label: 'Homologar',      classe: 'btn-workflow-ok',  justObrig: false },
-      { status_destino: 'DESCLASSIFICADA', label: 'Desclassificar', classe: 'btn-workflow-err', justObrig: true  },
-    ],
-    HOMOLOGADA: [
-      { status_destino: 'EM_ANALISE', label: 'Reverter Homologação', classe: 'btn-workflow-warn', justObrig: true, somenteAdm: true },
-    ],
-    DESCLASSIFICADA: [
-      { status_destino: 'EM_ANALISE', label: 'Reverter Desclassificação', classe: 'btn-workflow-warn', justObrig: true, somenteAdm: true },
-    ],
-  };
+   Arrastar é o caminho principal — mas nunca o único. A zona de destino é um
+   <button> de verdade: o HTML5 drag and drop não existe em tela de toque nem
+   para quem navega por teclado, e a tramitação não pode depender dele. Clique,
+   toque e Enter chegam exatamente ao mesmo lugar que o arrasto.
 
-  const terminais = ['HOMOLOGADA', 'DESCLASSIFICADA'];
-  const ehTerminal = terminais.includes(statusAtual);
+   O catálogo abaixo espelha TRANSICOES_STATUS (ADR-004); a decisão final é
+   sempre do backend (WorkflowService.transicionar) — aqui só se desenha o que
+   o usuário pode tentar. */
 
-  // Homologar/desclassificar — e desfazê-los — são exclusivos de ADM
-  // (ADR-014 §10, ADR-015 §4). O colaborador enxerga a esteira, mas não decide.
+const KANBAN_COLUNAS = [
+  { status: 'SUBMETIDA',       titulo: 'Submetida',       resumo: 'Aguardando triagem' },
+  { status: 'EM_ANALISE',      titulo: 'Em Análise',      resumo: 'Em avaliação pela Assessoria' },
+  { status: 'HOMOLOGADA',      titulo: 'Homologada',      resumo: 'Decisão terminal' },
+  { status: 'DESCLASSIFICADA', titulo: 'Desclassificada', resumo: 'Decisão terminal' },
+];
+
+/* A partir de um status terminal a única ação é a reversão da decisão, que
+   devolve a iniciativa à análise (ADR-015 §4). Nada é apagado: o histórico
+   ganha um evento de reversão a mais. */
+const TRANSICOES = {
+  SUBMETIDA: [
+    { status_destino: 'EM_ANALISE', label: 'Iniciar Análise', justObrig: false },
+  ],
+  EM_ANALISE: [
+    { status_destino: 'HOMOLOGADA',      label: 'Homologar',      justObrig: false },
+    { status_destino: 'DESCLASSIFICADA', label: 'Desclassificar', justObrig: true  },
+  ],
+  HOMOLOGADA: [
+    { status_destino: 'EM_ANALISE', label: 'Reverter Homologação', justObrig: true, somenteAdm: true },
+  ],
+  DESCLASSIFICADA: [
+    { status_destino: 'EM_ANALISE', label: 'Reverter Desclassificação', justObrig: true, somenteAdm: true },
+  ],
+};
+
+const STATUS_TERMINAIS = ['HOMOLOGADA', 'DESCLASSIFICADA'];
+
+/* Homologar/desclassificar — e desfazê-los — são exclusivos de ADM
+   (ADR-014 §10, ADR-015 §4). O colaborador enxerga a esteira, mas não decide. */
+const ACOES_EXCLUSIVAS_ADM = new Set(['HOMOLOGADA', 'DESCLASSIFICADA']);
+
+/* Estado do quadro em tela. Os handlers de arrasto e de clique são delegados
+   no container e não recebem parâmetro algum do render — é daqui que eles
+   sabem qual iniciativa está na mesa e para onde ela pode ir. */
+let _kanban = null;
+
+function rotuloStatus(val) {
+  return (STATUS_MAP[val] || [])[0] || val || '—';
+}
+
+/** Transições que este usuário pode tentar a partir do status atual. */
+function acoesDisponiveis(statusAtual) {
   const ehAdm = _me?.role === 'ADM';
-  const ACOES_EXCLUSIVAS_ADM = new Set(['HOMOLOGADA', 'DESCLASSIFICADA']);
-  const acoes = (TRANSICOES[statusAtual] || [])
-    .filter(a => ehAdm || !(a.somenteAdm || ACOES_EXCLUSIVAS_ADM.has(a.status_destino)));
+  return (TRANSICOES[statusAtual] || []).filter(
+    (a) => ehAdm || !(a.somenteAdm || ACOES_EXCLUSIVAS_ADM.has(a.status_destino)),
+  );
+}
 
-  if (!acoes.length) {
-    el.innerHTML = ehTerminal
-      ? '<p style="color:var(--gray-500);font-size:13px;">Tramitação encerrada. Somente administradores podem reverter esta decisão.</p>'
-      : '<p style="color:var(--gray-500);font-size:13px;">Nenhuma ação disponível para o seu perfil. Homologar e desclassificar são exclusivos de administradores.</p>';
-    return;
+function renderKanban(id, statusAtual) {
+  const board = document.getElementById('workflow-kanban');
+  if (!board) return;
+
+  const acoes = acoesDisponiveis(statusAtual);
+  const destinos = new Map(acoes.map((a) => [a.status_destino, a]));
+  _kanban = { id, statusAtual, destinos };
+
+  // O quadro é redesenhado logo após uma tramitação, que nasce de um arrasto:
+  // nada do estado do arrasto anterior pode sobreviver ao novo desenho.
+  limparArrasto(board);
+  board.innerHTML = colunasKanban(statusAtual)
+    .map((col) => renderColunaKanban(col, statusAtual, destinos.get(col.status), acoes.length))
+    .join('');
+  ligarKanban(board);
+
+  const nota = document.getElementById('workflow-nota');
+  if (nota) nota.textContent = notaKanban(statusAtual, acoes.length);
+
+  // As colunas entram em cascata, como os itens da timeline: o quadro declara
+  // o grupo (data-reveal-group) e o reveal.js distribui os atrasos.
+  window.CedaeReveal?.scan(board);
+}
+
+/* As quatro colunas da esteira — mais uma, à frente, quando a iniciativa está
+   num status que não é nenhuma delas (dado legado, ou um status que entrou no
+   banco sem transição correspondente). Sem essa coluna extra o cartão não
+   teria onde pousar e a iniciativa simplesmente sumiria do quadro. */
+function colunasKanban(statusAtual) {
+  if (KANBAN_COLUNAS.some((c) => c.status === statusAtual)) return KANBAN_COLUNAS;
+  return [
+    { status: statusAtual, titulo: rotuloStatus(statusAtual), resumo: 'Fora da esteira padrão' },
+    ...KANBAN_COLUNAS,
+  ];
+}
+
+function renderColunaKanban(col, statusAtual, acao, totalAcoes) {
+  const ehAtual = col.status === statusAtual;
+  const classes = ['kanban-col', `kanban-col--${col.status.toLowerCase()}`];
+  if (ehAtual) classes.push('is-current');
+  if (acao) classes.push('is-target');
+
+  let corpo;
+  if (ehAtual) corpo = cartaoKanban(totalAcoes);
+  else if (acao) corpo = zonaDestinoKanban(acao);
+  else corpo = `<p class="kanban-hint">${col.resumo}</p>`;
+
+  const [, cls] = STATUS_MAP[col.status] || ['', 'badge-default'];
+  return `
+    <div class="${classes.join(' ')}" data-status="${col.status}" data-reveal>
+      <div class="kanban-col-head">
+        <span class="badge ${cls}">${col.titulo}</span>
+        ${ehAtual ? '<span class="kanban-col-tag">atual</span>' : ''}
+      </div>
+      <div class="kanban-col-body">${corpo}</div>
+    </div>`;
+}
+
+/* O cartão só é arrastável quando existe para onde ir: um cartão que se move
+   e volta sozinho prometeria uma ação que o perfil do usuário não tem. */
+function cartaoKanban(totalAcoes) {
+  const d = _iniciativaData || {};
+  const arrastavel = totalAcoes > 0;
+  const proto = escapeHtml(d.codigo_publico || `#${d.id ?? ''}`);
+  const titulo = escapeHtml(d.titulo_iniciativa || 'Sem título');
+  const meta = [d.area_proponente, d.nome_colaborador]
+    .filter(Boolean).map(escapeHtml).join(' · ');
+
+  return `
+    <article class="kanban-card${arrastavel ? '' : ' is-fixed'}"
+             ${arrastavel ? 'draggable="true"' : ''}
+             aria-label="Iniciativa ${proto} — ${arrastavel ? 'arraste para tramitar' : 'sem tramitação disponível'}">
+      <span class="kanban-card-grip" aria-hidden="true">${window.CedaeUI.icon('grip-vertical')}</span>
+      <span class="kanban-card-proto">${proto}</span>
+      <h3 class="kanban-card-titulo">${titulo}</h3>
+      ${meta ? `<p class="kanban-card-meta">${meta}</p>` : ''}
+      <p class="kanban-card-dica">
+        ${arrastavel ? 'Arraste para a coluna de destino' : 'Sem destino disponível para o seu perfil'}
+      </p>
+    </article>`;
+}
+
+function zonaDestinoKanban(acao) {
+  return `
+    <button type="button" class="kanban-drop" data-destino="${acao.status_destino}">
+      <span class="kanban-drop-ic" aria-hidden="true">${window.CedaeUI.icon('arrow-right')}</span>
+      <span class="kanban-drop-txt">${acao.label}</span>
+      <span class="kanban-drop-hint">Solte o cartão aqui — ou clique</span>
+      ${acao.justObrig ? '<span class="kanban-drop-just">exige justificativa</span>' : ''}
+    </button>`;
+}
+
+function notaKanban(statusAtual, totalAcoes) {
+  const terminal = STATUS_TERMINAIS.includes(statusAtual);
+  if (!totalAcoes) {
+    return terminal
+      ? 'Tramitação encerrada. Somente administradores podem reverter esta decisão.'
+      : 'Nenhuma ação disponível para o seu perfil. Homologar e desclassificar são exclusivos de administradores.';
   }
+  return terminal
+    ? 'A reversão exige justificativa e fica registrada no histórico — nenhum evento anterior é removido.'
+    : 'Leve o cartão até a coluna de destino para registrar a tramitação.';
+}
 
-  const aviso = ehTerminal
-    ? '<p class="workflow-aviso" data-reveal>A reversão exige justificativa e fica registrada no histórico — nenhum evento anterior é removido.</p>'
-    : '';
+/* Handlers delegados no quadro: o miolo é reescrito a cada carga da
+   iniciativa, mas o container permanece — por isso a ligação acontece uma
+   única vez (`data-ligado`). */
+function ligarKanban(board) {
+  if (board.dataset.ligado === '1') return;
+  board.dataset.ligado = '1';
 
-  el.innerHTML = aviso + acoes.map(a => `
-    <button class="btn-workflow ${a.classe}"
-            onclick="iniciarTransicao(${id}, '${a.status_destino}', ${a.justObrig}, '${a.label}')">
-      ${a.label}
-    </button>
-  `).join('');
-  window.CedaeReveal?.scan(el);
+  board.addEventListener('click', (ev) => {
+    const alvo = ev.target.closest?.('.kanban-drop');
+    if (alvo) transicionarPara(alvo.dataset.destino);
+  });
+
+  board.addEventListener('dragstart', (ev) => {
+    const card = ev.target.closest?.('.kanban-card[draggable="true"]');
+    if (!card) return;
+    ev.dataTransfer.effectAllowed = 'move';
+    // O Firefox só inicia o arrasto quando há algum dado no dataTransfer.
+    ev.dataTransfer.setData('text/plain', String(_kanban?.id ?? ''));
+    card.classList.add('is-grabbed');
+    board.classList.add('is-dragging');
+  });
+
+  board.addEventListener('dragend', () => limparArrasto(board));
+
+  // Todas as colunas aceitam o dragover (preventDefault), inclusive as
+  // bloqueadas: sem isso o `drop` nunca dispara nelas, e soltar o cartão no
+  // lugar errado não diria nada ao usuário.
+  board.addEventListener('dragover', (ev) => {
+    if (!board.classList.contains('is-dragging')) return;
+    const col = ev.target.closest?.('.kanban-col');
+    if (!col) return;
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = 'move';
+    if (col.classList.contains('is-target')) col.classList.add('is-over');
+    else if (!col.classList.contains('is-current')) col.classList.add('is-barrado');
+  });
+
+  board.addEventListener('dragleave', (ev) => {
+    const col = ev.target.closest?.('.kanban-col');
+    if (col && !col.contains(ev.relatedTarget)) {
+      col.classList.remove('is-over', 'is-barrado');
+    }
+  });
+
+  board.addEventListener('drop', (ev) => {
+    const col = ev.target.closest?.('.kanban-col');
+    if (!col) return;
+    ev.preventDefault();
+    limparArrasto(board);
+    if (col.classList.contains('is-target')) transicionarPara(col.dataset.status);
+    else recusarDestino(col.dataset.status);
+  });
+}
+
+function limparArrasto(board) {
+  board.classList.remove('is-dragging');
+  board.querySelectorAll('.is-over, .is-barrado, .is-grabbed')
+    .forEach((el) => el.classList.remove('is-over', 'is-barrado', 'is-grabbed'));
+}
+
+function transicionarPara(statusDestino) {
+  const acao = _kanban?.destinos.get(statusDestino);
+  if (!acao) { recusarDestino(statusDestino); return; }
+  iniciarTransicao(_kanban.id, acao.status_destino, acao.justObrig, acao.label);
+}
+
+/* Soltar o cartão num destino inválido não é erro do usuário — é uma pergunta
+   sem resposta na tela. O toast diz qual das duas coisas aconteceu: a
+   transição não existe, ou existe e é de outro perfil. */
+function recusarDestino(statusDestino) {
+  if (!_kanban || statusDestino === _kanban.statusAtual) return;
+  const previsto = (TRANSICOES[_kanban.statusAtual] || [])
+    .some((a) => a.status_destino === statusDestino);
+  window.CedaeUI.toast(
+    previsto
+      ? `"${rotuloStatus(statusDestino)}" é uma decisão exclusiva de administradores.`
+      : `Não há tramitação de "${rotuloStatus(_kanban.statusAtual)}" para "${rotuloStatus(statusDestino)}".`,
+    'erro',
+  );
 }
 
 function iniciarTransicao(id, statusDestino, justObrig, titulo) {

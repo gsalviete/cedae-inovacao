@@ -19,6 +19,18 @@
         <i data-icon="file-text"></i> PDF
       </button>
     </div>
+    <!-- A base cresceu além do que uma tela comporta: a tabela passa a vir
+         em páginas, e o tamanho da página é escolha de quem lê. -->
+    <div class="filter-pagesize">
+      <label for="filtro-tamanho">Exibir</label>
+      <select id="filtro-tamanho" class="filter-select" onchange="setTamanhoPagina(this.value)">
+        <option value="10">10</option>
+        <option value="15">15</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+      </select>
+      <span>por página</span>
+    </div>
   </div>
   <p class="filter-count" id="filtro-count"></p>
   <div class="table-wrapper">
@@ -44,4 +56,6 @@
       </tbody>
     </table>
   </div>
+  <!-- Montada por renderPaginacao(); fica oculta enquanto houver uma só página. -->
+  <nav class="paginacao hidden" id="paginacao" aria-label="Paginação da listagem"></nav>
 </section>
