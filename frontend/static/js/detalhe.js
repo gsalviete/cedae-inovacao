@@ -10,6 +10,7 @@ let _justObrig = false;
 let _me = null;
 let _editTarget = null;
 let _iniciativaData = null;
+let _eventosHistorico = [];
 
 function fmtDate(val) {
   if (!val) return '—';
@@ -141,6 +142,7 @@ async function loadDetalhe() {
 
     renderKanban(id, data.status || 'SUBMETIDA');
     await loadHistorico(id);
+    document.getElementById('btn-imprimir-iniciativa')?.removeAttribute('disabled');
   } catch {
     document.getElementById('d-titulo').textContent = 'Erro ao carregar iniciativa.';
   }
@@ -606,6 +608,7 @@ async function loadHistorico(id) {
         justificativa: o.texto,
       })),
     ].sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
+    _eventosHistorico = eventos;
 
     if (!eventos.length) {
       // Estado vazio entra com reveal padrão, sem cascata: é uma frase só.
@@ -972,6 +975,189 @@ async function salvarEdicaoIniciativa() {
   }
 }
 
+/* ── Ficha para impressão ────────────────────────────────
+   O papel não reaproveita a tela: kanban, botões e modais não fazem sentido
+   impressos, e o layout de cartões desperdiça folha. A ficha é um documento
+   próprio (#print-doc), montado a partir dos mesmos dados já carregados, e o
+   @media print de detalhe.css esconde o app e mostra só ela. É remontada a
+   cada impressão — inclusive via Ctrl+P (beforeprint) — para refletir
+   edições, tramitações e observações feitas depois da carga. */
+function dataHoraCurta(val) {
+  if (!val) return '—';
+  try {
+    return new Date(val).toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short',
+    });
+  } catch { return val; }
+}
+
+function renderFichaImpressao() {
+  const doc = document.getElementById('print-doc');
+  const d = _iniciativaData;
+  if (!doc || !d) return;
+
+  const esc = escapeHtml;
+  const img = (arquivo) => `${BASE_PATH}/static/img/${arquivo}`;
+  const vazio = (v) => v === null || v === undefined || String(v).trim() === '';
+  const naoInformado = '<span class="pd-nd">Não informado</span>';
+
+  /* Campo curto da grade. `sempre: false` omite o campo quando vazio — o
+     mesmo comportamento condicional da tela. */
+  const campo = (label, valor, { sempre = true, largo = false } = {}) => {
+    if (vazio(valor) && !sempre) return '';
+    return `<div class="pd-field${largo ? ' pd-field--wide' : ''}">
+      <dt>${esc(label)}</dt><dd>${vazio(valor) ? naoInformado : esc(valor)}</dd></div>`;
+  };
+  /* Texto longo: parágrafos, preservando as quebras digitadas. */
+  const texto = (label, valor, { sempre = true } = {}) => {
+    if (vazio(valor) && !sempre) return '';
+    const corpo = vazio(valor)
+      ? `<p>${naoInformado}</p>`
+      : String(valor).trim().split(/\n{2,}/)
+        .map(par => `<p>${esc(par).replace(/\n/g, '<br>')}</p>`).join('');
+    return `<div class="pd-text"><h4>${esc(label)}</h4>${corpo}</div>`;
+  };
+  let n = 0;
+  const secao = (titulo, corpo) => `
+    <section class="pd-section">
+      <h3><span class="pd-num">${String(++n).padStart(2, '0')}</span>${esc(titulo)}</h3>
+      ${corpo}
+    </section>`;
+
+  const canal = canalInfo(d.canal_codigo || 'VIA_2');
+  const status = d.status || 'SUBMETIDA';
+  const temAporte = d.aporte_financeiro === 'sim';
+  const aporte = temAporte ? 'Sim' : d.aporte_financeiro === 'nao' ? 'Não' : null;
+  const estagio = rotulo(ESTAGIO_LABEL, d.estagio_desenvolvimento);
+  const macro = rotulo(MACRODIMENSAO_LABEL, d.macrodimensao);
+  const perfil = rotulo(PERFIL_IMPACTO_LABEL, d.perfil_impacto);
+  const classif = CLASSIFICACAO_LABEL[String(d.classificacao_iniciativa || '').toUpperCase()] || null;
+  const emissor = _me?.nome || _me?.login || '';
+
+  const proponente = [
+    campo('Nome', d.nome_colaborador),
+    campo('Área Proponente', d.area_proponente),
+    campo('Canal de Contato', d.canal_contato),
+    campo('E-mail', d.email_proponente),
+    campo('Local de Aplicação', d.local_aplicacao, { largo: true }),
+  ].join('');
+
+  const origem = [
+    campo('Via de Captação', canal.nome),
+    campo('Tipo de Proponente', (d.proponente_tipo || 'INTERNO') === 'EXTERNO' ? 'Externo' : 'Interno'),
+    campo('Sistema de Origem', d.sistema_origem, { sempre: false }),
+    campo('Código na Origem', d.codigo_origem, { sempre: false }),
+    campo('Instituição de Origem', d.organizacao_externa, { sempre: false }),
+    campo('Tipo de Instituição', rotulo(TIPO_INSTITUICAO_LABEL, d.tipo_instituicao), { sempre: false }),
+    campo('Registrado Por', d.registrado_por_login, { sempre: false }),
+  ].join('');
+
+  const classificacao = [
+    campo('Estágio de Desenvolvimento', estagio),
+    campo('Macrodimensão', macro),
+    campo('Descrição da Macrodimensão', d.macrodimensao_observacao, { sempre: false, largo: true }),
+    campo('Perfil de Impacto', perfil),
+    campo('Ação ou Projeto', classif),
+    campo('Relevância Estratégica', rotulo(RELEVANCIA_LABEL, d.relevancia_estrategica), { largo: true }),
+  ].join('');
+
+  const suporte = String(d.suporte_necessario || '').split('|').filter(Boolean)
+    .map(v => `<li>${esc(SUPORTE_LABEL[v] || v)}</li>`).join('');
+  const viabilidade = `
+    <dl class="pd-grid">
+      ${campo('Possui Aporte Financeiro?', aporte)}
+      ${campo('Valor Estimado', window.CedaeMoney.display(d.valor_aporte), { sempre: temAporte })}
+      ${campo('Retorno Econômico (R$/ano)', window.CedaeMoney.display(d.retorno_economico), { sempre: temAporte })}
+    </dl>
+    <div class="pd-text"><h4>Suporte Necessário</h4>${
+      suporte ? `<ul class="pd-chips">${suporte}</ul>` : `<p>${naoInformado}</p>`
+    }</div>
+    ${texto('Tipo de Apoio Diagnóstico Desejado', d.diagnostico_observacao, { sempre: false })}
+    ${texto('Comentários Adicionais', d.comentarios_adicionais, { sempre: false })}`;
+
+  const historico = _eventosHistorico.length
+    ? `<ol class="pd-timeline">${_eventosHistorico.map((ev) => {
+      const obs = ev.tipo_evento === 'OBSERVACAO';
+      const mov = obs
+        ? 'Observação registrada'
+        : ev.status_anterior
+          ? `${rotuloStatus(ev.status_anterior)} → ${rotuloStatus(ev.status_novo)}`
+          : `Submissão inicial · ${rotuloStatus(ev.status_novo)}`;
+      const tom = String(obs ? 'EM_OBSERVACAO' : (ev.status_novo || '')).toLowerCase();
+      return `
+        <li class="pd-ev pd-st-${esc(tom)}">
+          <div class="pd-ev-head">
+            <span class="pd-ev-tipo">${esc(TIPO_EVENTO_LABEL[ev.tipo_evento] || ev.tipo_evento)}</span>
+            <span class="pd-ev-mov">${esc(mov)}</span>
+            <span class="pd-ev-meta">${esc(dataHoraCurta(ev.data_hora))} · ${esc(ev.usuario_login || 'Sistema')}${ev.editado_em ? ' · editado' : ''}</span>
+          </div>
+          ${ev.justificativa ? `<p class="pd-ev-just">${esc(ev.justificativa)}</p>` : ''}
+        </li>`;
+    }).join('')}</ol>`
+    : '<p class="pd-nd">Sem histórico registrado.</p>';
+
+  /* Tabela com <thead>/<tfoot>: é o jeito portável de repetir cabeçalho e
+     rodapé em todas as folhas impressas. */
+  doc.innerHTML = `
+    <table class="pd-page">
+      <thead><tr><td>
+        <header class="pd-header">
+          <img class="pd-logo-cedae" src="${img('logo-placeholder.png')}" alt="CEDAE">
+          <div class="pd-header-mid">
+            <span>Ficha de Iniciativa</span>
+            <b>${esc(d.codigo_publico || `#${d.id}`)}</b>
+          </div>
+          <img class="pd-logo-inov" src="${img('logo-colorido-horizontal.png')}" alt="Inovação — Conexões que Transformam">
+        </header>
+        <div class="pd-rule"></div>
+      </td></tr></thead>
+      <tfoot><tr><td>
+        <footer class="pd-footer">
+          <span>CEDAE — Companhia Estadual de Águas e Esgotos do Rio de Janeiro<br>Assessoria de Inovação para Planejamento</span>
+          <span>Emitido em ${esc(dataHoraCurta(new Date()))}${emissor ? `<br>por ${esc(emissor)}` : ''}</span>
+        </footer>
+      </td></tr></tfoot>
+      <tbody><tr><td>
+        <div class="pd-hero">
+          <p class="pd-overline">Iniciativa de Inovação</p>
+          <h1 class="pd-title">${esc(d.titulo_iniciativa || 'Sem título')}</h1>
+          <div class="pd-tags">
+            <span class="pd-tag pd-tag--status pd-st-${esc(status.toLowerCase())}">${esc(rotuloStatus(status))}</span>
+            <span class="pd-tag">${esc(canal.nome)}</span>
+            <span class="pd-tag pd-tag--soft">Submetida em ${esc(dataHoraCurta(d.criado_em))}</span>
+          </div>
+        </div>
+
+        <div class="pd-kpis">
+          <div><span>Estágio</span><b>${esc(estagio || '—')}</b></div>
+          <div><span>Macrodimensão</span><b>${esc(macro || '—')}</b></div>
+          <div><span>Perfil de Impacto</span><b>${esc(perfil || '—')}</b></div>
+          <div><span>Ação ou Projeto</span><b>${esc(classif || '—')}</b></div>
+        </div>
+
+        ${secao('Descrição da Iniciativa', `
+          ${texto('Problema Prático', d.problema_pratico)}
+          ${texto('Solução Proposta', d.solucao_proposta)}
+          ${texto('Risco / Benefício Mitigado', d.risco_mitigado)}`)}
+        ${secao('Dados do Proponente', `<dl class="pd-grid">${proponente}</dl>`)}
+        ${secao('Origem', `<dl class="pd-grid">${origem}</dl>`)}
+        ${secao('Classificação', `<dl class="pd-grid">${classificacao}</dl>`)}
+        ${secao('Viabilidade', viabilidade)}
+        ${secao('Histórico de Tramitação', historico)}
+      </td></tr></tbody>
+    </table>`;
+}
+
+function imprimirIniciativa() {
+  if (!_iniciativaData) return;
+  renderFichaImpressao();
+  // Os logos só são baixados quando a ficha é montada; imprimir antes de
+  // chegarem deixaria o cabeçalho em branco na primeira impressão.
+  const imgs = [...document.querySelectorAll('#print-doc img')];
+  Promise.all(imgs.map(i => (i.complete ? null : new Promise(r => { i.onload = i.onerror = r; }))))
+    .then(() => window.print());
+}
+
 /** Liga os controles da modal de edição que não dependem dos dados carregados. */
 function initEdicaoIniciativa() {
   document.getElementById('e-macrodimensao')
@@ -991,5 +1177,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // desclassificar, tratadas em loadAcoes().
   document.getElementById('btn-editar-iniciativa')?.classList.remove('hidden');
   initEdicaoIniciativa();
+  // O template é injetado dentro do .app, que o @media print esconde: a ficha
+  // precisa ser filha direta do <body> para sobreviver no papel.
+  const printDoc = document.getElementById('print-doc');
+  if (printDoc) document.body.appendChild(printDoc);
+  document.body.classList.add('has-print-doc');
+  // Ctrl+P também imprime a ficha, não a tela.
+  window.addEventListener('beforeprint', renderFichaImpressao);
   loadDetalhe();
 });

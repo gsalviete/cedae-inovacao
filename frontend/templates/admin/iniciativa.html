@@ -7,6 +7,9 @@
       <div class="detalhe-header-badges" id="d-status-badge"></div>
     </div>
     <div class="detalhe-header-side">
+      <button id="btn-imprimir-iniciativa" class="btn-secondary btn-imprimir" onclick="imprimirIniciativa()" disabled>
+        <i data-icon="printer"></i> Imprimir
+      </button>
       <button id="btn-editar-iniciativa" class="btn-action hidden" onclick="abrirEdicaoIniciativa()">
         <i data-icon="file-text"></i> Editar
       </button>
@@ -410,3 +413,8 @@
     </div>
   </div>
 </div>
+
+<!-- Ficha para impressão: montada por renderFichaImpressao() a partir dos
+     dados já carregados. Fica fora da tela e é o único conteúdo visível no
+     papel (@media print em detalhe.css). -->
+<div id="print-doc" class="print-doc" aria-hidden="true"></div>
