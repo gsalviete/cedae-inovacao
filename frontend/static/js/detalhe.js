@@ -10,7 +10,6 @@ let _justObrig = false;
 let _me = null;
 let _editTarget = null;
 let _iniciativaData = null;
-let _eventosHistorico = [];
 
 function fmtDate(val) {
   if (!val) return '—';
@@ -608,7 +607,6 @@ async function loadHistorico(id) {
         justificativa: o.texto,
       })),
     ].sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
-    _eventosHistorico = eventos;
 
     if (!eventos.length) {
       // Estado vazio entra com reveal padrão, sem cascata: é uma frase só.
@@ -981,7 +979,8 @@ async function salvarEdicaoIniciativa() {
    próprio (#print-doc), montado a partir dos mesmos dados já carregados, e o
    @media print de detalhe.css esconde o app e mostra só ela. É remontada a
    cada impressão — inclusive via Ctrl+P (beforeprint) — para refletir
-   edições, tramitações e observações feitas depois da carga. */
+   edições feitas depois da carga. O histórico de tramitação fica de fora:
+   a ficha descreve a iniciativa, não o seu andamento. */
 function dataHoraCurta(val) {
   if (!val) return '—';
   try {
@@ -1075,27 +1074,6 @@ function renderFichaImpressao() {
     ${texto('Tipo de Apoio Diagnóstico Desejado', d.diagnostico_observacao, { sempre: false })}
     ${texto('Comentários Adicionais', d.comentarios_adicionais, { sempre: false })}`;
 
-  const historico = _eventosHistorico.length
-    ? `<ol class="pd-timeline">${_eventosHistorico.map((ev) => {
-      const obs = ev.tipo_evento === 'OBSERVACAO';
-      const mov = obs
-        ? 'Observação registrada'
-        : ev.status_anterior
-          ? `${rotuloStatus(ev.status_anterior)} → ${rotuloStatus(ev.status_novo)}`
-          : `Submissão inicial · ${rotuloStatus(ev.status_novo)}`;
-      const tom = String(obs ? 'EM_OBSERVACAO' : (ev.status_novo || '')).toLowerCase();
-      return `
-        <li class="pd-ev pd-st-${esc(tom)}">
-          <div class="pd-ev-head">
-            <span class="pd-ev-tipo">${esc(TIPO_EVENTO_LABEL[ev.tipo_evento] || ev.tipo_evento)}</span>
-            <span class="pd-ev-mov">${esc(mov)}</span>
-            <span class="pd-ev-meta">${esc(dataHoraCurta(ev.data_hora))} · ${esc(ev.usuario_login || 'Sistema')}${ev.editado_em ? ' · editado' : ''}</span>
-          </div>
-          ${ev.justificativa ? `<p class="pd-ev-just">${esc(ev.justificativa)}</p>` : ''}
-        </li>`;
-    }).join('')}</ol>`
-    : '<p class="pd-nd">Sem histórico registrado.</p>';
-
   /* Tabela com <thead>/<tfoot>: é o jeito portável de repetir cabeçalho e
      rodapé em todas as folhas impressas. */
   doc.innerHTML = `
@@ -1143,7 +1121,6 @@ function renderFichaImpressao() {
         ${secao('Origem', `<dl class="pd-grid">${origem}</dl>`)}
         ${secao('Classificação', `<dl class="pd-grid">${classificacao}</dl>`)}
         ${secao('Viabilidade', viabilidade)}
-        ${secao('Histórico de Tramitação', historico)}
       </td></tr></tbody>
     </table>`;
 }
