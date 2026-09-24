@@ -1,0 +1,53 @@
+<section class="admin-section" id="sec-quadro" data-reveal>
+  <div class="filter-bar">
+    <div class="filter-search">
+      <span class="filter-search-ic"><i data-icon="search-check"></i></span>
+      <input type="search" id="quadro-busca" class="filter-input" placeholder="Buscar título, proponente, protocolo…" oninput="aplicarFiltrosQuadro()" />
+    </div>
+    <div class="filter-chips" id="quadro-canais">
+      <button type="button" class="filter-chip is-active" data-canal="" onclick="setCanalQuadro(this)">Todos</button>
+      <button type="button" class="filter-chip" data-canal="VIA_1" onclick="setCanalQuadro(this)">SGE/SGP</button>
+      <button type="button" class="filter-chip" data-canal="VIA_2" onclick="setCanalQuadro(this)">Formulário</button>
+      <button type="button" class="filter-chip" data-canal="VIA_3" onclick="setCanalQuadro(this)">Reunião</button>
+      <button type="button" class="filter-chip" data-canal="MAPEAMENTO_EXTERNO" onclick="setCanalQuadro(this)">Externa</button>
+    </div>
+    <div class="filter-pagesize">
+      <label for="quadro-estagio">Estágio</label>
+      <select id="quadro-estagio" class="filter-select" onchange="aplicarFiltrosQuadro()">
+        <option value="">Todos</option>
+        <option value="ideacao">Ideação</option>
+        <option value="piloto">Piloto</option>
+        <option value="escala">Escala</option>
+        <option value="paralisada">Paralisada</option>
+      </select>
+    </div>
+  </div>
+  <p class="filter-count" id="quadro-count"></p>
+
+  <!-- Uma coluna por status. O miolo é montado por renderQuadro(); os
+       handlers de arrasto e clique são delegados neste container. -->
+  <div id="quadro-board" class="quadro-board" aria-label="Quadro kanban das iniciativas">
+    <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
+    <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
+    <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
+    <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
+  </div>
+  <p class="quadro-nota" id="quadro-nota">Arraste um cartão até outra coluna para tramitar a iniciativa. Clique no cartão para abrir os detalhes.</p>
+</section>
+
+<!-- Modal: Justificativa da tramitação -->
+<div id="modal-quadro-just" class="modal-overlay hidden" onclick="fecharModalQuadroOverlay(event)">
+  <div class="modal-box">
+    <h3 class="modal-title" id="quadro-just-title">Justificativa</h3>
+    <p class="quadro-just-alvo" id="quadro-just-alvo"></p>
+    <div class="form-group">
+      <label class="form-label" for="quadro-just-text" id="quadro-lbl-just">Justificativa</label>
+      <textarea id="quadro-just-text" class="form-input" rows="4" style="resize:vertical;" placeholder="Descreva o motivo desta decisão..."></textarea>
+    </div>
+    <div id="quadro-just-error" class="cu-result cu-result-err hidden"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" onclick="fecharModalQuadro()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="confirmarTransicaoQuadro(this)">Confirmar</button>
+    </div>
+  </div>
+</div>

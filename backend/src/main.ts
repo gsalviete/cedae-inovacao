@@ -128,6 +128,12 @@ async function bootstrap(): Promise<void> {
         breadcrumb: crumb('Painel', 'Iniciativas'), script: 'page-iniciativas.js' },
     },
     {
+      route: '/admin/quadro', content: 'quadro.html',
+      meta: { active: 'quadro', title: 'Quadro Kanban',
+        subtitle: 'Todas as iniciativas em uma visão só — arraste os cartões para tramitar.',
+        breadcrumb: crumb('Painel', 'Quadro Kanban'), script: 'page-quadro.js' },
+    },
+    {
       route: '/admin/iniciativa', content: 'iniciativa.html',
       meta: { active: 'iniciativas', title: 'Detalhes da Iniciativa',
         subtitle: '',

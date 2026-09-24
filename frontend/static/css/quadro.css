@@ -1,0 +1,229 @@
+/* ══════════════════════════════════════════════════════
+   CEDAE Inovação — Quadro kanban de iniciativas (quadro.css)
+   Prefixo `quadro-` de propósito: `.kanban-*` já pertence à tramitação do
+   detalhe (detalhe.css) e todas as folhas são carregadas em todas as páginas.
+   ══════════════════════════════════════════════════════ */
+
+/* O quadro precisa da largura inteira da tela: o limite de 1180px do
+   conteúdo espremeria as colunas. Só esta página abre mão dele. */
+.app-content:has(#sec-quadro) { max-width: none; }
+
+.quadro-board {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  margin-top: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* Cada coluna rola sozinha: a página não cresce até o fim da coluna mais
+   longa, e o cabeçalho de todas continua à vista. */
+.quadro-col {
+  flex: 1 1 0;
+  min-width: 270px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 250px);
+  min-height: 360px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    border-color     var(--dur-base) var(--ease-out),
+    box-shadow       var(--dur-base) var(--ease-out),
+    opacity          var(--dur-base) var(--ease-out);
+}
+
+.quadro-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Faixa de cor no topo: identifica a coluna mesmo com o quadro rolado. */
+.quadro-col--submetida       { border-top: 3px solid #3b82f6; }
+.quadro-col--em_analise      { border-top: 3px solid #f59e0b; }
+.quadro-col--em_observacao   { border-top: 3px solid #8b5cf6; }
+.quadro-col--homologada      { border-top: 3px solid #22c55e; }
+.quadro-col--desclassificada { border-top: 3px solid #ef4444; }
+
+.quadro-col-count {
+  min-width: 26px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--gray-150);
+  color: var(--gray-700);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.quadro-col-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.quadro-col-vazio,
+.quadro-vazio {
+  margin: auto 0;
+  font-size: 12.5px;
+  color: var(--gray-400);
+  text-align: center;
+}
+
+/* ── Cartão ─────────────────────────────────────────── */
+.quadro-card {
+  flex: 0 0 auto;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  cursor: grab;
+  transition:
+    box-shadow   var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    transform    var(--dur-fast) var(--ease-out),
+    opacity      var(--dur-fast) var(--ease-out);
+}
+.quadro-card.is-fixed { cursor: pointer; }
+
+@media (hover: hover) and (pointer: fine) {
+  .quadro-card:hover {
+    border-color: var(--blue-200);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+.quadro-card:active:not(.is-fixed) { cursor: grabbing; }
+.quadro-card:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+/* Enquanto viaja, o cartão fica fantasma no lugar de origem. */
+.quadro-card.is-grabbed { opacity: .4; transform: none; box-shadow: none; }
+
+.quadro-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quadro-card-proto {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue-800);
+}
+
+.quadro-card-data {
+  font-size: 11px;
+  color: var(--gray-400);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.quadro-card-titulo {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--gray-900);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.quadro-card-meta {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: var(--gray-500);
+  overflow-wrap: anywhere;
+}
+
+.quadro-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+/* ── Mostrar mais ───────────────────────────────────── */
+.quadro-mais {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--blue-800);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-out),
+              border-color     var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .quadro-mais:hover { background: var(--blue-50); border-color: var(--blue-400); }
+}
+.quadro-mais:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+
+/* ── Estados de arrasto ────────────────────────────────
+   O destino válido acende e o inválido se apaga assim que o arrasto começa. */
+.quadro-board.is-dragging .quadro-col.is-target {
+  border-color: var(--blue-400);
+  background: var(--blue-50);
+}
+.quadro-board.is-dragging .quadro-col:not(.is-target):not(.is-origem) { opacity: .5; }
+
+.quadro-col.is-over {
+  border-color: var(--blue-600);
+  background: var(--blue-100);
+  box-shadow: var(--ring);
+}
+.quadro-col.is-barrado {
+  border-color: #f6cccc;
+  background: var(--red-50);
+}
+
+.quadro-nota {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--gray-500);
+}
+
+.quadro-just-alvo {
+  margin: -4px 0 14px;
+  font-size: 13px;
+  color: var(--gray-600);
+  overflow-wrap: anywhere;
+}
+
+/* Tela estreita: colunas de largura fixa em rolagem horizontal com snap. */
+@media (max-width: 720px) {
+  .quadro-board { scroll-snap-type: x proximity; }
+  .quadro-col {
+    flex: 0 0 82vw;
+    min-width: 0;
+    max-height: calc(100vh - 200px);
+    scroll-snap-align: start;
+  }
+}
