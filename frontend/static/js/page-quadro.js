@@ -261,7 +261,7 @@ function renderNavQuadro(colunas, porColuna) {
   });
 
   nav.innerHTML = grupos.map((g) => `
-    <div class="quadro-nav-grupo quadro-fase--${g.fase.chave}" style="flex-grow:${g.cols.length}">
+    <div class="quadro-nav-grupo quadro-fase--${g.fase.chave}" style="--n:${g.cols.length}">
       <span class="quadro-nav-fase">${esc(g.fase.rotulo)}</span>
       <div class="quadro-nav-itens">
         ${g.cols.map((col) => {
@@ -269,7 +269,6 @@ function renderNavQuadro(colunas, porColuna) {
           return `
           <button type="button" class="quadro-nav-item${n ? '' : ' is-vazia'}"
                   data-ir="${esc(col.codigo)}" data-coluna="${esc(col.codigo)}"
-                  title="${esc(col.rotulo)} — ${n} iniciativa(s)"
                   aria-label="Ir para a etapa ${esc(col.rotulo)} (${n})">
             <span class="quadro-nav-num">${numeroEtapa(col)}</span>
             <span class="quadro-nav-nome">${esc(col.rotulo)}</span>
