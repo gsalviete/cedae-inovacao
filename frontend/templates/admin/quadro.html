@@ -24,15 +24,24 @@
   </div>
   <p class="filter-count" id="quadro-count"></p>
 
-  <!-- Uma coluna por status. O miolo é montado por renderQuadro(); os
-       handlers de arrasto e clique são delegados neste container. -->
+  <!-- Navegador das etapas: mostra onde o quadro está e leva a qualquer
+       coluna com um clique. Também recebe cartões arrastados. -->
+  <div class="quadro-navbar">
+    <button type="button" class="quadro-seta" id="quadro-prev" onclick="paginarQuadro(-1)" aria-label="Etapas anteriores"><i data-icon="chevron-left"></i></button>
+    <nav id="quadro-nav" class="quadro-nav" aria-label="Etapas do quadro"></nav>
+    <button type="button" class="quadro-seta" id="quadro-next" onclick="paginarQuadro(1)" aria-label="Próximas etapas"><i data-icon="chevron-right"></i></button>
+  </div>
+
+  <!-- Uma coluna por etapa. O miolo é montado por renderQuadro(); os
+       handlers de arrasto, clique e roda do mouse são delegados aqui. -->
   <div id="quadro-board" class="quadro-board" aria-label="Quadro kanban das iniciativas">
     <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
     <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
     <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
     <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
+    <div class="quadro-col"><div class="quadro-col-body"><span class="skeleton skeleton-line">.</span></div></div>
   </div>
-  <p class="quadro-nota" id="quadro-nota">Arraste um cartão até outra coluna para tramitar a iniciativa. Clique no cartão para abrir os detalhes.</p>
+  <p class="quadro-nota" id="quadro-nota">Role o mouse sobre o quadro para percorrer as etapas, ou clique numa etapa acima. Arraste um cartão até outra coluna (ou até o número da etapa) para movê-lo; mudar de fase pede confirmação. Clique no cartão para abrir os detalhes.</p>
 </section>
 
 <!-- Modal: Justificativa da tramitação -->
@@ -40,6 +49,7 @@
   <div class="modal-box">
     <h3 class="modal-title" id="quadro-just-title">Justificativa</h3>
     <p class="quadro-just-alvo" id="quadro-just-alvo"></p>
+    <p class="quadro-just-destino" id="quadro-just-destino"></p>
     <div class="form-group">
       <label class="form-label" for="quadro-just-text" id="quadro-lbl-just">Justificativa</label>
       <textarea id="quadro-just-text" class="form-input" rows="4" style="resize:vertical;" placeholder="Descreva o motivo desta decisão..."></textarea>

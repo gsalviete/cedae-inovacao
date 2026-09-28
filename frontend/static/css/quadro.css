@@ -2,33 +2,172 @@
    CEDAE Inovação — Quadro kanban de iniciativas (quadro.css)
    Prefixo `quadro-` de propósito: `.kanban-*` já pertence à tramitação do
    detalhe (detalhe.css) e todas as folhas são carregadas em todas as páginas.
+
+   Uma coluna por etapa (15). As etapas se agrupam em fases pelo status a que
+   pertencem; a fase dá a cor da coluna e do navegador.
    ══════════════════════════════════════════════════════ */
 
 /* O quadro precisa da largura inteira da tela: o limite de 1180px do
    conteúdo espremeria as colunas. Só esta página abre mão dele. */
 .app-content:has(#sec-quadro) { max-width: none; }
 
+/* ── Fases ──────────────────────────────────────────────
+   --fase: faixa/realce · --fase-tint: fundo suave · --fase-txt: texto (AA) */
+.quadro-fase--entrada    { --fase: var(--blue-600);  --fase-tint: var(--blue-50);  --fase-txt: var(--blue-800); }
+.quadro-fase--analise    { --fase: var(--amber-500); --fase-tint: var(--amber-50); --fase-txt: var(--amber-600); }
+.quadro-fase--homologada { --fase: var(--green-500); --fase-tint: var(--green-50); --fase-txt: var(--green-700); }
+.quadro-fase--encerrada  { --fase: var(--red-600);   --fase-tint: var(--red-50);   --fase-txt: var(--error); }
+.quadro-fase--extra      { --fase: var(--gray-400);  --fase-tint: var(--gray-100); --fase-txt: var(--gray-600); }
+
+/* ── Navegador de etapas ───────────────────────────── */
+.quadro-navbar {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quadro-seta {
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-out),
+              color            var(--dur-base) var(--ease-out),
+              opacity          var(--dur-base) var(--ease-out);
+}
+.quadro-seta svg { width: 18px; height: 18px; }
+.quadro-seta:disabled { opacity: .35; cursor: default; }
+@media (hover: hover) and (pointer: fine) {
+  .quadro-seta:not(:disabled):hover { background: var(--blue-50); color: var(--blue-800); }
+}
+.quadro-seta:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+
+.quadro-nav {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+}
+
+.quadro-nav-grupo {
+  flex-basis: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quadro-nav-fase {
+  padding-left: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--fase-txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quadro-nav-itens {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+}
+
+.quadro-nav-item {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "num nome count";
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px 6px;
+  border: 1px solid var(--border);
+  border-bottom: 3px solid color-mix(in srgb, var(--fase) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--gray-600);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    border-color     var(--dur-base) var(--ease-out),
+    color            var(--dur-base) var(--ease-out),
+    opacity          var(--dur-base) var(--ease-out);
+}
+.quadro-nav-num {
+  grid-area: num;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--fase-txt);
+}
+.quadro-nav-nome {
+  grid-area: nome;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.quadro-nav-count {
+  grid-area: count;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--fase-tint);
+  color: var(--fase-txt);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.quadro-nav-item.is-vazia .quadro-nav-count { background: var(--gray-100); color: var(--gray-400); }
+
+/* Etapas atualmente à vista no quadro. */
+.quadro-nav-item.is-visivel {
+  border-color: color-mix(in srgb, var(--fase) 45%, var(--border));
+  border-bottom-color: var(--fase);
+  background: var(--fase-tint);
+  color: var(--gray-900);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .quadro-nav-item:hover { border-bottom-color: var(--fase); color: var(--gray-900); }
+}
+.quadro-nav-item:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+
+/* ── Quadro ─────────────────────────────────────────── */
 .quadro-board {
   display: flex;
   gap: 14px;
   align-items: stretch;
-  margin-top: 8px;
+  margin-top: 12px;
   overflow-x: auto;
-  padding-bottom: 6px;
+  overscroll-behavior-x: contain;   /* sem "voltar página" no gesto do trackpad */
+  padding-bottom: 8px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
 
-/* Cada coluna rola sozinha: a página não cresce até o fim da coluna mais
-   longa, e o cabeçalho de todas continua à vista. */
+/* Colunas de largura fixa e mesma altura; cada uma rola sozinha, então o
+   cabeçalho de todas continua à vista. */
 .quadro-col {
-  flex: 1 1 0;
-  min-width: 270px;
+  flex: 0 0 296px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 250px);
-  min-height: 360px;
+  height: clamp(420px, calc(100dvh - 340px), 1400px);
   border: 1px solid var(--border);
+  border-top: 3px solid var(--fase, var(--gray-300));
   border-radius: var(--radius-md);
   background: var(--surface-subtle);
   transition:
@@ -38,23 +177,64 @@
     opacity          var(--dur-base) var(--ease-out);
 }
 
-.quadro-col-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--border);
+.quadro-col.is-destaque { animation: quadro-destaque 1.1s var(--ease-out); }
+@keyframes quadro-destaque {
+  0%, 35% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--fase) 45%, transparent); }
+  100%    { box-shadow: 0 0 0 3px transparent; }
 }
 
-/* Faixa de cor no topo: identifica a coluna mesmo com o quadro rolado. */
-.quadro-col--submetida       { border-top: 3px solid #3b82f6; }
-.quadro-col--em_analise      { border-top: 3px solid #f59e0b; }
-.quadro-col--em_observacao   { border-top: 3px solid #8b5cf6; }
-.quadro-col--homologada      { border-top: 3px solid #22c55e; }
-.quadro-col--desclassificada { border-top: 3px solid #ef4444; }
+.quadro-col-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 12px 11px;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: linear-gradient(180deg, var(--fase-tint, var(--surface)), var(--surface));
+}
+
+.quadro-col-num {
+  flex: 0 0 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1.5px solid var(--fase, var(--gray-300));
+  color: var(--fase-txt, var(--gray-700));
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.quadro-col-tit { flex: 1; min-width: 0; }
+
+.quadro-col-nome {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--gray-900);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* Reserva as duas linhas: todos os cabeçalhos ficam da mesma altura. */
+  min-height: calc(1.3em * 2);
+}
+
+.quadro-col-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .quadro-col-count {
+  flex: 0 0 auto;
   min-width: 26px;
   padding: 2px 8px;
   border-radius: 999px;
@@ -73,6 +253,7 @@
   gap: 10px;
   padding: 12px;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   scrollbar-width: thin;
 }
 
@@ -82,6 +263,12 @@
   font-size: 12.5px;
   color: var(--gray-400);
   text-align: center;
+}
+.quadro-col-vazio {
+  padding: 18px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  margin: 0;
 }
 
 /* ── Cartão ─────────────────────────────────────────── */
@@ -116,6 +303,13 @@
 
 /* Enquanto viaja, o cartão fica fantasma no lugar de origem. */
 .quadro-card.is-grabbed { opacity: .4; transform: none; box-shadow: none; }
+
+/* Gravando a movimentação: o cartão espera no lugar, sem aceitar arrasto. */
+.quadro-card.is-saving {
+  cursor: progress;
+  animation: quadro-salvando 1s ease-in-out infinite alternate;
+}
+@keyframes quadro-salvando { from { opacity: 1; } to { opacity: .5; } }
 
 .quadro-card-top {
   display: flex;
@@ -186,44 +380,95 @@
 .quadro-mais:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
 
 /* ── Estados de arrasto ────────────────────────────────
-   O destino válido acende e o inválido se apaga assim que o arrasto começa. */
-.quadro-board.is-dragging .quadro-col.is-target {
+   O destino válido acende e o inválido se apaga assim que o arrasto começa,
+   no quadro e no navegador. */
+.quadro-board.is-dragging .quadro-col.is-target,
+.quadro-nav.is-dragging .quadro-nav-item.is-target {
   border-color: var(--blue-400);
   background: var(--blue-50);
 }
-.quadro-board.is-dragging .quadro-col:not(.is-target):not(.is-origem) { opacity: .5; }
+.quadro-board.is-dragging .quadro-col:not(.is-target):not(.is-origem),
+.quadro-nav.is-dragging .quadro-nav-item:not(.is-target):not(.is-origem) { opacity: .45; }
 
-.quadro-col.is-over {
+.quadro-col.is-over,
+.quadro-nav-item.is-over {
   border-color: var(--blue-600);
   background: var(--blue-100);
   box-shadow: var(--ring);
 }
-.quadro-col.is-barrado {
+.quadro-col.is-barrado,
+.quadro-nav-item.is-barrado {
   border-color: #f6cccc;
   background: var(--red-50);
 }
 
 .quadro-nota {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--gray-500);
 }
 
 .quadro-just-alvo {
-  margin: -4px 0 14px;
+  margin: -4px 0 6px;
   font-size: 13px;
   color: var(--gray-600);
   overflow-wrap: anywhere;
 }
+.quadro-just-destino {
+  margin: 0 0 14px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--blue-50);
+  font-size: 12.5px;
+  color: var(--gray-700);
+}
 
-/* Tela estreita: colunas de largura fixa em rolagem horizontal com snap. */
-@media (max-width: 720px) {
-  .quadro-board { scroll-snap-type: x proximity; }
-  .quadro-col {
-    flex: 0 0 82vw;
-    min-width: 0;
-    max-height: calc(100vh - 200px);
-    scroll-snap-align: start;
+/* ── Responsivo ─────────────────────────────────────── */
+
+/* Telas médias: o nome da etapa no navegador não cabe — fica o número (o
+   nome completo aparece no tooltip e no cabeçalho da coluna). */
+@media (max-width: 1400px) {
+  .quadro-nav-item {
+    grid-template-columns: 1fr;
+    grid-template-areas: "num" "count";
+    justify-items: center;
+    gap: 3px;
+    padding: 6px 2px 5px;
+    text-align: center;
   }
+  .quadro-nav-nome { display: none; }
+}
+
+@media (max-width: 1100px) {
+  .quadro-nav { gap: 8px; }
+  .quadro-nav-fase { font-size: 9.5px; letter-spacing: .03em; }
+}
+
+/* Tela estreita (celular): colunas quase da largura da tela, com snap; o
+   navegador rola de lado e as setas saem (o gesto de arrastar já basta). */
+@media (max-width: 720px) {
+  .quadro-seta { display: none; }
+  .quadro-nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .quadro-nav::-webkit-scrollbar { display: none; }
+  .quadro-nav-grupo { flex-shrink: 0; flex-basis: auto; }
+  .quadro-nav-item { flex: 0 0 34px; }
+  .quadro-nav-count { min-width: 0; padding: 0 4px; font-size: 10px; }
+
+  .quadro-board { scroll-snap-type: x mandatory; gap: 10px; }
+  .quadro-col {
+    flex: 0 0 86vw;
+    height: calc(100dvh - 260px);
+    min-height: 380px;
+    scroll-snap-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quadro-col.is-destaque,
+  .quadro-card.is-saving { animation: none; }
 }

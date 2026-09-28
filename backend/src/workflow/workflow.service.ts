@@ -14,7 +14,17 @@ export interface TransicaoResultado {
   iniciativa_id: number;
   status_anterior: string;
   status_novo: string;
+  etapa_anterior: string | null;
+  etapa_nova: string | null;
   reversao: boolean;
+}
+
+/** Etapa do quadro kanban (ETAPAS_KANBAN, V32). Cada etapa pertence a um status. */
+export interface EtapaKanban {
+  codigo: string;
+  rotulo: string;
+  status_vinculado: string;
+  ordem: number;
 }
 
 @Injectable()
@@ -54,90 +64,228 @@ export class WorkflowService {
   ): Promise<TransicaoResultado> {
     const conn = await this.db.getConnection();
     try {
-      const iniResult = await conn.execute(
-        'SELECT STATUS FROM INOVACAO_INICIATIVAS WHERE ID = :1',
-        [iniciativaId],
-        { outFormat: oracledb.OUT_FORMAT_OBJECT },
-      );
-      const iniRows = iniResult.rows as any[];
-      if (!iniRows.length) {
-        throw new NotFoundException(`Iniciativa #${iniciativaId} não encontrada`);
-      }
-      const statusAtual: string = iniRows[0].STATUS || 'SUBMETIDA';
-
-      const transResult = await conn.execute(
-        'SELECT * FROM TRANSICOES_STATUS WHERE status_origem = :1 AND status_destino = :2',
-        [statusAtual, statusDestino],
-        { outFormat: oracledb.OUT_FORMAT_OBJECT },
-      );
-      const transRows = transResult.rows as any[];
-      if (!transRows.length) {
-        throw new BadRequestException(
-          `Transição de '${statusAtual}' para '${statusDestino}' não permitida`,
-        );
-      }
-
-      const trans = transRows[0];
-      // Qualquer usuário do painel (ADM ou CONTRIBUTOR) pode tramitar a esteira.
-      const ehUsuarioPainel = usuario.role === 'ADM' || usuario.role === 'CONTRIBUTOR';
-      if (!ehUsuarioPainel) {
-        throw new ForbiddenException('Sem permissão para realizar esta transição');
-      }
-
-      // Homologar e desclassificar são atos exclusivos de ADM (ADR-014 §10).
-      // O colaborador (CONTRIBUTOR) faz tudo na esteira, exceto estas duas
-      // decisões terminais. Validação primária no backend — a UI apenas oculta.
-      if (this.STATUS_EXCLUSIVOS_ADM.has(statusDestino) && usuario.role !== 'ADM') {
-        throw new ForbiddenException(
-          'Apenas administradores podem homologar ou desclassificar iniciativas.',
-        );
-      }
-
-      // Desfazer a decisão também é exclusivo de ADM (ADR-015 §4): quem não pode
-      // homologar/desclassificar tampouco pode reverter.
-      const ehReversao = this.STATUS_EXCLUSIVOS_ADM.has(statusAtual);
-      if (ehReversao && usuario.role !== 'ADM') {
-        throw new ForbiddenException(
-          'Apenas administradores podem reverter uma homologação ou desclassificação.',
-        );
-      }
-
-      // Reverter exige justificativa por regra de negócio, não por configuração:
-      // a checagem não depende de o catálogo trazer justificativa_obrig = 1.
-      const exigeJustificativa = trans.JUSTIFICATIVA_OBRIG === 1 || ehReversao;
-      if (exigeJustificativa && !justificativa?.trim()) {
-        throw new BadRequestException('Justificativa obrigatória para esta transição');
-      }
-
-      await conn.execute(
-        'UPDATE INOVACAO_INICIATIVAS SET STATUS = :1, ATUALIZADO_EM = SYSDATE WHERE ID = :2',
-        [statusDestino, iniciativaId],
+      const atual = await this.lerPosicao(conn, iniciativaId);
+      const ehReversao = await this.aplicarTransicao(
+        conn, iniciativaId, atual.status, statusDestino, justificativa, usuario,
       );
 
-      await conn.execute(
-        `INSERT INTO HISTORICO_STATUS
-           (iniciativa_id, status_anterior, status_novo, tipo_evento, usuario_login, justificativa, data_hora)
-         VALUES (:1, :2, :3, :4, :5, :6, SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
-        [
-          iniciativaId,
-          statusAtual,
-          statusDestino,
-          ehReversao ? 'REVERSAO' : this.mapTipoEvento(statusDestino),
-          usuario.login,
-          justificativa || null,
-        ],
-      );
+      // A etapa do quadro acompanha o status: se a etapa atual não pertence ao
+      // novo status, a iniciativa vai para a primeira etapa dele.
+      const etapas = await this.lerEtapas(conn);
+      const etapaAtual = etapas.find((e) => e.codigo === atual.etapa);
+      let etapaNova = atual.etapa;
+      if (etapaAtual?.status_vinculado !== statusDestino) {
+        etapaNova = etapas.find((e) => e.status_vinculado === statusDestino)?.codigo ?? null;
+        await this.gravarEtapa(conn, iniciativaId, atual.etapa, etapaNova, null, usuario);
+      }
 
       await conn.commit();
       return {
         iniciativa_id: iniciativaId,
-        status_anterior: statusAtual,
+        status_anterior: atual.status,
         status_novo: statusDestino,
+        etapa_anterior: atual.etapa,
+        etapa_nova: etapaNova,
         reversao: ehReversao,
       };
     } finally {
       await conn.close().catch(() => {});
     }
+  }
+
+  /** Catálogo de etapas do quadro kanban, na ordem de exibição (V32). */
+  async listarEtapas(): Promise<EtapaKanban[]> {
+    const conn = await this.db.getConnection();
+    try {
+      return await this.lerEtapas(conn);
+    } finally {
+      await conn.close();
+    }
+  }
+
+  /**
+   * Move a iniciativa para outra etapa do quadro. Dentro do mesmo status é só
+   * uma mudança de etapa; para uma etapa de outro status é também uma
+   * tramitação, com todas as regras de `transicionar` (catálogo
+   * TRANSICOES_STATUS, perfil ADM nas decisões terminais, justificativa).
+   * Tudo numa transação só: ou mudam status e etapa, ou nada muda.
+   */
+  async moverEtapa(
+    iniciativaId: number,
+    etapaDestino: string,
+    justificativa: string | undefined,
+    usuario: RequestUser,
+  ): Promise<TransicaoResultado> {
+    if (usuario.role !== 'ADM' && usuario.role !== 'CONTRIBUTOR') {
+      throw new ForbiddenException('Sem permissão para movimentar iniciativas');
+    }
+
+    const conn = await this.db.getConnection();
+    try {
+      const destino = (await this.lerEtapas(conn)).find((e) => e.codigo === etapaDestino);
+      if (!destino) {
+        throw new BadRequestException(`Etapa '${etapaDestino}' inexistente ou inativa`);
+      }
+
+      const atual = await this.lerPosicao(conn, iniciativaId);
+      let ehReversao = false;
+      if (destino.status_vinculado !== atual.status) {
+        ehReversao = await this.aplicarTransicao(
+          conn, iniciativaId, atual.status, destino.status_vinculado, justificativa, usuario,
+        );
+      }
+      await this.gravarEtapa(
+        conn, iniciativaId, atual.etapa, destino.codigo, justificativa, usuario,
+      );
+
+      await conn.commit();
+      return {
+        iniciativa_id: iniciativaId,
+        status_anterior: atual.status,
+        status_novo: destino.status_vinculado,
+        etapa_anterior: atual.etapa,
+        etapa_nova: destino.codigo,
+        reversao: ehReversao,
+      };
+    } finally {
+      await conn.close().catch(() => {});
+    }
+  }
+
+  private async lerEtapas(conn: oracledb.Connection): Promise<EtapaKanban[]> {
+    const result = await conn.execute(
+      `SELECT codigo, rotulo_pt, status_vinculado, ordem
+         FROM ETAPAS_KANBAN
+        WHERE ativo = 1
+        ORDER BY ordem, id`,
+      [],
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+    return (result.rows as any[]).map((r) => ({
+      codigo: r.CODIGO,
+      rotulo: r.ROTULO_PT,
+      status_vinculado: r.STATUS_VINCULADO,
+      ordem: r.ORDEM,
+    }));
+  }
+
+  /** Status e etapa atuais; a linha fica bloqueada até o commit, para que duas
+   *  movimentações simultâneas não se atropelem. */
+  private async lerPosicao(
+    conn: oracledb.Connection,
+    iniciativaId: number,
+  ): Promise<{ status: string; etapa: string | null }> {
+    const result = await conn.execute(
+      'SELECT STATUS, ETAPA_CODIGO FROM INOVACAO_INICIATIVAS WHERE ID = :1 FOR UPDATE',
+      [iniciativaId],
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+    const rows = result.rows as any[];
+    if (!rows.length) {
+      throw new NotFoundException(`Iniciativa #${iniciativaId} não encontrada`);
+    }
+    return { status: rows[0].STATUS || 'SUBMETIDA', etapa: rows[0].ETAPA_CODIGO ?? null };
+  }
+
+  /** Grava a etapa atual e o evento em HISTORICO_ETAPA (sem commit). */
+  private async gravarEtapa(
+    conn: oracledb.Connection,
+    iniciativaId: number,
+    etapaAnterior: string | null,
+    etapaNova: string | null,
+    justificativa: string | undefined | null,
+    usuario: RequestUser,
+  ): Promise<void> {
+    if (etapaNova === etapaAnterior) return;
+    await conn.execute(
+      'UPDATE INOVACAO_INICIATIVAS SET ETAPA_CODIGO = :1, ATUALIZADO_EM = SYSDATE WHERE ID = :2',
+      [etapaNova, iniciativaId],
+    );
+    if (!etapaNova) return;
+    await conn.execute(
+      `INSERT INTO HISTORICO_ETAPA
+         (iniciativa_id, etapa_anterior, etapa_nova, usuario_login, justificativa, data_hora)
+       VALUES (:1, :2, :3, :4, :5, SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
+      [iniciativaId, etapaAnterior, etapaNova, usuario.login, justificativa?.trim() || null],
+    );
+  }
+
+  /**
+   * Valida e grava uma tramitação de status (sem commit). Devolve se ela é a
+   * reversão de uma decisão terminal.
+   */
+  private async aplicarTransicao(
+    conn: oracledb.Connection,
+    iniciativaId: number,
+    statusAtual: string,
+    statusDestino: string,
+    justificativa: string | undefined,
+    usuario: RequestUser,
+  ): Promise<boolean> {
+    const transResult = await conn.execute(
+      'SELECT * FROM TRANSICOES_STATUS WHERE status_origem = :1 AND status_destino = :2',
+      [statusAtual, statusDestino],
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+    const transRows = transResult.rows as any[];
+    if (!transRows.length) {
+      throw new BadRequestException(
+        `Transição de '${statusAtual}' para '${statusDestino}' não permitida`,
+      );
+    }
+
+    const trans = transRows[0];
+    // Qualquer usuário do painel (ADM ou CONTRIBUTOR) pode tramitar a esteira.
+    const ehUsuarioPainel = usuario.role === 'ADM' || usuario.role === 'CONTRIBUTOR';
+    if (!ehUsuarioPainel) {
+      throw new ForbiddenException('Sem permissão para realizar esta transição');
+    }
+
+    // Homologar e desclassificar são atos exclusivos de ADM (ADR-014 §10).
+    // O colaborador (CONTRIBUTOR) faz tudo na esteira, exceto estas duas
+    // decisões terminais. Validação primária no backend — a UI apenas oculta.
+    if (this.STATUS_EXCLUSIVOS_ADM.has(statusDestino) && usuario.role !== 'ADM') {
+      throw new ForbiddenException(
+        'Apenas administradores podem homologar ou desclassificar iniciativas.',
+      );
+    }
+
+    // Desfazer a decisão também é exclusivo de ADM (ADR-015 §4): quem não pode
+    // homologar/desclassificar tampouco pode reverter.
+    const ehReversao = this.STATUS_EXCLUSIVOS_ADM.has(statusAtual);
+    if (ehReversao && usuario.role !== 'ADM') {
+      throw new ForbiddenException(
+        'Apenas administradores podem reverter uma homologação ou desclassificação.',
+      );
+    }
+
+    // Reverter exige justificativa por regra de negócio, não por configuração:
+    // a checagem não depende de o catálogo trazer justificativa_obrig = 1.
+    const exigeJustificativa = trans.JUSTIFICATIVA_OBRIG === 1 || ehReversao;
+    if (exigeJustificativa && !justificativa?.trim()) {
+      throw new BadRequestException('Justificativa obrigatória para esta transição');
+    }
+
+    await conn.execute(
+      'UPDATE INOVACAO_INICIATIVAS SET STATUS = :1, ATUALIZADO_EM = SYSDATE WHERE ID = :2',
+      [statusDestino, iniciativaId],
+    );
+
+    await conn.execute(
+      `INSERT INTO HISTORICO_STATUS
+         (iniciativa_id, status_anterior, status_novo, tipo_evento, usuario_login, justificativa, data_hora)
+       VALUES (:1, :2, :3, :4, :5, :6, SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
+      [
+        iniciativaId,
+        statusAtual,
+        statusDestino,
+        ehReversao ? 'REVERSAO' : this.mapTipoEvento(statusDestino),
+        usuario.login,
+        justificativa || null,
+      ],
+    );
+
+    return ehReversao;
   }
 
   async getHistorico(iniciativaId: number): Promise<object[]> {

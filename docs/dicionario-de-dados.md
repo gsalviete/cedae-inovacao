@@ -3,7 +3,7 @@
 **Versão:** 1.0
 **Data:** 2026-07-29
 **Banco:** Oracle 19c — schema `CEDAE_INOVACAO`
-**Estado descrito:** migrations `V01`–`V31` aplicadas
+**Estado descrito:** migrations `V01`–`V32` aplicadas
 
 > Documento de referência do modelo de dados: o que cada tabela guarda, o que cada
 > coluna significa, quais valores são aceitos e de onde o dado vem.
@@ -727,6 +727,7 @@ SELECT i.CODIGO_PUBLICO, i.TITULO_INICIATIVA, i.STATUS AS status_atual,
 | `V29` | Rótulos oficiais dos quatro canais e ativação das quatro vias |
 | `V30` | `TERMOS_ACEITES` |
 | `V31` | `RELEVANCIA_ESTRATEGICA`, `CLASSIFICACAO_INICIATIVA`, proponente opcional na Captação Externa, ampliação do domínio de instituição, evento `REVERSAO` e transições de reversão |
+| `V32` | `ETAPAS_KANBAN` (15 etapas do quadro, cada uma vinculada a um status), `HISTORICO_ETAPA` e `INOVACAO_INICIATIVAS.ETAPA_CODIGO` (default `RECEBIMENTO`, backfill pela 1ª etapa do status) |
 
 **Princípio observado em toda a evolução:** aditiva e idempotente. Colunas novas
 sempre nullable, nenhuma coluna removida ou renomeada, nenhum dado descartado,

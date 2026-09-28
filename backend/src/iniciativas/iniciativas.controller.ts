@@ -19,11 +19,12 @@ import { Request, Response } from 'express';
 import { AdminGuard } from '../auth/admin.guard';
 import { AuthService } from '../auth/auth.service';
 import { RequestUser } from '../common/interfaces/request-user.interface';
-import { WorkflowService } from '../workflow/workflow.service';
+import { TransicaoResultado, WorkflowService } from '../workflow/workflow.service';
 import { CreateIniciativaDto } from './dto/create-iniciativa.dto';
 import { EditarHistoricoDto } from './dto/editar-historico.dto';
 import { EditarObservacaoDto } from './dto/editar-observacao.dto';
 import { ObservacaoDto } from './dto/observacao.dto';
+import { PatchEtapaDto } from './dto/patch-etapa.dto';
 import { PatchStatusDto } from './dto/patch-status.dto';
 import { UpdateIniciativaDto } from './dto/update-iniciativa.dto';
 import { ExportService, IniciativaExport } from './export.service';
@@ -142,6 +143,13 @@ export class IniciativasController {
     res.end(buffer);
   }
 
+  /** Etapas do quadro kanban (V32). Declarado antes de `:id`. */
+  @Get('etapas')
+  @UseGuards(AdminGuard)
+  async listarEtapas(): Promise<object[]> {
+    return this.workflowService.listarEtapas();
+  }
+
   @Get(':id')
   @UseGuards(AdminGuard)
   async getById(@Param('id', ParseIntPipe) id: number): Promise<object> {
@@ -216,22 +224,50 @@ export class IniciativasController {
     const resultado = await this.workflowService.transicionar(
       id, dto.status, dto.justificativa, user,
     );
-    // A esteira normal já é auditada pelo HISTORICO_STATUS (ADR-005). A reversão
-    // de uma decisão terminal é um ato administrativo excepcional e ganha
-    // também a camada de log geral (ADR-008 / ADR-015 §9).
-    if (resultado.reversao) {
-      this.authService
-        .registrarLog(
-          user.login,
-          'reverter_decisao',
-          limitarDetalhe(
-            `Iniciativa #${id} — reversão de ${resultado.status_anterior} para ` +
-            `${resultado.status_novo}. Justificativa: ${dto.justificativa?.trim() ?? ''}`,
-          ),
-        )
-        .catch(() => {});
-    }
+    this.logarReversao(id, resultado, dto.justificativa, user);
     return resultado;
+  }
+
+  /**
+   * Movimentação no quadro kanban. Entre etapas do mesmo status é livre; para
+   * uma etapa de outro status é também tramitação (mesmas regras do
+   * PATCH :id/status).
+   */
+  @Patch(':id/etapa')
+  @UseGuards(AdminGuard)
+  async patchEtapa(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PatchEtapaDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const user = (req as AuthRequest).user;
+    const resultado = await this.workflowService.moverEtapa(
+      id, dto.etapa, dto.justificativa, user,
+    );
+    this.logarReversao(id, resultado, dto.justificativa, user);
+    return resultado;
+  }
+
+  // A esteira normal já é auditada pelo HISTORICO_STATUS (ADR-005). A reversão
+  // de uma decisão terminal é um ato administrativo excepcional e ganha
+  // também a camada de log geral (ADR-008 / ADR-015 §9).
+  private logarReversao(
+    id: number,
+    resultado: TransicaoResultado,
+    justificativa: string | undefined,
+    user: RequestUser,
+  ): void {
+    if (!resultado.reversao) return;
+    this.authService
+      .registrarLog(
+        user.login,
+        'reverter_decisao',
+        limitarDetalhe(
+          `Iniciativa #${id} — reversão de ${resultado.status_anterior} para ` +
+          `${resultado.status_novo}. Justificativa: ${justificativa?.trim() ?? ''}`,
+        ),
+      )
+      .catch(() => {});
   }
 
   @Patch(':id/observacao/:obsId')

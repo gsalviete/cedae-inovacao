@@ -130,7 +130,7 @@ async function bootstrap(): Promise<void> {
     {
       route: '/admin/quadro', content: 'quadro.html',
       meta: { active: 'quadro', title: 'Quadro Kanban',
-        subtitle: 'Todas as iniciativas em uma visão só — arraste os cartões para tramitar.',
+        subtitle: 'Todas as iniciativas por etapa de trabalho — arraste os cartões para movimentar.',
         breadcrumb: crumb('Painel', 'Quadro Kanban'), script: 'page-quadro.js' },
     },
     {
