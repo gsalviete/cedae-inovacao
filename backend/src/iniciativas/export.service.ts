@@ -50,30 +50,30 @@ export interface IniciativaExport {
 /* ── Rótulos ──────────────────────────────────────────────
    Espelham os mapas do frontend (api.js / detalhe.js): o arquivo exportado
    mostra o mesmo texto que a tela, nunca a chave crua gravada no banco. */
-const CANAL_LABEL: Record<string, string> = {
+export const CANAL_LABEL: Record<string, string> = {
   VIA_1: 'Registro de Sistemas Corporativos (SGE/SGP)',
   VIA_2: 'Formulário Interno de Submissão',
   VIA_3: 'Registro de Reuniões com Áreas',
   MAPEAMENTO_EXTERNO: 'Captação Externa',
 };
-const ESTAGIO_LABEL: Record<string, string> = {
+export const ESTAGIO_LABEL: Record<string, string> = {
   ideacao: 'Ideação',
   piloto: 'Teste / Piloto (MVP)',
   escala: 'Escala / Operação Ativa',
   paralisada: 'Paralisada',
 };
-const MACRODIMENSAO_LABEL: Record<string, string> = {
+export const MACRODIMENSAO_LABEL: Record<string, string> = {
   tecnologica: 'Tecnológica',
   operacional: 'Operacional',
   gerencial: 'Gerencial / Administrativa',
   social_ambiental: 'Social e Ambiental',
   outros: 'Outros / Multidimensionais',
 };
-const PERFIL_IMPACTO_LABEL: Record<string, string> = {
+export const PERFIL_IMPACTO_LABEL: Record<string, string> = {
   incremental: 'Incremental',
   radical: 'Radical / Disruptivo',
 };
-const SUPORTE_LABEL: Record<string, string> = {
+export const SUPORTE_LABEL: Record<string, string> = {
   instrumentos_juridicos: 'Instrumentos Técnicos e Jurídicos',
   academia: 'Conexão com Academia',
   mercado_startups: 'Conexão com Mercado / Startups',
@@ -81,7 +81,7 @@ const SUPORTE_LABEL: Record<string, string> = {
   monitoramento: 'Monitoramento Corporativo',
   diagnostico: 'Apoio Diagnóstico',
 };
-const STATUS_LABEL: Record<string, string> = {
+export const STATUS_LABEL: Record<string, string> = {
   SUBMETIDA: 'Submetida',
   EM_ANALISE: 'Em Análise',
   EM_OBSERVACAO: 'Em Observação',
@@ -96,7 +96,7 @@ const VAZIO = '—';
  * Aplica o mapa de rótulos. Valor fora do domínio — dado legado ou gravado por
  * fora — aparece como está, em vez de sumir do documento.
  */
-function rotulo(mapa: Record<string, string>, val: unknown): string {
+export function rotulo(mapa: Record<string, string>, val: unknown): string {
   const v = (val ?? '').toString().trim();
   if (!v) return '';
   return mapa[v] ?? mapa[v.toUpperCase()] ?? mapa[v.toLowerCase()] ?? v;
@@ -117,7 +117,7 @@ function fmtData(val: string | Date | null | undefined): string {
 /** Valores em reais: RETORNO_ECONOMICO é NUMBER(15,2) e VALOR_APORTE é
    VARCHAR2 com o número em texto ("1000000"). Ambos saem como moeda; o que
    não for numérico (dado legado) é exportado como está. */
-function fmtMoeda(val: unknown): string {
+export function fmtMoeda(val: unknown): string {
   if (val === null || val === undefined || val === '') return '';
   const n = typeof val === 'number' ? val : Number(String(val).replace(',', '.'));
   if (Number.isNaN(n)) return String(val);
@@ -125,13 +125,13 @@ function fmtMoeda(val: unknown): string {
 }
 
 /** SUPORTE_NECESSARIO guarda várias opções separadas por "|". */
-function fmtSuporte(val: unknown): string {
+export function fmtSuporte(val: unknown): string {
   const v = texto(val);
   if (!v) return '';
   return v.split('|').filter(Boolean).map((s) => SUPORTE_LABEL[s] ?? s).join(' · ');
 }
 
-function fmtSimNao(val: unknown): string {
+export function fmtSimNao(val: unknown): string {
   const v = texto(val).toLowerCase();
   if (v === 'sim') return 'Sim';
   if (v === 'nao' || v === 'não') return 'Não';

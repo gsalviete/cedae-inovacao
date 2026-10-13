@@ -7,6 +7,7 @@ import {
 import * as oracledb from 'oracledb';
 import { DatabaseService } from '../database/database.service';
 import { RequestUser } from '../common/interfaces/request-user.interface';
+import { STATUS_LABEL } from '../iniciativas/export.service';
 
 /** Resultado de uma tramitação. `reversao` marca o desfazimento de uma
  *  decisão terminal (homologação/desclassificação) — ADR-015 §4. */
@@ -76,7 +77,10 @@ export class WorkflowService {
       let etapaNova = atual.etapa;
       if (etapaAtual?.status_vinculado !== statusDestino) {
         etapaNova = etapas.find((e) => e.status_vinculado === statusDestino)?.codigo ?? null;
-        await this.gravarEtapa(conn, iniciativaId, atual.etapa, etapaNova, null, usuario);
+        await this.gravarEtapa(conn, iniciativaId, atual.etapa, etapaNova, justificativa, usuario, {
+          anterior: atual.status,
+          novo: statusDestino,
+        });
       }
 
       await conn.commit();
@@ -136,6 +140,7 @@ export class WorkflowService {
       }
       await this.gravarEtapa(
         conn, iniciativaId, atual.etapa, destino.codigo, justificativa, usuario,
+        { anterior: atual.status, novo: destino.status_vinculado },
       );
 
       await conn.commit();
@@ -187,7 +192,11 @@ export class WorkflowService {
     return { status: rows[0].STATUS || 'SUBMETIDA', etapa: rows[0].ETAPA_CODIGO ?? null };
   }
 
-  /** Grava a etapa atual e o evento em HISTORICO_ETAPA (sem commit). */
+  /**
+   * Grava a etapa atual, o evento em HISTORICO_ETAPA e a observação automática
+   * da movimentação no detalhamento da iniciativa (sem commit). `status` vem
+   * preenchido quando a movimentação também mudou o status.
+   */
   private async gravarEtapa(
     conn: oracledb.Connection,
     iniciativaId: number,
@@ -195,6 +204,7 @@ export class WorkflowService {
     etapaNova: string | null,
     justificativa: string | undefined | null,
     usuario: RequestUser,
+    status?: { anterior: string; novo: string },
   ): Promise<void> {
     if (etapaNova === etapaAnterior) return;
     await conn.execute(
@@ -208,6 +218,33 @@ export class WorkflowService {
        VALUES (:1, :2, :3, :4, :5, SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
       [iniciativaId, etapaAnterior, etapaNova, usuario.login, justificativa?.trim() || null],
     );
+
+    const rotulos = await this.rotulosEtapas(conn);
+    const rotular = (codigo: string | null) =>
+      codigo ? `"${rotulos.get(codigo) ?? codigo}"` : '(sem etapa)';
+    const linhas = [`Etapa alterada: ${rotular(etapaAnterior)} → ${rotular(etapaNova)}`];
+    if (status && status.anterior !== status.novo) {
+      linhas.push(
+        `Status: ${STATUS_LABEL[status.anterior] ?? status.anterior} → ` +
+        `${STATUS_LABEL[status.novo] ?? status.novo}`,
+      );
+    }
+    if (justificativa?.trim()) linhas.push(`Justificativa: ${justificativa.trim()}`);
+    await conn.execute(
+      `INSERT INTO INICIATIVA_OBSERVACOES (iniciativa_id, usuario_login, texto, origem, criado_em)
+       VALUES (:1, :2, :3, 'MOVIMENTACAO', SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
+      [iniciativaId, usuario.login, linhas.join('\n')],
+    );
+  }
+
+  /** Rótulo de toda etapa, ativa ou não — a de origem pode ter sido desativada. */
+  private async rotulosEtapas(conn: oracledb.Connection): Promise<Map<string, string>> {
+    const result = await conn.execute(
+      'SELECT codigo, rotulo_pt FROM ETAPAS_KANBAN',
+      [],
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+    return new Map((result.rows as any[]).map((r) => [r.CODIGO, r.ROTULO_PT]));
   }
 
   /**
@@ -345,7 +382,8 @@ export class WorkflowService {
   async getObservacoes(iniciativaId: number): Promise<object[]> {
     const sql = `
       SELECT id, usuario_login,
-             DBMS_LOB.SUBSTR(texto, 32767, 1) AS texto, criado_em, editado_em
+             DBMS_LOB.SUBSTR(texto, 32767, 1) AS texto, criado_em, editado_em,
+             NVL(origem, 'MANUAL') AS origem
       FROM INICIATIVA_OBSERVACOES
       WHERE iniciativa_id = :1
       ORDER BY criado_em ASC
@@ -361,6 +399,7 @@ export class WorkflowService {
         texto: r.TEXTO,
         criado_em: r.CRIADO_EM,
         editado_em: r.EDITADO_EM,
+        origem: r.ORIGEM,
       }));
     } finally {
       await conn.close();
@@ -408,7 +447,7 @@ export class WorkflowService {
     const conn = await this.db.getConnection();
     try {
       const result = await conn.execute(
-        `SELECT usuario_login, criado_em
+        `SELECT usuario_login, criado_em, NVL(origem, 'MANUAL') AS origem
          FROM INICIATIVA_OBSERVACOES
          WHERE id = :1 AND iniciativa_id = :2`,
         [observacaoId, iniciativaId],
@@ -419,6 +458,11 @@ export class WorkflowService {
         throw new NotFoundException(`Observação #${observacaoId} não encontrada.`);
       }
       const obs = rows[0];
+      // Observações gravadas pelo sistema (edição de campos, movimentação no
+      // quadro) são trilha de auditoria: não se corrigem.
+      if (obs.ORIGEM !== 'MANUAL') {
+        throw new ForbiddenException('Observações automáticas não podem ser editadas.');
+      }
       if (obs.USUARIO_LOGIN !== usuario.login) {
         throw new ForbiddenException('Apenas o autor pode editar esta observação.');
       }

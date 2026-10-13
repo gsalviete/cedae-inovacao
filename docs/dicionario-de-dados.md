@@ -3,7 +3,7 @@
 **Versão:** 1.0
 **Data:** 2026-07-29
 **Banco:** Oracle 19c — schema `CEDAE_INOVACAO`
-**Estado descrito:** migrations `V01`–`V32` aplicadas
+**Estado descrito:** migrations `V01`–`V33` aplicadas
 
 > Documento de referência do modelo de dados: o que cada tabela guarda, o que cada
 > coluna significa, quais valores são aceitos e de onde o dado vem.
@@ -292,8 +292,17 @@ alimentam indicadores.
 | `TEXTO` | CLOB | ✅ | Conteúdo | 📝 Não pode ser vazio |
 | `CRIADO_EM` | TIMESTAMP | ✅ | Quando foi registrada | ⚙️ UTC |
 | `EDITADO_EM` | TIMESTAMP | — | Quando foi corrigida | ⚙️ Nulo se nunca editada |
+| `ORIGEM` | VARCHAR2(20) | ✅ | Quem gerou a observação | ⚙️ `MANUAL` (default), `EDICAO` (edição de campos no detalhe) ou `MOVIMENTACAO` (mudança de etapa). Introduzida na V33 |
 
-**Edição:** apenas pelo **autor**, em até **2 horas** após o registro.
+**Edição:** apenas pelo **autor**, em até **2 horas** após o registro, e só
+observações `MANUAL` — as automáticas são trilha de auditoria e não se corrigem.
+
+**Observações automáticas (V33):** toda edição de campos na tela de detalhe grava
+uma observação `EDICAO` listando cada campo alterado com o valor anterior e o
+novo (textos longos resumidos em 300 caracteres). Toda mudança de etapa — arrasto
+no quadro ou tramitação de status que leva a iniciativa a outra etapa — grava uma
+observação `MOVIMENTACAO` com a etapa de origem e destino, a mudança de status
+quando houver e a justificativa. Ambas na mesma transação da alteração.
 
 **Uso automático pelo sistema:** o contexto de reunião da Via 3 (data e área) é
 gravado aqui como observação inicial, autoria do analista que cadastrou — em vez
@@ -728,6 +737,7 @@ SELECT i.CODIGO_PUBLICO, i.TITULO_INICIATIVA, i.STATUS AS status_atual,
 | `V30` | `TERMOS_ACEITES` |
 | `V31` | `RELEVANCIA_ESTRATEGICA`, `CLASSIFICACAO_INICIATIVA`, proponente opcional na Captação Externa, ampliação do domínio de instituição, evento `REVERSAO` e transições de reversão |
 | `V32` | `ETAPAS_KANBAN` (15 etapas do quadro, cada uma vinculada a um status), `HISTORICO_ETAPA` e `INOVACAO_INICIATIVAS.ETAPA_CODIGO` (default `RECEBIMENTO`, backfill pela 1ª etapa do status) |
+| `V33` | Quadro com 13 etapas: desativa `VERIFICACAO_LACUNAS` e `ACOMPANHAMENTO_POS_HOMOLOG` (iniciativas realocadas), renomeia `IDENTIFICACAO_ARTICULACOES` para "Homologação da iniciativa", traz `MONITORAMENTO_CORPORATIVO` para logo depois dela e renumera a ordem; `INICIATIVA_OBSERVACOES.ORIGEM` |
 
 **Princípio observado em toda a evolução:** aditiva e idempotente. Colunas novas
 sempre nullable, nenhuma coluna removida ou renomeada, nenhum dado descartado,

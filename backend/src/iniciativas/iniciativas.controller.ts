@@ -171,7 +171,7 @@ export class IniciativasController {
   ): Promise<object> {
     const user = (req as AuthRequest).user;
     
-    const alteracoes = await this.iniciativasService.atualizar(id, dto);
+    const alteracoes = await this.iniciativasService.atualizar(id, dto, user.login);
     this.authService
       .registrarLog(user.login, 'editar_iniciativa', `Iniciativa #${id} editada`)
       .catch(() => {});

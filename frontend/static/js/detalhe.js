@@ -48,6 +48,12 @@ const TIPO_EVENTO_LABEL = {
   REVERSAO:         'Reversão',
 };
 
+/* Observações gravadas pelo sistema (INICIATIVA_OBSERVACOES.ORIGEM, V33). */
+const ORIGEM_OBSERVACAO_DESC = {
+  EDICAO:       'edição de campos',
+  MOVIMENTACAO: 'mudança de etapa',
+};
+
 function getIniciativaId() {
   const params = new URLSearchParams(window.location.search);
   return parseInt(params.get('id') || '0', 10);
@@ -605,6 +611,7 @@ async function loadHistorico(id) {
         status_anterior: null,
         status_novo: null,
         justificativa: o.texto,
+        origem: o.origem || 'MANUAL',
       })),
     ].sort((a, b) => new Date(a.data_hora) - new Date(b.data_hora));
 
@@ -627,6 +634,8 @@ async function loadHistorico(id) {
 
 function podeEditar(ev) {
   if (!_me || !TIPOS_EDITAVEIS.has(ev.tipo_evento)) return false;
+  // Observações automáticas (edição de campos, movimentação) são auditoria.
+  if (ev.kind === 'obs' && ev.origem !== 'MANUAL') return false;
   if (ev.usuario_login !== _me.login) return false;
   const idade = Date.now() - new Date(ev.data_hora).getTime();
   return Number.isFinite(idade) && idade <= JANELA_EDICAO_MS;
@@ -645,9 +654,17 @@ function renderEvento(ev, iniciativaId) {
 
   if (ev.tipo_evento === 'OBSERVACAO') {
     const cls = 'badge-status-em_observacao';
+    const automatica = ORIGEM_OBSERVACAO_DESC[ev.origem];
+    // A anotação livre aparece entre aspas; a automática é um resumo do
+    // sistema, em linhas, e vai sem aspas.
     const texto = ev.justificativa
-      ? `<div class="historico-just" data-evento-texto>"${escapeHtml(ev.justificativa)}"</div>`
+      ? `<div class="historico-just" data-evento-texto>${
+          automatica ? escapeHtml(ev.justificativa) : `"${escapeHtml(ev.justificativa)}"`
+        }</div>`
       : '';
+    const desc = automatica
+      ? `Registro automático — ${automatica} por <strong>${autor}</strong>`
+      : `Observação registrada por <strong>${autor}</strong>`;
     return `
       <div class="historico-item" data-reveal data-evento-kind="${ev.kind}" data-evento-id="${ev.id}">
         <div class="historico-dot ${cls}"></div>
@@ -658,7 +675,7 @@ function renderEvento(ev, iniciativaId) {
             <span class="historico-data">${fmtDate(ev.data_hora)}</span>
             ${btnEditar}
           </div>
-          <div class="historico-desc">Observação registrada por <strong>${autor}</strong></div>
+          <div class="historico-desc">${desc}</div>
           ${texto}
         </div>
       </div>`;

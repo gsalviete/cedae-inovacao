@@ -13,6 +13,15 @@ import {
 import { CreateIniciativaDto } from './dto/create-iniciativa.dto';
 import { CreateManualIniciativaDto } from './dto/create-manual-iniciativa.dto';
 import { UpdateIniciativaDto } from './dto/update-iniciativa.dto';
+import {
+  ESTAGIO_LABEL,
+  MACRODIMENSAO_LABEL,
+  PERFIL_IMPACTO_LABEL,
+  fmtMoeda,
+  fmtSimNao,
+  fmtSuporte,
+  rotulo,
+} from './export.service';
 
 /** Metadados de origem carimbados pela camada de ingestão (ADR-013 §3.2). */
 interface OrigemIngestao {
@@ -53,6 +62,64 @@ const CAMPOS_PROPONENTE: Record<string, string> = {
   nome_colaborador: 'o nome do proponente',
   canal_contato: 'o canal de contato',
 };
+
+/** Campo editável na tela de detalhe, como aparece na observação automática. */
+interface CampoEditavel {
+  dto: keyof UpdateIniciativaDto;
+  coluna: string;
+  rotulo: string;
+  formatar?: (valor: string) => string;
+  numerico?: boolean;
+}
+
+/** Mesmos rótulos do detalhe/exportação: a observação mostra o que a tela mostra. */
+const CAMPOS_EDITAVEIS: CampoEditavel[] = [
+  { dto: 'titulo_iniciativa', coluna: 'TITULO_INICIATIVA', rotulo: 'Título' },
+  { dto: 'nome_colaborador', coluna: 'NOME_COLABORADOR', rotulo: 'Proponente' },
+  { dto: 'canal_contato', coluna: 'CANAL_CONTATO', rotulo: 'Canal de contato' },
+  { dto: 'email_proponente', coluna: 'EMAIL_PROPONENTE', rotulo: 'E-mail do proponente' },
+  { dto: 'area_proponente', coluna: 'AREA_PROPONENTE', rotulo: 'Área proponente' },
+  { dto: 'local_aplicacao', coluna: 'LOCAL_APLICACAO', rotulo: 'Local de aplicação' },
+  { dto: 'problema_pratico', coluna: 'PROBLEMA_PRATICO', rotulo: 'Problema prático' },
+  { dto: 'solucao_proposta', coluna: 'SOLUCAO_PROPOSTA', rotulo: 'Solução proposta' },
+  { dto: 'risco_mitigado', coluna: 'RISCO_MITIGADO', rotulo: 'Risco mitigado' },
+  {
+    dto: 'estagio_desenvolvimento', coluna: 'ESTAGIO_DESENVOLVIMENTO',
+    rotulo: 'Estágio de desenvolvimento', formatar: (v) => rotulo(ESTAGIO_LABEL, v),
+  },
+  {
+    dto: 'macrodimensao', coluna: 'MACRODIMENSAO',
+    rotulo: 'Macrodimensão', formatar: (v) => rotulo(MACRODIMENSAO_LABEL, v),
+  },
+  { dto: 'macrodimensao_observacao', coluna: 'MACRODIMENSAO_OBSERVACAO', rotulo: 'Macrodimensão (observação)' },
+  {
+    dto: 'perfil_impacto', coluna: 'PERFIL_IMPACTO',
+    rotulo: 'Perfil de impacto', formatar: (v) => rotulo(PERFIL_IMPACTO_LABEL, v),
+  },
+  {
+    dto: 'relevancia_estrategica', coluna: 'RELEVANCIA_ESTRATEGICA',
+    rotulo: 'Relevância estratégica', formatar: (v) => rotulo(RELEVANCIA_LABEL, v),
+  },
+  {
+    dto: 'classificacao_iniciativa', coluna: 'CLASSIFICACAO_INICIATIVA',
+    rotulo: 'Classificação', formatar: (v) => rotulo(CLASSIFICACAO_LABEL, v),
+  },
+  { dto: 'aporte_financeiro', coluna: 'APORTE_FINANCEIRO', rotulo: 'Possui aporte financeiro?', formatar: fmtSimNao },
+  {
+    dto: 'valor_aporte', coluna: 'VALOR_APORTE',
+    rotulo: 'Valor estimado', formatar: fmtMoeda, numerico: true,
+  },
+  {
+    dto: 'retorno_economico', coluna: 'RETORNO_ECONOMICO',
+    rotulo: 'Retorno econômico', formatar: fmtMoeda, numerico: true,
+  },
+  { dto: 'suporte_necessario', coluna: 'SUPORTE_NECESSARIO', rotulo: 'Suporte necessário', formatar: fmtSuporte },
+  { dto: 'diagnostico_observacao', coluna: 'DIAGNOSTICO_OBSERVACAO', rotulo: 'Observação do diagnóstico' },
+  { dto: 'comentarios_adicionais', coluna: 'COMENTARIOS_ADICIONAIS', rotulo: 'Comentários adicionais' },
+];
+
+/** Textos longos (problema, solução...) entram resumidos na observação. */
+const LIMITE_VALOR_OBSERVACAO = 300;
 
 const CANAIS_MANUAIS = new Set(['VIA_1', 'VIA_3', 'MAPEAMENTO_EXTERNO']);
 const SISTEMAS_ORIGEM = new Set(['SGE', 'SGP']);
@@ -449,7 +516,7 @@ export class IniciativasService {
    * estratégica e classificação Ação/Projeto) para que o controller as registre
    * individualmente em INOVACAO_LOGS (ADR-008 / ADR-015 §9).
    */
-  async atualizar(id: number, dto: UpdateIniciativaDto): Promise<string[]> {
+  async atualizar(id: number, dto: UpdateIniciativaDto, usuarioLogin: string): Promise<string[]> {
     const conn = await this.db.getConnection();
     try {
       // O "antes" é lido na mesma conexão da escrita: dá o canal (para a regra
@@ -459,7 +526,7 @@ export class IniciativasService {
         throw new NotFoundException(`Iniciativa #${id} não encontrada`);
       }
 
-      this.validarCamposObrigatorios(dto, atual.CANAL_CODIGO);
+      this.validarCamposObrigatorios(dto, atual.CANAL_CODIGO as string | null);
 
       const { sql, binds } = this.montarUpdate(id, dto);
       const alteracoes = this.diffCamposAuditados(atual, dto);
@@ -467,6 +534,17 @@ export class IniciativasService {
       const result = await conn.execute(sql, binds);
       if (!result.rowsAffected) {
         throw new NotFoundException(`Iniciativa #${id} não encontrada`);
+      }
+
+      // Toda edição de campo vira observação automática no detalhamento, na
+      // mesma transação: ou a alteração e o registro dela existem, ou nenhum.
+      const resumo = this.descreverEdicao(atual, dto);
+      if (resumo) {
+        await conn.execute(
+          `INSERT INTO INICIATIVA_OBSERVACOES (iniciativa_id, usuario_login, texto, origem, criado_em)
+           VALUES (:1, :2, :3, 'EDICAO', SYS_EXTRACT_UTC(SYSTIMESTAMP))`,
+          [id, usuarioLogin, resumo],
+        );
       }
       await conn.commit();
       return alteracoes;
@@ -555,15 +633,65 @@ export class IniciativasService {
   private async carregarEstadoAtual(
     conn: oracledb.Connection,
     id: number,
-  ): Promise<Record<string, string | null> | null> {
+  ): Promise<Record<string, unknown> | null> {
     const result = await conn.execute(
-      `SELECT CANAL_CODIGO, RELEVANCIA_ESTRATEGICA, CLASSIFICACAO_INICIATIVA
-         FROM INOVACAO_INICIATIVAS WHERE ID = :1`,
+      `SELECT CANAL_CODIGO, NOME_COLABORADOR, CANAL_CONTATO, EMAIL_PROPONENTE,
+              TITULO_INICIATIVA, AREA_PROPONENTE, LOCAL_APLICACAO,
+              DBMS_LOB.SUBSTR(PROBLEMA_PRATICO,       32767, 1) AS PROBLEMA_PRATICO,
+              DBMS_LOB.SUBSTR(SOLUCAO_PROPOSTA,       32767, 1) AS SOLUCAO_PROPOSTA,
+              DBMS_LOB.SUBSTR(RISCO_MITIGADO,         32767, 1) AS RISCO_MITIGADO,
+              ESTAGIO_DESENVOLVIMENTO, MACRODIMENSAO, MACRODIMENSAO_OBSERVACAO,
+              PERFIL_IMPACTO, APORTE_FINANCEIRO, VALOR_APORTE, RETORNO_ECONOMICO,
+              SUPORTE_NECESSARIO, DIAGNOSTICO_OBSERVACAO,
+              DBMS_LOB.SUBSTR(COMENTARIOS_ADICIONAIS, 32767, 1) AS COMENTARIOS_ADICIONAIS,
+              RELEVANCIA_ESTRATEGICA, CLASSIFICACAO_INICIATIVA
+         FROM INOVACAO_INICIATIVAS WHERE ID = :1 FOR UPDATE`,
       [id],
       { outFormat: oracledb.OUT_FORMAT_OBJECT },
     );
-    const rows = result.rows as Record<string, string | null>[];
+    const rows = result.rows as Record<string, unknown>[];
     return rows.length ? rows[0] : null;
+  }
+
+  /**
+   * Texto da observação automática de uma edição: um item por campo que
+   * realmente mudou, com o valor anterior e o novo já rotulados como na tela.
+   * Devolve null quando o PATCH não alterou nada de fato.
+   */
+  private descreverEdicao(atual: Record<string, unknown>, dto: UpdateIniciativaDto): string | null {
+    const normalizar = (v: unknown): string | null => {
+      if (v === null || v === undefined) return null;
+      // Quebra de linha do textarea (LF) x a gravada (CRLF) não é alteração.
+      const s = String(v).replace(/\r\n/g, '\n').trim();
+      return s === '' ? null : s;
+    };
+    // Valores monetários: "1000" e "1000.00" são o mesmo número. O que não for
+    // numérico (dado legado) é comparado como texto.
+    const mesmoNumero = (a: string | null, b: string | null): boolean => {
+      const na = a === null ? NaN : Number(a);
+      const nb = b === null ? NaN : Number(b);
+      return Number.isFinite(na) && Number.isFinite(nb) ? na === nb : a === b;
+    };
+    const exibir = (campo: CampoEditavel, v: string | null): string => {
+      if (v === null) return '(vazio)';
+      const formatado = campo.formatar ? campo.formatar(v) || v : v;
+      const curto = formatado.length > LIMITE_VALOR_OBSERVACAO
+        ? `${formatado.slice(0, LIMITE_VALOR_OBSERVACAO - 1)}…`
+        : formatado;
+      return `"${curto}"`;
+    };
+
+    const linhas: string[] = [];
+    for (const campo of CAMPOS_EDITAVEIS) {
+      const enviado = (dto as Record<string, unknown>)[campo.dto];
+      if (enviado === undefined) continue;
+      const antes = normalizar(atual[campo.coluna]);
+      const depois = normalizar(enviado);
+      if (campo.numerico ? mesmoNumero(antes, depois) : antes === depois) continue;
+      linhas.push(`• ${campo.rotulo}: ${exibir(campo, antes)} → ${exibir(campo, depois)}`);
+    }
+
+    return linhas.length ? `Campos editados:\n${linhas.join('\n')}` : null;
   }
 
   /**
@@ -572,7 +700,7 @@ export class IniciativasService {
    * sem alteração efetiva não geram entrada de auditoria.
    */
   private diffCamposAuditados(
-    atual: Record<string, string | null>,
+    atual: Record<string, unknown>,
     dto: UpdateIniciativaDto,
   ): string[] {
     const auditados: Array<{
@@ -605,7 +733,7 @@ export class IniciativasService {
 
     return pendentes
       .map((c) => {
-        const antes = atual[c.coluna] ?? null;
+        const antes = (atual[c.coluna] ?? null) as string | null;
         const depois = (c.novo ?? '') === '' ? null : c.novo;
         if (antes === depois) return null;
         return `${c.rotulo}: ${rotular(c.labels, antes)} → ${rotular(c.labels, depois)}`;
