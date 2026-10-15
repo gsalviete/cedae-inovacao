@@ -738,6 +738,7 @@ SELECT i.CODIGO_PUBLICO, i.TITULO_INICIATIVA, i.STATUS AS status_atual,
 | `V31` | `RELEVANCIA_ESTRATEGICA`, `CLASSIFICACAO_INICIATIVA`, proponente opcional na Captação Externa, ampliação do domínio de instituição, evento `REVERSAO` e transições de reversão |
 | `V32` | `ETAPAS_KANBAN` (15 etapas do quadro, cada uma vinculada a um status), `HISTORICO_ETAPA` e `INOVACAO_INICIATIVAS.ETAPA_CODIGO` (default `RECEBIMENTO`, backfill pela 1ª etapa do status) |
 | `V33` | Quadro com 13 etapas: desativa `VERIFICACAO_LACUNAS` e `ACOMPANHAMENTO_POS_HOMOLOG` (iniciativas realocadas), renomeia `IDENTIFICACAO_ARTICULACOES` para "Homologação da iniciativa", traz `MONITORAMENTO_CORPORATIVO` para logo depois dela e renumera a ordem; `INICIATIVA_OBSERVACOES.ORIGEM` |
+| `V34` | `APOIO_DIAGNOSTICO` sobe para a etapa 6 (logo depois de "Homologação da iniciativa"); as etapas 6 a 11 descem uma posição |
 
 **Princípio observado em toda a evolução:** aditiva e idempotente. Colunas novas
 sempre nullable, nenhuma coluna removida ou renomeada, nenhum dado descartado,
